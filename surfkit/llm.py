@@ -6,8 +6,8 @@ import json
 from litellm import Router
 from pydantic import BaseModel
 
-from guisurfer.agent.task import Task
-from guisurfer.server.models import EnvVarOptModel, LLMProviderOption, LLMProviderModel
+from taskara import Task
+from .models import EnvVarOptModel, LLMProviderOption
 
 
 class LLMProvider:
