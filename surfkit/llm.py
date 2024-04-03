@@ -160,6 +160,9 @@ class LLMProvider:
 
         for provider, env_var in cls.provider_api_keys.items():
             if os.getenv(env_var):
+                print(
+                    f"Found LLM provider '{provider}' API key in environment variables."
+                )
                 available_providers.append(provider)
 
         if not available_providers:

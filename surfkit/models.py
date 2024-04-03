@@ -26,16 +26,16 @@ class LLMProviderModel(BaseModel):
 
 
 class AgentTypeModel(BaseModel):
-    id: str
+    id: Optional[str] = None
     name: str
-    owner_id: str
+    owner_id: Optional[str] = None
     description: str
-    image: str
-    versions: Dict[str, str]
+    image: Optional[str] = None
+    versions: Optional[Dict[str, str]] = None
     env_opts: List[EnvVarOptModel] = []
     supported_runtimes: List[str] = []
-    created: float
-    updated: float
+    created: Optional[float] = None
+    updated: Optional[float] = None
     public: bool = False
     icon: Optional[str] = None
     mem_request: Optional[str] = "500m"
