@@ -90,6 +90,7 @@ class LLMProvider:
                     ),
                 )
             )
+        return out
 
     def chat(
         self, msgs: list, task: Optional[Task] = None, namespace: Optional[str] = None
