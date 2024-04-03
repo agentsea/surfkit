@@ -3051,19 +3051,19 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.1"
+version = "0.1.5"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.1-py3-none-any.whl", hash = "sha256:1711fc2b07c3a73bb1c0f175f7dd7b1a94569b4ecfb13e0b6c416793d4d217aa"},
-    {file = "taskara-0.1.1.tar.gz", hash = "sha256:ca62b0f33d91ad3641152e87800d7dad570bcc7aa4154f6361eae06856949eb0"},
+    {file = "taskara-0.1.5-py3-none-any.whl", hash = "sha256:063d6d22fcabbed882c8108a11562f55d21f659eb431e321432ad8f67dd5b3c2"},
+    {file = "taskara-0.1.5.tar.gz", hash = "sha256:b782907dd01d7e3cd6ba9a02afb1696303adb68e924cb1f6fb05490890d99e3c"},
 ]
 
 [package.dependencies]
 pydantic = ">=2.6.4,<3.0.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
-threadmem = ">=0.2.11,<0.3.0"
+threadmem = ">=0.2.12,<0.3.0"
 
 [[package]]
 name = "tenacity"
@@ -3081,13 +3081,13 @@ doc = ["reno", "sphinx", "tornado (>=4.5)"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.11"
+version = "0.2.12"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.11-py3-none-any.whl", hash = "sha256:8e4ca4211415349043956779cb0df968fe163d3e267e5c51607bfa29462c1fc5"},
-    {file = "threadmem-0.2.11.tar.gz", hash = "sha256:181b76ebb6ba88134dbe327bd1b6dce401011d825d3035fc3b2703aaa8665003"},
+    {file = "threadmem-0.2.12-py3-none-any.whl", hash = "sha256:88c9116bd921ed94464c11f56a73f74ead5a537f9f7a02b8a42ce0deea05432b"},
+    {file = "threadmem-0.2.12.tar.gz", hash = "sha256:9cdeedd462221a5825a64ae3f9c6de5ffff1ad4e1ff777c71a20b7e7513b2ca8"},
 ]
 
 [package.dependencies]
@@ -3798,4 +3798,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "66d181c2f7923e1bbb6b7f97380153c648a3ed7e30a23c463c1b1b1fd8925bf6"
+content-hash = "91738f61005804861af0a15e6540ddb8e2d7f8b19833721f8c74e8c0a287f096"
