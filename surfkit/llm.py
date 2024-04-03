@@ -4,9 +4,8 @@ from typing import Optional, List, Dict
 import json
 
 from litellm import Router
-from pydantic import BaseModel
-
 from taskara import Task
+
 from .models import EnvVarOptModel, LLMProviderOption
 
 

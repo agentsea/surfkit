@@ -1,7 +1,6 @@
 from typing import List, Optional, Dict
 
 from pydantic import BaseModel
-from taskara.models import TaskModel
 
 
 class EnvVarOptModel(BaseModel):
