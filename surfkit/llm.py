@@ -108,11 +108,11 @@ class LLMProvider:
 
         response = self.router.completion(self.model, msgs)
 
-        print("llm response: ", response)
+        print("llm response: ", response.__dict__)
         logging.debug("response: ", response)
 
         if task:
-            dump = {"request": msgs, "response": response}
+            dump = {"request": msgs, "response": response.json()}
             if namespace:
                 dump["namespace"] = namespace
             task.post_message("assistant", json.dumps(dump), thread="prompt")
@@ -162,7 +162,7 @@ class LLMProvider:
         for provider, env_var in cls.provider_api_keys.items():
             if os.getenv(env_var):
                 print(
-                    f"Found LLM provider '{provider}' API key in environment variables."
+                    f"\nFound LLM provider '{provider}' API key in environment variables."
                 )
                 available_providers.append(provider)
 

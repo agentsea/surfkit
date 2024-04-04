@@ -4,7 +4,7 @@ import os
 import typer
 import webbrowser
 
-from surfkit.config import GlobalConfig, AGENTSEA_HUB_URL
+from surfkit.config import GlobalConfig, AGENTSEA_HUB_URL, HUB_URL
 
 art = """
  _______                ___  __  __  __  __   
@@ -16,7 +16,7 @@ art = """
 app = typer.Typer()
 
 # Sub-command groups
-create = typer.Typer(help="Create an agent, app, or tool")
+create = typer.Typer(help="Create an agent or device")
 list_group = typer.Typer(help="List resources")
 get = typer.Typer(help="Get resources")
 view = typer.Typer(help="View resources")
@@ -61,20 +61,17 @@ def get_default(ctx: typer.Context):
 
 
 # 'create' sub-commands
-@create.command("app")
+@create.command("devices")
 def create_app(name: str):
     typer.echo(f"Creating app: {name}")
 
 
-@create.command("agent")
+@create.command("agents")
 def create_agent(name: str):
     typer.echo(f"Creating agent: {name}")
 
 
 # 'list' sub-commands
-@list_group.command("apps")
-def list_apps():
-    typer.echo("Listing apps")
 
 
 @list_group.command("agents")
@@ -82,21 +79,36 @@ def list_agents():
     typer.echo("Listing agents")
 
 
-@list_group.command("deployments")
-def list_deployments():
-    typer.echo("Listing deployments")
+@list_group.command("devices")
+def list_devices():
+    typer.echo("Listing desktops")
+
+
+@list_group.command("types")
+def list_types():
+    typer.echo("Listing desktops")
 
 
 # 'get' sub-commands
-@get.command("deployment")
-def get_deployment(name: str):
-    typer.echo(f"Getting deployment: {name}")
+@get.command("agent")
+def get_agent(name: str):
+    typer.echo(f"Getting agent: {name}")
+
+
+@get.command("device")
+def get_device(name: str):
+    typer.echo(f"Getting device: {name}")
+
+
+@get.command("type")
+def get_type(name: str):
+    typer.echo(f"Getting type: {name}")
 
 
 # Other commands
 @app.command(help="Login to the hub")
 def login():
-    url = urljoin(AGENTSEA_HUB_URL, "cli-login")
+    url = urljoin(HUB_URL, "cli-login")
     typer.echo(f"\nVisit {url} to get an API key\n")
 
     webbrowser.open(url)
@@ -109,9 +121,24 @@ def login():
     typer.echo("\nLogin successful!")
 
 
-@app.command(help="Deploy an agent or app")
+@app.command(help="Deploy an agent")
 def deploy():
     typer.echo("Deploying...")
+
+
+@app.command(help="Publish an agent")
+def publish():
+    typer.echo("Publishing...")
+
+
+@app.command(help="Init an agent")
+def init():
+    typer.echo("Initing...")
+
+
+@app.command(help="Use an agent to solve a task")
+def solve(description: str):
+    typer.echo(f"Solving task {description}...")
 
 
 if __name__ == "__main__":
