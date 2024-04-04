@@ -106,6 +106,7 @@ class LLMProvider:
             dict: The message dictionary
         """
 
+        print(f"calling chat completion for model {self.model} with msgs: ", msgs)
         response = self.router.completion(self.model, msgs)
 
         print("llm response: ", response.__dict__)
@@ -118,7 +119,7 @@ class LLMProvider:
             print("\ndump: ", dump)
             task.post_message("assistant", json.dumps(dump), thread="prompt")
 
-        return response["choices"][0]["message"]
+        return response["choices"][0]["message"].model_dump()
 
     def check_model(self) -> None:
         """Check if the model is available"""
