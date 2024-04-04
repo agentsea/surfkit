@@ -62,12 +62,12 @@ def get_default(ctx: typer.Context):
 
 # 'create' sub-commands
 @create.command("devices")
-def create_app(name: str):
-    typer.echo(f"Creating app: {name}")
+def create_app(name: str, type: str = "desktop"):
+    typer.echo(f"Creating device: {name}")
 
 
 @create.command("agents")
-def create_agent(name: str):
+def create_agent(name: str, type: str = "SurfDino"):
     typer.echo(f"Creating agent: {name}")
 
 
@@ -81,7 +81,7 @@ def list_agents():
 
 @list_group.command("devices")
 def list_devices():
-    typer.echo("Listing desktops")
+    typer.echo("Listing devices")
 
 
 @list_group.command("types")
@@ -131,9 +131,9 @@ def publish():
     typer.echo("Publishing...")
 
 
-@app.command(help="Init an agent")
+@app.command(help="Initialize an agent repo")
 def init():
-    typer.echo("Initing...")
+    typer.echo("Initializing...")
 
 
 @app.command(help="Use an agent to solve a task")

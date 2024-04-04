@@ -12,8 +12,8 @@ litellm = "^1.34.21"
 agentdesk = "^0.2.43"
 pydantic = "^2.6.4"
 threadmem = "^0.2.11"
-taskara = "^0.1.10"
 rootpath = "^0.1.1"
+taskara = "^0.1.11"
 
 
 [build-system]

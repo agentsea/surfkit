@@ -115,6 +115,7 @@ class LLMProvider:
             dump = {"request": msgs, "response": response.json()}
             if namespace:
                 dump["namespace"] = namespace
+            print("\ndump: ", dump)
             task.post_message("assistant", json.dumps(dump), thread="prompt")
 
         return response["choices"][0]["message"]
