@@ -7,6 +7,7 @@ from litellm import Router
 from taskara import Task
 
 from .models import EnvVarOptModel, LLMProviderOption
+from .types import AgentType
 
 
 class LLMProvider:
@@ -74,6 +75,24 @@ class LLMProvider:
             set_verbose=True,
             fallbacks=fallbacks,
         )
+
+    @classmethod
+    def opts_for_type(cls, type: AgentType) -> List[LLMProviderOption]:
+        out = []
+        for model, key in cls.provider_api_keys.items():
+            if model in type.llm_providers.preference:
+                out.append(
+                    LLMProviderOption(
+                        model=model,
+                        env_var=EnvVarOptModel(
+                            name=key,
+                            description=f"{model} API key",
+                            required=True,
+                            secret=True,
+                        ),
+                    )
+                )
+        return out
 
     @classmethod
     def all_opts(cls) -> List[LLMProviderOption]:

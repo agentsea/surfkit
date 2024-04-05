@@ -1,4 +1,4 @@
-def generate_dockerfile(package_name: str):
+def generate_dockerfile(package_name: str) -> str:
     return f"""
 # Use an official Python runtime as a parent image
 FROM python:3.10
@@ -32,11 +32,11 @@ CMD ["uvicorn", "{package_name}.server:app", "--host=0.0.0.0", "--port=8000", "-
 """
 
 
-def generate_main():
+def generate_main() -> str:
     pass
 
 
-def generate_server(agent_name: str):
+def generate_server(agent_name: str) -> str:
     return f"""
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -184,7 +184,7 @@ def get_remote_task(id: str, owner_id: str) -> Task:
 """
 
 
-def generate_agent(agent_name: str):
+def generate_agent(agent_name: str) -> str:
     return f"""
 from typing import List, Tuple, Optional
 import json
@@ -231,11 +231,11 @@ class {agent_name}(TaskAgent):
 """
 
 
-def generate_ci():
+def generate_ci() -> str:
     pass
 
 
-def generate_requirements():
+def generate_requirements() -> str:
     return """
 agentdesk
 rich
@@ -253,7 +253,7 @@ surfkit
 """
 
 
-def generate_agentfile(name: str, description: str):
+def generate_agentfile(name: str, description: str) -> str:
     return f"""
 version: v1
 name: "{name}"
@@ -264,7 +264,6 @@ llm_providers:
   preference:
     - "gpt-4-vision-preview"
     - "anthropic/claude-3-opus-20240229"
-    - "gemini/gemini-pro-vision"
 public: True
 icon: https://storage.googleapis.com/guisurfer-assets/surf_dino2.webp
 min_cpu: 1
