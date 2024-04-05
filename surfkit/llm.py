@@ -114,17 +114,17 @@ class LLMProvider:
     def chat(
         self,
         msgs: list,
+        model: Optional[str] = None,
         task: Optional[Task] = None,
         namespace: Optional[str] = None,
-        model: Optional[str] = None,
     ) -> dict:
         """Chat with a language model
 
         Args:
             msgs (list): Messages in openai schema format
+            model (Optional[str], optional): Model to use. Defaults to None.
             task (Optional[Task], optional): Optional task to log into. Defaults to None.
             namespace (Optional[str], optional): Namespace to log into. Defaults to None.
-            model (Optional[str], optional): Model to use. Defaults to None.
 
         Returns:
             dict: The message dictionary
@@ -187,8 +187,13 @@ class LLMProvider:
         """
         available_providers = []
 
-        preference = os.getenv("MODEL_PREFERENCE", cls.provider_api_keys.keys())
+        preference_data = os.getenv("MODEL_PREFERENCE")
+        if preference_data:
+            preference = json.loads(preference_data)
+        if not preference:
+            preference = cls.provider_api_keys.keys()
 
+        print("\nloading models with preference: ", preference)
         for provider in preference:
             env_var = cls.provider_api_keys.get(provider)
             if not env_var:
