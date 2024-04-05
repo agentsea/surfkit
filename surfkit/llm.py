@@ -189,7 +189,7 @@ class LLMProvider:
 
         preference_data = os.getenv("MODEL_PREFERENCE")
         if preference_data:
-            preference = json.loads(preference_data)
+            preference = preference_data.split(",")
         if not preference:
             preference = cls.provider_api_keys.keys()
 
