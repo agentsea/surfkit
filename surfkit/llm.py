@@ -125,17 +125,17 @@ class LLMProvider:
             dict: The message dictionary
         """
 
-        print(f"calling chat completion for model {self.model} with msgs: ", msgs)
+        # print(f"calling chat completion for model {self.model} with msgs: ", msgs)
         response = self.router.completion(self.model, msgs)
 
-        print("llm response: ", response.__dict__)
+        # print("llm response: ", response.__dict__)
         logging.debug("response: ", response)
 
         if task:
             dump = {"request": msgs, "response": response.json()}
             if namespace:
                 dump["namespace"] = namespace
-            print("\ndump: ", dump)
+            # print("\ndump: ", dump)
             task.post_message("assistant", json.dumps(dump), thread="prompt")
 
         return response["choices"][0]["message"].model_dump()
@@ -180,7 +180,14 @@ class LLMProvider:
         """
         available_providers = []
 
-        for provider, env_var in cls.provider_api_keys.items():
+        preference = os.getenv("MODEL_PREFERENCE", cls.provider_api_keys.keys())
+
+        for provider in preference:
+            env_var = cls.provider_api_keys.get(provider)
+            if not env_var:
+                raise ValueError(
+                    f"Invalid provider '{provider}' specified in MODEL_PREFERENCE."
+                )
             if os.getenv(env_var):
                 print(
                     f"\nFound LLM provider '{provider}' API key in environment variables."
