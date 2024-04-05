@@ -72,7 +72,7 @@ class LLMProvider:
             timeout=timeout,
             allowed_fails=allow_fails,
             num_retries=num_retries,
-            set_verbose=True,
+            # set_verbose=True,
             fallbacks=fallbacks,
         )
 
