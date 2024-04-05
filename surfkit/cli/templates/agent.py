@@ -1,3 +1,6 @@
+from surfkit.types import AgentType
+
+
 def generate_dockerfile(package_name: str) -> str:
     return f"""
 # Use an official Python runtime as a parent image
@@ -23,7 +26,7 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Surfkit
-RUN pip install surfkit==0.1.13
+RUN pip install surfkit
 
 COPY . .
 
@@ -253,20 +256,21 @@ surfkit
 """
 
 
-def generate_agentfile(name: str, description: str) -> str:
-    return f"""
-version: v1
-name: "{name}"
-description: "{description}"
-supported_runtimes:
-  - "gke"
-llm_providers:
-  preference:
-    - "gpt-4-vision-preview"
-    - "anthropic/claude-3-opus-20240229"
-public: True
-icon: https://storage.googleapis.com/guisurfer-assets/surf_dino2.webp
-min_cpu: 1
-min_mem: 1Gi
-min_gpu: 0
-"""
+# def generate_agentfile(name: str, description: str) -> str:
+
+#     return f"""
+# version: v1
+# name: "{name}"
+# description: "{description}"
+# supported_runtimes:
+#   - "gke"
+# llm_providers:
+#   preference:
+#     - "gpt-4-vision-preview"
+#     - "anthropic/claude-3-opus-20240229"
+# public: True
+# icon: https://storage.googleapis.com/guisurfer-assets/surf_dino2.webp
+# min_cpu: 1
+# min_mem: 1Gi
+# min_gpu: 0
+# """

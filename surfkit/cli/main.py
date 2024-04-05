@@ -5,6 +5,7 @@ import typer
 import webbrowser
 
 from surfkit.config import GlobalConfig, AGENTSEA_HUB_URL, HUB_URL
+from surfkit.runtime import DockerAgentRuntime
 
 art = """
  _______                ___  __  __  __  __   
@@ -139,6 +140,17 @@ def init():
 @app.command(help="Use an agent to solve a task")
 def solve(description: str):
     typer.echo(f"Solving task {description}...")
+
+
+@app.command(help="Run an agent")
+def run(provider: str = "local", agent_file: str = "./agent.yaml"):
+    typer.echo(f"Running agent {agent_file} with provider {provider}...")
+    runtime = DockerAgentRuntime()
+
+    with open(agent_file, "r") as f:
+        agent_type = f.read()
+
+    runtime.run(agent_type)
 
 
 if __name__ == "__main__":
