@@ -112,7 +112,11 @@ class LLMProvider:
         return out
 
     def chat(
-        self, msgs: list, task: Optional[Task] = None, namespace: Optional[str] = None
+        self,
+        msgs: list,
+        task: Optional[Task] = None,
+        namespace: Optional[str] = None,
+        model: Optional[str] = None,
     ) -> dict:
         """Chat with a language model
 
@@ -120,13 +124,16 @@ class LLMProvider:
             msgs (list): Messages in openai schema format
             task (Optional[Task], optional): Optional task to log into. Defaults to None.
             namespace (Optional[str], optional): Namespace to log into. Defaults to None.
+            model (Optional[str], optional): Model to use. Defaults to None.
 
         Returns:
             dict: The message dictionary
         """
+        if not model:
+            model = self.model
 
         # print(f"calling chat completion for model {self.model} with msgs: ", msgs)
-        response = self.router.completion(self.model, msgs)
+        response = self.router.completion(model, msgs)
 
         # print("llm response: ", response.__dict__)
         logging.debug("response: ", response)
