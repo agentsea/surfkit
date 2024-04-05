@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "surfkit"
-version = "0.1.13"
+version = "0.1.14"
 description = "A toolkit to build GUI surfing AI agents"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>"]
 license = "Apache 2.0"
@@ -13,7 +13,7 @@ agentdesk = "^0.2.43"
 pydantic = "^2.6.4"
 threadmem = "^0.2.11"
 rootpath = "^0.1.1"
-taskara = "^0.1.11"
+taskara = "^0.1.12"
 
 
 [tool.poetry.group.dev.dependencies]
