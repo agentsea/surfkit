@@ -6,6 +6,7 @@ from taskara.models import SolveTaskModel
 from taskara import Task
 from agentdesk.util import find_open_port
 import requests
+from namesgenerator import get_random_name
 
 from .types import AgentType
 

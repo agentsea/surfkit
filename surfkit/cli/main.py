@@ -1,11 +1,20 @@
 from urllib.parse import urljoin
 import os
+from typing import Optional
+from importlib.metadata import version, PackageNotFoundError
+import yaml
 
 import typer
 import webbrowser
+from namesgenerator import get_random_name
+from taskara.models import SolveTaskModel
+from taskara import Task
 
 from surfkit.config import GlobalConfig, AGENTSEA_HUB_URL, HUB_URL
 from surfkit.runtime import DockerAgentRuntime
+from surfkit.models import AgentTypeModel
+from surfkit.types import AgentType
+
 
 art = """
  _______                ___  __  __  __  __   
@@ -35,6 +44,19 @@ def show_help(ctx: typer.Context, command_group: str):
             typer.echo(art)
         typer.echo(ctx.get_help())
         raise typer.Exit()
+
+
+try:
+    __version__ = version("surfkit")
+except PackageNotFoundError:
+    # Fallback version or error handling
+    __version__ = "unknown"
+
+
+@app.command(help="Show the version of the CLI")
+def version():
+    """Show the CLI version."""
+    typer.echo(f"CLI Version: {__version__}")
 
 
 # Root command callback
@@ -138,19 +160,48 @@ def init():
 
 
 @app.command(help="Use an agent to solve a task")
-def solve(description: str):
+def solve(
+    description: str,
+    agent_name: str,
+    max_steps: int = 20,
+    starting_url: Optional[str] = None,
+    runtime: str = "docker",
+):
     typer.echo(f"Solving task {description}...")
+
+    if runtime == "docker":
+        druntime = DockerAgentRuntime()
+
+        task = Task(description=description)
+        mdl = SolveTaskModel(task=task, max_steps=max_steps, starting_url=starting_url)
+        druntime.solve_task(agent_name, mdl)
+
+    else:
+        raise ValueError(f"Unknown runtime '{runtime}'")
 
 
 @app.command(help="Run an agent")
-def run(provider: str = "local", agent_file: str = "./agent.yaml"):
-    typer.echo(f"Running agent {agent_file} with provider {provider}...")
-    runtime = DockerAgentRuntime()
+def run(
+    runtime: str = "docker",
+    agent_file: str = "./agent.yaml",
+    name: Optional[str] = None,
+):
+    if not name:
+        name = get_random_name(sep="-")
+    typer.echo(f"Running agent '{agent_file}' with runtime '{runtime}'...")
 
-    with open(agent_file, "r") as f:
-        agent_type = f.read()
+    if runtime == "docker":
+        druntime = DockerAgentRuntime()
 
-    runtime.run(agent_type)
+        with open(agent_file, "r") as f:
+            data = yaml.safe_load(f)
+            agent_type_model = AgentTypeModel(**data)
+
+        agent_type = AgentType.from_schema(agent_type_model)
+        druntime.run(agent_type, name)
+
+    else:
+        raise ValueError(f"Unknown runtime '{runtime}'")
 
 
 if __name__ == "__main__":
