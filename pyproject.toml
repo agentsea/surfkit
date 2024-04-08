@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "surfkit"
 version = "0.1.20"
-description = "A toolkit to build GUI surfing AI agents"
+description = "A toolkit for building GUI surfing AI agents"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>"]
-license = "Apache 2.0"
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
