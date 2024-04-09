@@ -4,6 +4,7 @@ import time
 import json
 
 from sqlalchemy import or_, and_
+from pydantic import BaseModel
 
 from .db.models import AgentTypeRecord
 from .db.conn import WithDB
@@ -13,7 +14,7 @@ from .models import (
     LLMProviders,
 )
 
-from .models import LLMProviders
+from .models import LLMProviders, DeviceConfig
 
 
 class AgentType(WithDB):
@@ -36,6 +37,7 @@ class AgentType(WithDB):
         cpu_limit: Optional[str] = "4",
         gpu_mem: Optional[str] = None,
         llm_providers: Optional[LLMProviders] = None,
+        devices: List[DeviceConfig] = [],
     ):
         self.id = str(uuid.uuid4())
         self.name = name
@@ -55,6 +57,7 @@ class AgentType(WithDB):
         self.created = time.time()
         self.updated = time.time()
         self.llm_providers: Optional[LLMProviders] = llm_providers
+        self.devices = devices
         self.save()
 
     def to_schema(self) -> AgentTypeModel:
@@ -76,6 +79,7 @@ class AgentType(WithDB):
             cpu_limit=self.cpu_limit,
             gpu_mem=self.gpu_mem,
             llm_providers=self.llm_providers,
+            devices=self.devices,
             owner_id=self.owner_id,
         )
 
@@ -100,6 +104,7 @@ class AgentType(WithDB):
         obj.gpu_mem = schema.gpu_mem
         obj.versions = schema.versions
         obj.llm_providers = schema.llm_providers
+        obj.devices = schema.devices
         return obj
 
     def to_record(self) -> AgentTypeRecord:
@@ -107,6 +112,10 @@ class AgentType(WithDB):
         llm_providers = None
         if self.llm_providers:
             llm_providers = json.dumps(self.llm_providers.model_dump())
+
+        devices = None
+        if self.devices:
+            devices = json.dumps(self.devices)
         return AgentTypeRecord(
             id=self.id,
             name=self.name,
@@ -126,23 +135,33 @@ class AgentType(WithDB):
             cpu_request=self.cpu_request,
             gpu_mem=self.gpu_mem,
             llm_providers=llm_providers,
+            devices=devices,
         )
 
     @classmethod
     def from_record(cls, record: AgentTypeRecord) -> "AgentType":
         versions = {}
-        if record.versions:
-            versions = json.loads(record.versions)
-        if record.llm_providers:
-            llm_providers = LLMProviders(**json.loads(record.llm_providers))
+        if len(str(record.versions)) != 0:
+            versions = json.loads(str(record.versions))
+
+        llm_providers = None
+        if len(str(record.llm_providers)) != 0:
+            llm_providers = LLMProviders(**json.loads(str(record.llm_providers)))
+
+        devices = []
+        if len(str(record.devices)) != 0:
+            devices = json.loads(str(record.devices))
+
         obj = cls.__new__(cls)
         obj.id = record.id
         obj.name = record.name
         obj.description = record.description
         obj.image = record.image
         obj.versions = versions
-        obj.env_opts = [EnvVarOptModel(**opt) for opt in json.loads(record.env_opts)]
-        obj.supported_runtimes = json.loads(record.supported_runtimes)
+        obj.env_opts = [
+            EnvVarOptModel(**opt) for opt in json.loads(str(record.env_opts))
+        ]
+        obj.supported_runtimes = json.loads(str(record.supported_runtimes))
         obj.created = record.created
         obj.updated = record.updated
         obj.owner_id = record.owner_id
@@ -154,6 +173,7 @@ class AgentType(WithDB):
         obj.cpu_request = record.cpu_request
         obj.gpu_mem = record.gpu_mem
         obj.llm_providers = llm_providers
+        obj.devices = devices
         return obj
 
     def save(self) -> None:
@@ -166,30 +186,31 @@ class AgentType(WithDB):
     @classmethod
     def find(cls, **kwargs) -> List["AgentType"]:
         for session in cls.get_db():
-            if session:
-                records = session.query(AgentTypeRecord).filter_by(**kwargs).all()
-                return [cls.from_record(record) for record in records]
+            records = session.query(AgentTypeRecord).filter_by(**kwargs).all()
+            return [cls.from_record(record) for record in records]
+
+        return []
 
     @classmethod
     def find_for_user(
         cls, user_id: str, name: Optional[str] = None
     ) -> List["AgentType"]:
         for session in cls.get_db():
-            if session:
-                # Base query
-                query = session.query(AgentTypeRecord).filter(
-                    or_(
-                        AgentTypeRecord.owner_id == user_id,
-                        AgentTypeRecord.public == True,
-                    )
+            # Base query
+            query = session.query(AgentTypeRecord).filter(
+                or_(
+                    AgentTypeRecord.owner_id == user_id,
+                    AgentTypeRecord.public == True,
                 )
+            )
 
-                # Conditionally add name filter if name is provided
-                if name is not None:
-                    query = query.filter(AgentTypeRecord.name == name)
+            # Conditionally add name filter if name is provided
+            if name is not None:
+                query = query.filter(AgentTypeRecord.name == name)
 
-                records = query.all()
-                return [cls.from_record(record) for record in records]
+            records = query.all()
+            return [cls.from_record(record) for record in records]
+        return []
 
     @classmethod
     def delete(cls, id: str, owner_id: str) -> None:
@@ -266,6 +287,10 @@ class AgentType(WithDB):
 
         if self.llm_providers != model.llm_providers:
             self.llm_providers = model.llm_providers
+            updated = True
+
+        if self.devices != model.devices:
+            self.devices = model.devices
             updated = True
 
         # If anything was updated, set the updated timestamp and save changes

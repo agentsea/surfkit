@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import List
 
-from agentdesk import Desktop
+from devicebay import Device
 from taskara import Task
 
 
@@ -11,17 +12,27 @@ class TaskAgent(ABC):
     def solve_task(
         self,
         task: Task,
-        desktop: Desktop,
+        device: Device,
         max_steps: int = 10,
     ) -> Task:
-        """Solve a desktop GUI task
+        """Solve a task on a device
 
         Args:
             task (Task): The task
+            device (Desktop): Device to perform the task on.
             max_steps (int, optional): Max steps allowed. Defaults to 10.
-            site_url (Optional[str], optional): A starting site. Defaults to None.
 
         Returns:
             Task: A task
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def supported_devices(cls) -> List[str]:
+        """Devices this agent supports
+
+        Returns:
+            List[str]: A list of supported devices
         """
         pass

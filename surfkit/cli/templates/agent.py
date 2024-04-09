@@ -36,7 +36,7 @@ CMD ["uvicorn", "{package_name}.server:app", "--host=0.0.0.0", "--port=8000", "-
 
 
 def generate_main() -> str:
-    pass
+    return ""
 
 
 def generate_server(agent_name: str) -> str:
@@ -235,7 +235,7 @@ class {agent_name}(TaskAgent):
 
 
 def generate_ci() -> str:
-    pass
+    return ""
 
 
 def generate_requirements() -> str:

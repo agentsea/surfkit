@@ -1,7 +1,8 @@
 from urllib.parse import urljoin
 import os
 from typing import Optional
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as pkgversion
 import yaml
 
 import typer
@@ -47,7 +48,7 @@ def show_help(ctx: typer.Context, command_group: str):
 
 
 try:
-    __version__ = version("surfkit")
+    __version__ = pkgversion("surfkit")
 except PackageNotFoundError:
     # Fallback version or error handling
     __version__ = "unknown"
@@ -173,7 +174,9 @@ def solve(
         druntime = DockerAgentRuntime()
 
         task = Task(description=description)
-        mdl = SolveTaskModel(task=task, max_steps=max_steps, starting_url=starting_url)
+        mdl = SolveTaskModel(
+            task=task.to_schema(), max_steps=max_steps, site=starting_url
+        )
         druntime.solve_task(agent_name, mdl)
 
     else:
@@ -188,6 +191,8 @@ def run(
 ):
     if not name:
         name = get_random_name(sep="-")
+        if not name:
+            raise ValueError("could not generate name")
     typer.echo(f"Running agent '{agent_file}' with runtime '{runtime}'...")
 
     if runtime == "docker":

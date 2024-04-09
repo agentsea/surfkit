@@ -80,7 +80,7 @@ class LLMProvider:
     def opts_for_type(cls, type: AgentType) -> List[LLMProviderOption]:
         out = []
         for model, key in cls.provider_api_keys.items():
-            if model in type.llm_providers.preference:
+            if type.llm_providers and model in type.llm_providers.preference:
                 out.append(
                     LLMProviderOption(
                         model=model,
@@ -139,13 +139,13 @@ class LLMProvider:
         logging.debug("response: ", response)
 
         if task:
-            dump = {"request": msgs, "response": response.json()}
+            dump = {"request": msgs, "response": response.json()}  # type: ignore
             if namespace:
                 dump["namespace"] = namespace
             # print("\ndump: ", dump)
             task.post_message("assistant", json.dumps(dump), thread="prompt")
 
-        return response["choices"][0]["message"].model_dump()
+        return response["choices"][0]["message"].model_dump()  # type: ignore
 
     def check_model(self) -> None:
         """Check if the model is available"""
@@ -188,6 +188,7 @@ class LLMProvider:
         available_providers = []
 
         preference_data = os.getenv("MODEL_PREFERENCE")
+        preference = None
         if preference_data:
             preference = preference_data.split(",")
         if not preference:

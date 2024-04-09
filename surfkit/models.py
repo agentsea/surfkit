@@ -16,6 +16,15 @@ class LLMProviders(BaseModel):
     preference: List[str] = []
 
 
+class DeviceConfig(BaseModel):
+    name: str
+    provision: bool = False
+
+
+class DevicesConfig(BaseModel):
+    preference: List[DeviceConfig] = []
+
+
 class LLMProviderOption(BaseModel):
     model: str
     env_var: EnvVarOptModel
@@ -44,6 +53,7 @@ class AgentTypeModel(BaseModel):
     cpu_limit: Optional[str] = "4"
     gpu_mem: Optional[str] = None
     llm_providers: Optional[LLMProviders] = None
+    devices: List[DeviceConfig] = []
 
 
 class AgentTypesModel(BaseModel):

@@ -34,9 +34,10 @@ class DockerAgentRuntime:
             labels=labels,
             name=name,
         )
-        print(f"ran container '{container.id}'")
+        if container and type(container) != bytes:
+            print(f"ran container '{container.id}'")  # type: ignore
 
-    def solve_task(self, agent_name: str, task: SolveTaskModel) -> Task:
+    def solve_task(self, agent_name: str, task: SolveTaskModel) -> None:
         try:
             container = self.client.containers.get(agent_name)
             print(f"Container '{agent_name}' found.")
@@ -52,14 +53,14 @@ class DockerAgentRuntime:
             json=task.model_dump(),
         )
 
-        for line in container.logs(stream=True, follow=True):
+        for line in container.logs(stream=True, follow=True):  # type: ignore
             print(line.decode().strip())
 
     def list(self) -> List[str]:
         label_filter = {"label": ["provisioner=surfkit"]}
         containers = self.client.containers.list(filters=label_filter)
 
-        container_names_or_ids = [container.name for container in containers]
+        container_names_or_ids = [container.name for container in containers]  # type: ignore
 
         return container_names_or_ids
 
@@ -69,7 +70,7 @@ class DockerAgentRuntime:
             container = self.client.containers.get(name)
 
             # If found, remove the container
-            container.remove(force=True)
+            container.remove(force=True)  # type: ignore
             print(f"Successfully deleted container: {name}")
             return True
         except NotFound:
@@ -94,12 +95,12 @@ class DockerAgentRuntime:
         for container in containers:
             try:
                 container_name_or_id = (
-                    container.name
+                    container.name  # type: ignore
                 )  # or container.id for container ID
-                container.remove(force=True)
+                container.remove(force=True)  # type: ignore
                 print(f"Deleted container: {container_name_or_id}")
                 deleted_containers.append(container_name_or_id)
             except Exception as e:
-                print(f"Failed to delete container {container_name_or_id}: {e}")
+                print(f"Failed to delete container: {e}")
 
         return deleted_containers
