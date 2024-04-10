@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "surfkit"
-version = "0.1.22"
+version = "0.1.23"
 description = "A toolkit to build GUI surfing AI agents"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>"]
 license = "MIT"
@@ -18,7 +18,7 @@ pyyaml = "^6.0.1"
 toolfuse = "^0.1.13"
 agentdesk = "^0.2.46"
 devicebay = "^0.1.1"
-taskara = "^0.1.13"
+taskara = "^0.1.17"
 
 
 [tool.poetry.group.dev.dependencies]

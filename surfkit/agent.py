@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional, Dict, TypeVar, Type, Generic
+
+from pydantic import BaseModel
 
 from devicebay import Device
 from taskara import Task
 
+C = TypeVar("C", bound="BaseModel")
+T = TypeVar("T", bound="TaskAgent")
 
-class TaskAgent(ABC):
+
+class TaskAgent(Generic[C, T], ABC):
     """An agent that works on tasks"""
 
     @abstractmethod
@@ -13,14 +18,14 @@ class TaskAgent(ABC):
         self,
         task: Task,
         device: Device,
-        max_steps: int = 10,
+        max_steps: int = 30,
     ) -> Task:
         """Solve a task on a device
 
         Args:
             task (Task): The task
             device (Desktop): Device to perform the task on.
-            max_steps (int, optional): Max steps allowed. Defaults to 10.
+            max_steps (int, optional): Max steps allowed. Defaults to 30.
 
         Returns:
             Task: A task
@@ -29,10 +34,38 @@ class TaskAgent(ABC):
 
     @classmethod
     @abstractmethod
-    def supported_devices(cls) -> List[str]:
+    def supported_devices(cls) -> List[Type[Device]]:
         """Devices this agent supports
 
         Returns:
-            List[str]: A list of supported devices
+            List[Type[Device]]: A list of supported devices
         """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def config_type(cls) -> Type[C]:
+        """Type to configure the agent
+
+        Returns:
+            Type[C]: A configuration type
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_config(cls, config: C) -> T:
+        """Create an agent from a config
+
+        Args:
+            config (C): Config to create the agent from
+
+        Returns:
+            T: The Agent
+        """
+        pass
+
+    @classmethod
+    def init(cls) -> None:
+        """Initialize the Agent type"""
         pass

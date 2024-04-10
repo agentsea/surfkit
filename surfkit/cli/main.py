@@ -173,9 +173,10 @@ def solve(
     if runtime == "docker":
         druntime = DockerAgentRuntime()
 
-        task = Task(description=description)
+        task = Task(description=description, parameters={"site": starting_url})
         mdl = SolveTaskModel(
-            task=task.to_schema(), max_steps=max_steps, site=starting_url
+            task=task.to_schema(),
+            max_steps=max_steps,
         )
         druntime.solve_task(agent_name, mdl)
 
