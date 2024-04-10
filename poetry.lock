@@ -4043,20 +4043,36 @@ files = [
 ]
 
 [[package]]
+name = "toolcore"
+version = "0.1.0"
+description = "Core utilities for AI agent tools"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "toolcore-0.1.0-py3-none-any.whl", hash = "sha256:4460b62ff9c711b076cc4823445ffe83edc91dbea0fdb5846bfdc6d7abafa171"},
+    {file = "toolcore-0.1.0.tar.gz", hash = "sha256:dcde76acc9ec43f9cce88d9fba5bc71c3b25d654b11ce81f719de621f73ec7a0"},
+]
+
+[package.dependencies]
+docstring-parser = ">=0.15,<0.16"
+typing-extensions = ">=4.6.3,<5.0.0"
+
+[[package]]
 name = "toolfuse"
-version = "0.1.13"
+version = "0.1.15"
 description = "Tools for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "toolfuse-0.1.13-py3-none-any.whl", hash = "sha256:90f04c7f1b5d378062b7b58e340a8e23ab637acd1c9083de53a3c90722b2d796"},
-    {file = "toolfuse-0.1.13.tar.gz", hash = "sha256:3cce0297e4086425b433771e0b90316f6b1a86c69dc517493f0ea5b8ab527723"},
+    {file = "toolfuse-0.1.15-py3-none-any.whl", hash = "sha256:5a29cbb2db118e510d446b1bee146a21171e4e0194abbe8de5807ee6c0773f90"},
+    {file = "toolfuse-0.1.15.tar.gz", hash = "sha256:2beaa4c4071d02f3d7dad7105172080ee79fc4b6d15315ed1e89b65bef1ee935"},
 ]
 
 [package.dependencies]
 docstring-parser = ">=0.15,<0.16"
 openai = ">=1.12.0,<2.0.0"
 python-dotenv = ">=1.0.1,<2.0.0"
+toolcore = ">=0.1.0,<0.2.0"
 urllib3 = ">=1.26.0,<2.0.0"
 
 [[package]]
@@ -4675,4 +4691,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3819d7aef727470aa81bb03768a105370a8ebf8bea942fcc8aacd1d0ff41b448"
+content-hash = "7249e2847e08b9729189f8ce514de4efdc04672fab2a535045699c1877dde3e0"
