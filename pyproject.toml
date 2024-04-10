@@ -19,6 +19,7 @@ agentdesk = "^0.2.46"
 devicebay = "^0.1.1"
 taskara = "^0.1.17"
 toolfuse = "^0.1.15"
+kubernetes = "^29.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

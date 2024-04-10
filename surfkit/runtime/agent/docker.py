@@ -1,21 +1,16 @@
 from typing import List
-from abc import ABC, abstractmethod
 
 import docker
 from docker.errors import NotFound
 from taskara.models import SolveTaskModel
-from taskara import Task
 from agentdesk.util import find_open_port
 import requests
 
-from .types import AgentType
+from ...types import AgentType
+from .base import AgentRuntime
 
 
-class ConatinerRuntime(ABC):
-    pass
-
-
-class DockerAgentRuntime:
+class DockerAgentRuntime(AgentRuntime):
 
     def __init__(self) -> None:
         self.client = docker.from_env()

@@ -3,8 +3,7 @@ import uuid
 import time
 import json
 
-from sqlalchemy import or_, and_
-from pydantic import BaseModel
+from sqlalchemy import or_
 
 from .db.models import AgentTypeRecord
 from .db.conn import WithDB
@@ -12,9 +11,9 @@ from .models import (
     EnvVarOptModel,
     AgentTypeModel,
     LLMProviders,
+    LLMProviders,
+    DeviceConfig,
 )
-
-from .models import LLMProviders, DeviceConfig
 
 
 class AgentType(WithDB):

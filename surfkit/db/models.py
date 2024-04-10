@@ -4,7 +4,6 @@ import time
 from sqlalchemy import Column, String, Boolean, Float, Integer
 from sqlalchemy.orm import declarative_base
 
-from ..models import V1UserProfile
 
 Base = declarative_base()
 
