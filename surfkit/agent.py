@@ -66,6 +66,16 @@ class TaskAgent(Generic[C, T], ABC):
         pass
 
     @classmethod
+    @abstractmethod
+    def default(cls) -> T:
+        """Create a default agent with no params
+
+        Returns:
+            T: The Agent
+        """
+        pass
+
+    @classmethod
     def init(cls) -> None:
         """Initialize the Agent type"""
         pass
