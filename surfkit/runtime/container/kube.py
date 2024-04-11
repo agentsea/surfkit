@@ -34,8 +34,8 @@ class LocalOpts(BaseModel):
 
 
 class ConnectConfig(BaseModel):
-    provider: str
-    namespace: str
+    provider: str = "local"
+    namespace: str = "default"
     gke_opts: Optional[GKEOpts] = None
     local_opts: Optional[LocalOpts] = None
 

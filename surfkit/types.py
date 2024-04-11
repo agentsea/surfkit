@@ -198,7 +198,7 @@ class AgentType(WithDB):
             # Base query
             query = session.query(AgentTypeRecord).filter(
                 or_(
-                    AgentTypeRecord.owner_id == user_id,
+                    AgentTypeRecord.owner_id == user_id,  # type: ignore
                     AgentTypeRecord.public == True,
                 )
             )
