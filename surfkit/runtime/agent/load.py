@@ -14,16 +14,10 @@ class AgentRuntimeConfig(BaseModel):
     preference: List[str] = ["kube", "docker"]
 
 
-def load_container_runtime(cfg: AgentRuntimeConfig) -> AgentRuntime:
-    if cfg.provider == KubernetesAgentRuntime.name():
-        if not cfg.kube_config:
-            raise ValueError("Kubernetes config is required")
-        return KubernetesAgentRuntime.connect(cfg.kube_config)
-
-    elif cfg.provider == DockerAgentRuntime.name():
-        if not cfg.docker_config:
-            raise ValueError("Docker config is required")
-        return DockerAgentRuntime.connect(cfg.docker_config)
-
-    else:
-        raise ValueError(f"Unknown provider: {cfg.provider}")
+def load_agent_runtime(cfg: AgentRuntimeConfig) -> AgentRuntime:
+    for pref in cfg.preference:
+        if pref == KubernetesAgentRuntime.name() and cfg.kube_config:
+            return KubernetesAgentRuntime.connect(cfg.kube_config)
+        elif pref == DockerAgentRuntime.name() and cfg.docker_config:
+            return DockerAgentRuntime.connect(cfg.docker_config)
+    raise ValueError(f"Unknown provider: {cfg.provider}")
