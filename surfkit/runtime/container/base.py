@@ -14,13 +14,13 @@ class ContainerRuntime(Generic[C, R], ABC):
     def name(cls) -> str:
         return cls.__name__
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def connect_config_type(cls) -> Type[C]:
         pass
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def connect(cls, cfg: C) -> R:
         pass
 
