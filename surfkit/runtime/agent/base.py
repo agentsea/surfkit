@@ -1,4 +1,4 @@
-from typing import List, TypeVar, Type, Generic, Union, Iterator
+from typing import List, TypeVar, Type, Generic, Union, Iterator, Optional
 from abc import ABC, abstractmethod
 
 import docker
@@ -31,7 +31,9 @@ class AgentRuntime(Generic[R, C], ABC):
         pass
 
     @abstractmethod
-    def run(self, agent_type: AgentType, name: str) -> None:
+    def run(
+        self, agent_type: AgentType, name: str, version: Optional[str] = None
+    ) -> None:
         pass
 
     @abstractmethod

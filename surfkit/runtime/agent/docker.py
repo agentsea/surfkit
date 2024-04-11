@@ -35,7 +35,9 @@ class DockerAgentRuntime(AgentRuntime):
     def connect(cls, cfg: ConnectConfig) -> "DockerAgentRuntime":
         return cls(cfg)
 
-    def run(self, agent_type: AgentType, name: str) -> None:
+    def run(
+        self, agent_type: AgentType, name: str, version: Optional[str] = None
+    ) -> None:
         env_vars = {}
         labels = {
             "provisioner": "surfkit",
@@ -45,8 +47,16 @@ class DockerAgentRuntime(AgentRuntime):
 
         port = find_open_port(8000, 9000)
         print("running container")
+
+        img = agent_type.image
+        if version:
+            if not agent_type.versions:
+                raise ValueError("version supplied but no versions in type")
+            img = agent_type.versions.get(version)
+        if not img:
+            raise ValueError("img not found")
         container = self.client.containers.run(
-            agent_type.image,
+            img,
             network_mode="host",
             environment=env_vars,
             detach=True,

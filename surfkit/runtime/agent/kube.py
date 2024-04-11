@@ -436,11 +436,20 @@ class KubernetesAgentRuntime(AgentRuntime):
             except ApiException as e:
                 print(f"Failed to delete pod '{pod.metadata.name}': {e}")
 
-    def run(self, agent_type: AgentType, name: str) -> None:
+    def run(
+        self, agent_type: AgentType, name: str, version: Optional[str] = None
+    ) -> None:
         if not agent_type.image:
             raise ValueError(f"Image not specified for agent type: {agent_type.name}")
+        img = agent_type.image
+        if version:
+            if not agent_type.versions:
+                raise ValueError("version supplied but no versions in type")
+            img = agent_type.versions.get(version)
+        if not img:
+            raise ValueError("img not found")
         self.create(
-            image=agent_type.image,
+            image=img,
             name=name,
             mem_request=agent_type.mem_request,
             mem_limit=agent_type.mem_limit,
