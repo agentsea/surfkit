@@ -28,7 +28,7 @@ class AgentTypeRecord(Base):
     image = Column(String)
     versions = Column(String)
     env_opts = Column(String)
-    supported_runtimes = Column(String)
+    runtimes = Column(String)
     owner_id = Column(String)
     public = Column(Boolean)
     icon = Column(String)

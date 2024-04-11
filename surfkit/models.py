@@ -34,7 +34,14 @@ class LLMProviderModel(BaseModel):
     options: List[LLMProviderOption]
 
 
+class RuntimeModel(BaseModel):
+    type: str
+    preference: List[str] = []
+
+
 class AgentTypeModel(BaseModel):
+    version: Optional[str] = None
+    kind: Optional[str] = None
     id: Optional[str] = None
     name: str
     owner_id: Optional[str] = None
@@ -42,7 +49,7 @@ class AgentTypeModel(BaseModel):
     image: Optional[str] = None
     versions: Optional[Dict[str, str]] = None
     env_opts: List[EnvVarOptModel] = []
-    supported_runtimes: List[str] = []
+    runtimes: List[RuntimeModel] = []
     created: Optional[float] = None
     updated: Optional[float] = None
     public: bool = False

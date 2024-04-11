@@ -1,5 +1,4 @@
 from urllib.parse import urljoin
-import os
 from typing import Optional
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkgversion
@@ -11,8 +10,15 @@ from namesgenerator import get_random_name
 from taskara.models import SolveTaskModel
 from taskara import Task
 
-from surfkit.config import GlobalConfig, AGENTSEA_HUB_URL, HUB_URL
-from surfkit.runtime import DockerAgentRuntime
+from surfkit.config import GlobalConfig, HUB_URL
+from surfkit.runtime.agent.docker import (
+    DockerAgentRuntime,
+    ConnectConfig as DockerConnectConfig,
+)
+from surfkit.runtime.agent.kube import (
+    KubernetesAgentRuntime,
+    ConnectConfig as KubeConnectConfig,
+)
 from surfkit.models import AgentTypeModel
 from surfkit.types import AgentType
 
@@ -171,17 +177,22 @@ def solve(
     typer.echo(f"Solving task {description}...")
 
     if runtime == "docker":
-        druntime = DockerAgentRuntime()
+        dconf = DockerConnectConfig()
+        runt = DockerAgentRuntime(config=dconf)
 
-        task = Task(description=description, parameters={"site": starting_url})
-        mdl = SolveTaskModel(
-            task=task.to_schema(),
-            max_steps=max_steps,
-        )
-        druntime.solve_task(agent_name, mdl)
+    elif runtime == "kube":
+        kconf = KubeConnectConfig()
+        runt = KubernetesAgentRuntime(cfg=kconf)
 
     else:
         raise ValueError(f"Unknown runtime '{runtime}'")
+
+    task = Task(description=description, parameters={"site": starting_url})
+    mdl = SolveTaskModel(
+        task=task.to_schema(),
+        max_steps=max_steps,
+    )
+    runt.solve_task(agent_name, mdl)
 
 
 @app.command(help="Run an agent")
@@ -197,17 +208,22 @@ def run(
     typer.echo(f"Running agent '{agent_file}' with runtime '{runtime}'...")
 
     if runtime == "docker":
-        druntime = DockerAgentRuntime()
+        conf = DockerConnectConfig()
+        runt = DockerAgentRuntime(config=conf)
 
-        with open(agent_file, "r") as f:
-            data = yaml.safe_load(f)
-            agent_type_model = AgentTypeModel(**data)
-
-        agent_type = AgentType.from_schema(agent_type_model)
-        druntime.run(agent_type, name)
+    elif runtime == "kube":
+        conf = KubeConnectConfig()
+        runt = KubernetesAgentRuntime(cfg=conf)
 
     else:
         raise ValueError(f"Unknown runtime '{runtime}'")
+
+    with open(agent_file, "r") as f:
+        data = yaml.safe_load(f)
+        agent_type_model = AgentTypeModel(**data)
+
+    agent_type = AgentType.from_schema(agent_type_model)
+    runt.run(agent_type, name)
 
 
 if __name__ == "__main__":

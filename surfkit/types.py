@@ -13,6 +13,7 @@ from .models import (
     LLMProviders,
     LLMProviders,
     DeviceConfig,
+    RuntimeModel,
 )
 
 
@@ -25,7 +26,7 @@ class AgentType(WithDB):
         description: str,
         image: str,
         versions: Dict[str, str],
-        supported_runtimes: List[str],
+        runtimes: List[RuntimeModel],
         owner_id: Optional[str] = None,
         env_opts: List[EnvVarOptModel] = [],
         public: bool = False,
@@ -43,7 +44,7 @@ class AgentType(WithDB):
         self.description = description
         self.image = image
         self.versions = versions
-        self.supported_runtimes = supported_runtimes
+        self.runtimes = runtimes
         self.owner_id = owner_id
         self.env_opts = env_opts
         self.public = public
@@ -67,7 +68,7 @@ class AgentType(WithDB):
             image=self.image,
             versions=self.versions,
             env_opts=self.env_opts,
-            supported_runtimes=self.supported_runtimes,
+            runtimes=self.runtimes,
             created=self.created,
             updated=self.updated,
             public=self.public,
@@ -91,7 +92,7 @@ class AgentType(WithDB):
         obj.description = schema.description
         obj.image = schema.image
         obj.env_opts = schema.env_opts
-        obj.supported_runtimes = schema.supported_runtimes
+        obj.runtimes = schema.runtimes
         obj.created = schema.created
         obj.updated = schema.updated
         obj.public = schema.public
@@ -122,7 +123,7 @@ class AgentType(WithDB):
             image=self.image,
             versions=versions,
             env_opts=json.dumps([opt.model_dump() for opt in self.env_opts]),
-            supported_runtimes=json.dumps(self.supported_runtimes),
+            runtimes=json.dumps(self.runtimes),
             created=self.created,
             updated=self.updated,
             owner_id=self.owner_id,
@@ -160,7 +161,7 @@ class AgentType(WithDB):
         obj.env_opts = [
             EnvVarOptModel(**opt) for opt in json.loads(str(record.env_opts))
         ]
-        obj.supported_runtimes = json.loads(str(record.supported_runtimes))
+        obj.runtimes = json.loads(str(record.runtimes))
         obj.created = record.created
         obj.updated = record.updated
         obj.owner_id = record.owner_id
@@ -252,8 +253,8 @@ class AgentType(WithDB):
             self.env_opts = model.env_opts
             updated = True
 
-        if self.supported_runtimes != model.supported_runtimes:
-            self.supported_runtimes = model.supported_runtimes
+        if self.runtimes != model.runtimes:
+            self.runtimes = model.runtimes
             updated = True
 
         if self.public != model.public:
