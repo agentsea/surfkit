@@ -1,19 +1,32 @@
-from typing import List, TypeVar, Optional
+from typing import List, TypeVar, Optional, Tuple, Type
 
 import docker
 from docker.errors import NotFound
 from agentdesk.util import find_open_port
 import requests
 from namesgenerator import get_random_name
+from pydantic import BaseModel
 
-from .base import ConatinerRuntime
+from .base import ContainerRuntime
 
 
-class DockerRuntime(ConatinerRuntime):
+class ConnectConfig(BaseModel):
+    pass
+
+
+class DockerRuntime(ContainerRuntime):
     """A container runtime that uses docker"""
 
     def __init__(self) -> None:
         self.client = docker.from_env()
+
+    @classmethod
+    def connect_config_type(cls) -> Type[ConnectConfig]:
+        return ConnectConfig
+
+    @classmethod
+    def connect(cls, cfg: ConnectConfig) -> "DockerRuntime":
+        return cls()
 
     def create(self, image: str, name: Optional[str] = None) -> None:
         if not name:
@@ -37,16 +50,26 @@ class DockerRuntime(ConatinerRuntime):
         if container and type(container) != bytes:
             print(f"ran container '{container.id}'")  # type: ignore
 
+    # def call(
+    #     self,
+    #     name: str,
+    #     route: str,
+    #     method: str = "GET",
+    #     port: int = 8080,
+    #     params: Optional[dict] = None,
+    #     body: Optional[dict] = None,
+    #     headers: Optional[dict] = None,
+    # ) -> requests.Response:
+
     def call(
         self,
         name: str,
-        route: str,
-        method: str = "GET",
+        path: str,
+        method: str,
         port: int = 8080,
-        params: Optional[dict] = None,
-        body: Optional[dict] = None,
+        data: Optional[dict] = None,
         headers: Optional[dict] = None,
-    ) -> requests.Response:
+    ) -> Tuple[int, str]:
         """
         Makes an HTTP request to the specified container.
 
@@ -72,7 +95,7 @@ class DockerRuntime(ConatinerRuntime):
             print(f"An unexpected error occurred: {e}")
             raise
 
-        url = f"http://localhost:{port}/{route}"
+        url = f"http://localhost:{port}{path}"
 
         # Dynamically calling the method based on 'method' parameter
         http_request = getattr(requests, method.lower(), requests.get)
@@ -81,9 +104,11 @@ class DockerRuntime(ConatinerRuntime):
             raise ValueError(f"Unsupported HTTP method: {method}")
 
         if method.upper() in ["GET", "DELETE"]:  # These methods should use params
-            return http_request(url, params=params, headers=headers)
+            response = http_request(url, params=data, headers=headers)
+            return response.status_code, response.text
         else:
-            return http_request(url, json=body, headers=headers)
+            response = http_request(url, json=data, headers=headers)
+            return response.status_code, response.text
 
     def list(self) -> List[str]:
         label_filter = {"label": ["provisioner=surfkit"]}

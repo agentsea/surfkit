@@ -1,10 +1,25 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple, TypeVar, Type, Generic
 from abc import ABC, abstractmethod
 
-import requests
+from pydantic import BaseModel
 
 
-class ConatinerRuntime(ABC):
+R = TypeVar("R", bound="ContainerRuntime")
+C = TypeVar("C", bound="BaseModel")
+
+
+class ContainerRuntime(Generic[C, R], ABC):
+
+    @abstractmethod
+    @classmethod
+    def connect_config_type(cls) -> Type[C]:
+        pass
+
+    @abstractmethod
+    @classmethod
+    def connect(cls, cfg: C) -> R:
+        pass
+
     @abstractmethod
     def create(self, image: str, name: Optional[str] = None) -> None:
         pass
@@ -13,13 +28,12 @@ class ConatinerRuntime(ABC):
     def call(
         self,
         name: str,
-        route: str,
-        method: str = "GET",
+        path: str,
+        method: str,
         port: int = 8080,
-        params: Optional[dict] = None,
-        body: Optional[dict] = None,
+        data: Optional[dict] = None,
         headers: Optional[dict] = None,
-    ) -> requests.Response:
+    ) -> Tuple[int, str]:
         pass
 
     @abstractmethod
