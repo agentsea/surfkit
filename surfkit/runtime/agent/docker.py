@@ -1,19 +1,39 @@
-from typing import List
+from typing import List, Optional, Type, Union, Iterator
 
 import docker
 from docker.errors import NotFound
 from taskara.models import SolveTaskModel
 from agentdesk.util import find_open_port
 import requests
+from pydantic import BaseModel
 
 from ...types import AgentType
 from .base import AgentRuntime
 
 
+class ConnectConfig(BaseModel):
+    timeout: Optional[int] = None
+
+
 class DockerAgentRuntime(AgentRuntime):
 
-    def __init__(self) -> None:
-        self.client = docker.from_env()
+    def __init__(self, config: ConnectConfig) -> None:
+        if config.timeout:
+            self.client = docker.from_env(timeout=config.timeout)
+        else:
+            self.client = docker.from_env()
+
+    @classmethod
+    def name(cls) -> str:
+        return "docker"
+
+    @classmethod
+    def connect_config_type(cls) -> Type[ConnectConfig]:
+        return ConnectConfig
+
+    @classmethod
+    def connect(cls, cfg: ConnectConfig) -> "DockerAgentRuntime":
+        return cls(cfg)
 
     def run(self, agent_type: AgentType, name: str) -> None:
         env_vars = {}
@@ -36,24 +56,31 @@ class DockerAgentRuntime(AgentRuntime):
         if container and type(container) != bytes:
             print(f"ran container '{container.id}'")  # type: ignore
 
-    def solve_task(self, agent_name: str, task: SolveTaskModel) -> None:
+    def solve_task(
+        self, agent_name: str, task: SolveTaskModel, follow_logs: bool = False
+    ) -> None:
         try:
             container = self.client.containers.get(agent_name)
             print(f"Container '{agent_name}' found.")
+            response = requests.post(
+                f"http://localhost:{container.attrs['NetworkSettings']['Ports']['8000/tcp'][0]['HostPort']}/v1/tasks",  # type: ignore
+                json=task.model_dump(),
+            )
+            print(f"Task posted with response: {response.status_code}, {response.text}")
         except NotFound:
             print(f"Container '{agent_name}' does not exist.")
             raise
         except Exception as e:
-            print(f"An unexpected error occurred connecting to agent container: {e}")
+            print(f"An unexpected error occurred: {e}")
             raise
 
-        requests.post(
-            f"http://localhost:8000/v1/tasks",
-            json=task.model_dump(),
-        )
-
-        for line in container.logs(stream=True, follow=True):  # type: ignore
-            print(line.decode().strip())
+        if follow_logs:
+            print(f"Following logs for '{agent_name}':")
+            try:
+                for line in self.logs(agent_name, follow=True):
+                    print(line)
+            except Exception as e:
+                print(f"Error while streaming logs: {e}")
 
     def list(self) -> List[str]:
         label_filter = {"label": ["provisioner=surfkit"]}
@@ -63,7 +90,7 @@ class DockerAgentRuntime(AgentRuntime):
 
         return container_names_or_ids
 
-    def delete_by_name(self, name: str) -> bool:
+    def delete(self, name: str) -> None:
         try:
             # Attempt to get the container by name
             container = self.client.containers.get(name)
@@ -71,17 +98,14 @@ class DockerAgentRuntime(AgentRuntime):
             # If found, remove the container
             container.remove(force=True)  # type: ignore
             print(f"Successfully deleted container: {name}")
-            return True
         except NotFound:
             # Handle the case where the container does not exist
             print(f"Container '{name}' does not exist.")
-            return False
         except Exception as e:
             # Handle other potential errors
             print(f"Failed to delete container '{name}': {e}")
-            return False
 
-    def clean(self) -> List[str]:
+    def clean(self) -> None:
         # Define the filter for containers with the specific label
         label_filter = {"label": ["provisioner=surfkit"]}
 
@@ -102,4 +126,30 @@ class DockerAgentRuntime(AgentRuntime):
             except Exception as e:
                 print(f"Failed to delete container: {e}")
 
-        return deleted_containers
+        return None
+
+    def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
+        """
+        Fetches the logs from the specified container. Can return all logs as a single string,
+        or stream the logs as a generator of strings.
+
+        Parameters:
+            name (str): The name of the container.
+            follow (bool): Whether to continuously follow the logs.
+
+        Returns:
+            Union[str, Iterator[str]]: All logs as a single string, or a generator that yields log lines.
+        """
+        try:
+            container = self.client.containers.get(name)
+            if follow:
+                log_stream = container.logs(stream=True, follow=True)  # type: ignore
+                return (line.decode("utf-8").strip() for line in log_stream)
+            else:
+                return container.logs().decode("utf-8")  # type: ignore
+        except NotFound:
+            print(f"Container '{name}' does not exist.")
+            raise
+        except Exception as e:
+            print(f"Failed to fetch logs for container '{name}': {e}")
+            raise

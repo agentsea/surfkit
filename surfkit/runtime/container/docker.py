@@ -21,6 +21,10 @@ class DockerRuntime(ContainerRuntime):
         self.client = docker.from_env()
 
     @classmethod
+    def name(cls) -> str:
+        return "docker"
+
+    @classmethod
     def connect_config_type(cls) -> Type[ConnectConfig]:
         return ConnectConfig
 

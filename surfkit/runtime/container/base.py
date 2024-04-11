@@ -10,6 +10,10 @@ C = TypeVar("C", bound="BaseModel")
 
 class ContainerRuntime(Generic[C, R], ABC):
 
+    @classmethod
+    def name(cls) -> str:
+        return cls.__name__
+
     @abstractmethod
     @classmethod
     def connect_config_type(cls) -> Type[C]:

@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Type
+from typing import List, Optional, Tuple, Type, Union, Iterator
 import os
 import json
 import urllib.error
@@ -8,7 +8,7 @@ from tenacity import retry, stop_after_attempt
 import socket
 import base64
 
-from kubernetes import client, config, stream
+from kubernetes import client, config
 from google.oauth2 import service_account
 from google.cloud import container_v1
 from google.auth.transport.requests import Request
@@ -19,8 +19,10 @@ from kubernetes.client.api import core_v1_api
 from namesgenerator import get_random_name
 from tenacity import retry
 from pydantic import BaseModel
+from taskara.models import SolveTaskModel
 
-from .base import ContainerRuntime
+from .base import AgentRuntime
+from ...types import AgentType
 
 
 class GKEOpts(BaseModel):
@@ -40,7 +42,7 @@ class ConnectConfig(BaseModel):
     local_opts: Optional[LocalOpts] = None
 
 
-class KubernetesRuntime(ContainerRuntime):
+class KubernetesAgentRuntime(AgentRuntime):
     """A container runtime that uses Kubernetes to manage Pods directly"""
 
     def __init__(self, cfg: ConnectConfig) -> None:
@@ -135,7 +137,7 @@ class KubernetesRuntime(ContainerRuntime):
         return ConnectConfig
 
     @classmethod
-    def connect(cls, cfg: ConnectConfig) -> "KubernetesRuntime":
+    def connect(cls, cfg: ConnectConfig) -> "KubernetesAgentRuntime":
         return cls(cfg)
 
     @retry(stop=stop_after_attempt(15))
@@ -377,18 +379,25 @@ class KubernetesRuntime(ContainerRuntime):
             except:
                 pass
 
-    def logs(self, name: str) -> str:
+    def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
         """
-        Fetches the logs from the specified pod.
+        Fetches the logs from the specified pod. Can return all logs as a single string,
+        or stream the logs as a generator of strings.
 
         Parameters:
             name (str): The name of the pod.
+            follow (bool): Whether to continuously follow the logs.
 
         Returns:
-            str: The logs from the pod.
+            Union[str, Iterator[str]]: All logs as a single string, or a generator that yields log lines.
         """
         try:
-            return self.core_api.read_namespaced_pod_log(name=name, namespace="default")
+            return self.core_api.read_namespaced_pod_log(
+                name=name,
+                namespace=self.namespace,
+                follow=follow,
+                _preload_content=False,  # Important to return a generator when following
+            )
         except ApiException as e:
             print(f"Failed to get logs for pod '{name}': {e}")
             raise
@@ -426,3 +435,52 @@ class KubernetesRuntime(ContainerRuntime):
                 print(f"Deleted pod: {pod.metadata.name}")
             except ApiException as e:
                 print(f"Failed to delete pod '{pod.metadata.name}': {e}")
+
+    def run(self, agent_type: AgentType, name: str) -> None:
+        if not agent_type.image:
+            raise ValueError(f"Image not specified for agent type: {agent_type.name}")
+        self.create(
+            image=agent_type.image,
+            name=name,
+            mem_request=agent_type.mem_request,
+            mem_limit=agent_type.mem_limit,
+            cpu_request=agent_type.cpu_request,
+            cpu_limit=agent_type.cpu_limit,
+            gpu_mem=agent_type.gpu_mem,
+        )
+
+    def solve_task(
+        self, agent_name: str, task: SolveTaskModel, follow_logs: bool = False
+    ) -> None:
+        try:
+            # Making the call to the specified path to initiate the task
+            status_code, response_text = self.call(
+                name=agent_name,
+                path="/v1/solve_task",
+                method="POST",
+                port=8080,
+                data=task.model_dump(),
+            )
+            print(
+                f"Task initiation response: Status Code {status_code}, Response Text {response_text}"
+            )
+
+        except ApiException as e:
+            print(f"API exception occurred: {e}")
+            raise
+        except Exception as e:
+            print(f"An error occurred while posting the task: {e}")
+            raise
+
+        if follow_logs:
+            print(f"Starting to follow logs for: {agent_name}")
+            try:
+                log_lines = self.logs(name=agent_name, follow=True)
+                for line in log_lines:
+                    print(line)
+            except ApiException as e:
+                print(f"Failed to follow logs for pod '{agent_name}': {e}")
+                raise
+            except Exception as e:
+                print(f"An error occurred while fetching logs: {e}")
+                raise
