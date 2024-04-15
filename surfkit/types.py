@@ -33,7 +33,7 @@ class AgentType(WithDB):
         public: bool = False,
         icon: Optional[str] = None,
         mem_request: Optional[str] = "500m",
-        mem_limit: Optional[str] = "2gi",
+        mem_limit: Optional[str] = "2Gi",
         cpu_request: Optional[str] = "1",
         cpu_limit: Optional[str] = "4",
         gpu_mem: Optional[str] = None,
