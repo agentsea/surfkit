@@ -1,3 +1,4 @@
+from curses.ascii import isdigit
 from typing import List, Optional, Tuple, Type, Union, Iterator
 import os
 import json
@@ -80,6 +81,12 @@ class KubernetesAgentRuntime(AgentRuntime):
         gpu_mem: Optional[str] = None,
         env_vars: Optional[dict] = None,
     ) -> None:
+        if mem_request:
+            if mem_request.isdigit():
+                mem_request = f"{mem_request}Gi"
+        if mem_limit:
+            if mem_limit.isdigit():
+                mem_limit = f"{mem_limit}Gi"
         if not name:
             name = get_random_name("-")
 
@@ -96,6 +103,8 @@ class KubernetesAgentRuntime(AgentRuntime):
                 resources.limits["nvidia.com/gpu"] = gpu_mem  # type: ignore
             else:
                 resources.limits = {"nvidia.com/gpu": gpu_mem}
+
+        print("running with resources: ", resources)
 
         # Define the container with environment variables
         env_list = []
@@ -468,7 +477,7 @@ class KubernetesAgentRuntime(AgentRuntime):
                     raise ValueError(f"no api key env for provider {provider_name}")
                 key = os.getenv(api_key_env)
                 if not key:
-                    print("no api key found locally for provider", provider_name)
+                    print("no api key found locally for provider: ", provider_name)
                     continue
 
                 print("api key found locally for provider: ", provider_name)
