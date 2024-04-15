@@ -118,6 +118,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             ports=[client.V1ContainerPort(container_port=8080)],
             resources=resources,
             env=env_list,
+            image_pull_policy="Always",
         )
 
         # Create a Pod specification
