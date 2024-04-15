@@ -291,7 +291,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         name: str,
         path: str,
         method: str,
-        port: int = 8080,
+        port: int = 8000,
         data: Optional[dict] = None,
         headers: Optional[dict] = None,
     ) -> Tuple[int, str]:
@@ -562,7 +562,7 @@ class KubernetesAgentRuntime(AgentRuntime):
                 name=agent_name,
                 path="/v1/solve_task",
                 method="POST",
-                port=8080,
+                port=8000,
                 data=task.model_dump(),
             )
             print(
