@@ -461,17 +461,24 @@ class KubernetesAgentRuntime(AgentRuntime):
                 )
             if not env_vars:
                 env_vars = {}
+            found = {}
             for provider_name in agent_type.llm_providers.preference:
                 api_key_env = LLMProvider.provider_api_keys.get(provider_name)
                 if not api_key_env:
                     raise ValueError(f"no api key env for provider {provider_name}")
                 key = os.getenv(api_key_env)
                 if not key:
-                    raise ValueError(
-                        f"no api key for provider {provider_name} in env var {api_key_env} with llmprovider_local=True"
-                    )
+                    print("no api key found locally for provider", provider_name)
+                    continue
 
-                env_vars[api_key_env] = key
+                print("api key found locally for provider: ", provider_name)
+                found[api_key_env] = key
+
+            if not found:
+                raise ValueError(
+                    "no api keys found locally for any of the providers in the agent type"
+                )
+            env_vars.update(found)
 
         self.create(
             image=img,
