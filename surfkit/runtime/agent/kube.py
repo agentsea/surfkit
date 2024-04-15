@@ -33,7 +33,7 @@ class GKEOpts(BaseModel):
 
 
 class LocalOpts(BaseModel):
-    path: Optional[str] = os.getenv("KUBECONFIG")
+    path: Optional[str] = os.getenv("KUBECONFIG", os.path.expanduser("~/.kube/config"))
 
 
 class ConnectConfig(BaseModel):
@@ -56,7 +56,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         elif cfg.provider == "local":
             opts = cfg.local_opts
             if not opts:
-                raise ValueError("Local opts missing")
+                opts = LocalOpts()
             if opts.path:
                 config.load_kube_config(opts.path)
         else:
