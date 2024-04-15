@@ -5,7 +5,7 @@ import json
 import urllib.error
 import urllib.parse
 import urllib.request
-from tenacity import retry, stop_after_attempt
+from tenacity import retry, stop_after_attempt, wait_fixed
 import socket
 import base64
 
@@ -89,6 +89,8 @@ class KubernetesAgentRuntime(AgentRuntime):
                 mem_limit = f"{mem_limit}Gi"
         if not name:
             name = get_random_name("-")
+            if not name:
+                raise ValueError("Could not generate a random name")
 
         labels = {"provisioner": "surfkit"}
 
@@ -142,6 +144,9 @@ class KubernetesAgentRuntime(AgentRuntime):
             print(f"Pod created. name='{name}'")
         except ApiException as e:
             print(f"Exception when creating pod: {e}")
+
+        self.wait_pod_ready(name)
+        self.wait_for_http_200(name)
 
     @classmethod
     def connect_config_type(cls) -> Type[ConnectConfig]:
@@ -232,6 +237,53 @@ class KubernetesAgentRuntime(AgentRuntime):
         print("\nK8s returning client...")
 
         return v1_client, project_id, cluster_name
+
+    @retry(stop=stop_after_attempt(200), wait=wait_fixed(2))
+    def wait_for_http_200(self, name: str, path: str = "/", port: int = 8000):
+        """
+        Waits for an HTTP 200 response from the specified path on the given pod.
+
+        Parameters:
+            name (str): The name of the pod.
+            path (str): The path to query. Defaults to root '/'.
+            port (int): The port on which the pod service is exposed. Defaults to 8000.
+
+        Raises:
+            RuntimeError: If the response is not 200 after the specified retries.
+        """
+        print(f"Checking HTTP 200 readiness for pod {name} on path {path}")
+        status_code, response_text = self.call(name, path, "GET", port)
+        if status_code != 200:
+            print(f"Received status code {status_code}, retrying...")
+            raise Exception(
+                f"Pod {name} at path {path} is not ready. Status code: {status_code}"
+            )
+        print(f"Pod {name} at path {path} is ready with status 200.")
+
+    @retry(stop=stop_after_attempt(200), wait=wait_fixed(2))
+    def wait_pod_ready(self, name: str) -> bool:
+        """
+        Checks if the specified pod is ready to serve requests.
+
+        Parameters:
+            name (str): The name of the pod to check.
+
+        Returns:
+            bool: True if the pod is ready, False otherwise.
+        """
+        try:
+            pod = self.core_api.read_namespaced_pod(name=name, namespace=self.namespace)
+            conditions = pod.status.conditions  # type: ignore
+            if conditions:
+                for condition in conditions:
+                    if condition.type == "Ready" and condition.status == "True":
+                        print("pod is ready!")
+                        return True
+            print("pod is not ready yet...")
+            raise Exception(f"Pod {name} is not ready")
+        except ApiException as e:
+            print(f"Failed to read pod status for '{name}': {e}")
+            raise
 
     @retry(stop=stop_after_attempt(15))
     def call(
