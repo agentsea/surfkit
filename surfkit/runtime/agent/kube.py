@@ -346,7 +346,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             namespace = dns_name[-2]
             name = dns_name[0]
             port = address[1]
-            print("connecting to: ", namespace, name, port)
+            # print("connecting to: ", namespace, name, port)
             if len(dns_name) == 4:
                 if dns_name[1] in ("svc", "service"):
                     service = core_v1.read_namespaced_service(name, namespace)
