@@ -14,6 +14,7 @@ from .models import (
     LLMProviders,
     DeviceConfig,
     RuntimeModel,
+    MeterModel,
 )
 
 
@@ -26,7 +27,7 @@ class AgentType(WithDB):
         description: str,
         image: str,
         versions: Dict[str, str],
-        runtimes: List[RuntimeModel],
+        runtimes: List[RuntimeModel] = [],
         owner_id: Optional[str] = None,
         env_opts: List[EnvVarOptModel] = [],
         public: bool = False,
@@ -38,6 +39,8 @@ class AgentType(WithDB):
         gpu_mem: Optional[str] = None,
         llm_providers: Optional[LLMProviders] = None,
         devices: List[DeviceConfig] = [],
+        repo: Optional[str] = None,
+        meters: List[MeterModel] = [],
     ):
         self.id = str(uuid.uuid4())
         self.name = name
@@ -58,6 +61,8 @@ class AgentType(WithDB):
         self.updated = time.time()
         self.llm_providers: Optional[LLMProviders] = llm_providers
         self.devices = devices
+        self.repo = repo
+        self.meters = meters
         self.save()
 
     def to_schema(self) -> AgentTypeModel:
@@ -81,6 +86,8 @@ class AgentType(WithDB):
             llm_providers=self.llm_providers,
             devices=self.devices,
             owner_id=self.owner_id,
+            repo=self.repo,
+            meters=self.meters,
         )
 
     @classmethod
@@ -105,6 +112,8 @@ class AgentType(WithDB):
         obj.versions = schema.versions
         obj.llm_providers = schema.llm_providers
         obj.devices = schema.devices
+        obj.repo = schema.repo
+        obj.meters = schema.meters
         return obj
 
     def to_record(self) -> AgentTypeRecord:
@@ -112,6 +121,10 @@ class AgentType(WithDB):
         llm_providers = None
         if self.llm_providers:
             llm_providers = json.dumps(self.llm_providers.model_dump())
+
+        meters = None
+        if self.meters:
+            meters = json.dumps([meter.model_dump() for meter in self.meters])
 
         devices = None
         if self.devices:
@@ -136,21 +149,28 @@ class AgentType(WithDB):
             gpu_mem=self.gpu_mem,
             llm_providers=llm_providers,
             devices=devices,
+            meters=meters,
+            repo=self.repo,
         )
 
     @classmethod
     def from_record(cls, record: AgentTypeRecord) -> "AgentType":
         versions = {}
-        if len(str(record.versions)) != 0:
+        if record.versions:  # type: ignore
             versions = json.loads(str(record.versions))
 
         llm_providers = None
-        if len(str(record.llm_providers)) != 0:
+        if record.llm_providers:  # type: ignore
             llm_providers = LLMProviders(**json.loads(str(record.llm_providers)))
 
         devices = []
-        if len(str(record.devices)) != 0:
+        if record.devices:  # type: ignore
             devices = json.loads(str(record.devices))
+
+        meters = []
+        if record.meters:  # type: ignore
+            meters_mod = json.loads(str(record.meters))
+            meters = [MeterModel(**m) for m in meters_mod]
 
         obj = cls.__new__(cls)
         obj.id = record.id
@@ -174,6 +194,8 @@ class AgentType(WithDB):
         obj.gpu_mem = record.gpu_mem
         obj.llm_providers = llm_providers
         obj.devices = devices
+        obj.meters = meters
+        obj.repo = record.repo
         return obj
 
     def save(self) -> None:
@@ -213,12 +235,12 @@ class AgentType(WithDB):
         return []
 
     @classmethod
-    def delete(cls, id: str, owner_id: str) -> None:
+    def delete(cls, name: str, owner_id: str) -> None:
         for session in cls.get_db():
             if session:
                 record = (
                     session.query(AgentTypeRecord)
-                    .filter_by(id=id, owner_id=owner_id)
+                    .filter_by(name=name, owner_id=owner_id)
                     .first()
                 )
                 if record:
@@ -291,6 +313,14 @@ class AgentType(WithDB):
 
         if self.devices != model.devices:
             self.devices = model.devices
+            updated = True
+
+        if self.meters != model.meters:
+            self.meters = model.meters
+            updated = True
+
+        if self.repo != model.repo:
+            self.repo = model.repo
             updated = True
 
         # If anything was updated, set the updated timestamp and save changes

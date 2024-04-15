@@ -22,7 +22,8 @@ from pydantic import BaseModel
 from taskara.models import SolveTaskModel
 
 from .base import AgentRuntime
-from ...types import AgentType
+from surfkit.types import AgentType
+from surfkit.llm import LLMProvider
 
 
 class GKEOpts(BaseModel):
@@ -437,7 +438,12 @@ class KubernetesAgentRuntime(AgentRuntime):
                 print(f"Failed to delete pod '{pod.metadata.name}': {e}")
 
     def run(
-        self, agent_type: AgentType, name: str, version: Optional[str] = None
+        self,
+        agent_type: AgentType,
+        name: str,
+        version: Optional[str] = None,
+        env_vars: Optional[dict] = None,
+        llm_providers_local: bool = False,
     ) -> None:
         if not agent_type.image:
             raise ValueError(f"Image not specified for agent type: {agent_type.name}")
@@ -448,6 +454,25 @@ class KubernetesAgentRuntime(AgentRuntime):
             img = agent_type.versions.get(version)
         if not img:
             raise ValueError("img not found")
+        if llm_providers_local:
+            if not agent_type.llm_providers:
+                raise ValueError(
+                    "no llm providers in agent type, yet llm_providers_local is True"
+                )
+            if not env_vars:
+                env_vars = {}
+            for provider_name in agent_type.llm_providers.preference:
+                api_key_env = LLMProvider.provider_api_keys.get(provider_name)
+                if not api_key_env:
+                    raise ValueError(f"no api key env for provider {provider_name}")
+                key = os.getenv(api_key_env)
+                if not key:
+                    raise ValueError(
+                        f"no api key for provider {provider_name} in env var {api_key_env} with llmprovider_local=True"
+                    )
+
+                env_vars[api_key_env] = key
+
         self.create(
             image=img,
             name=name,
@@ -456,6 +481,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             cpu_request=agent_type.cpu_request,
             cpu_limit=agent_type.cpu_limit,
             gpu_mem=agent_type.gpu_mem,
+            env_vars=env_vars,
         )
 
     def solve_task(

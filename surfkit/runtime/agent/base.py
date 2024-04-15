@@ -1,7 +1,6 @@
 from typing import List, TypeVar, Type, Generic, Union, Iterator, Optional
 from abc import ABC, abstractmethod
 
-import docker
 from pydantic import BaseModel
 from taskara.models import SolveTaskModel
 
@@ -12,9 +11,6 @@ C = TypeVar("C", bound="BaseModel")
 
 
 class AgentRuntime(Generic[R, C], ABC):
-
-    def __init__(self) -> None:
-        self.client = docker.from_env()
 
     @classmethod
     def name(cls) -> str:
@@ -32,7 +28,12 @@ class AgentRuntime(Generic[R, C], ABC):
 
     @abstractmethod
     def run(
-        self, agent_type: AgentType, name: str, version: Optional[str] = None
+        self,
+        agent_type: AgentType,
+        name: str,
+        version: Optional[str] = None,
+        env_vars: Optional[dict] = None,
+        llm_providers_local: bool = False,
     ) -> None:
         pass
 

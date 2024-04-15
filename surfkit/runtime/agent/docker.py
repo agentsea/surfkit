@@ -1,4 +1,5 @@
 from typing import List, Optional, Type, Union, Iterator
+import os
 
 import docker
 from docker.errors import NotFound
@@ -7,8 +8,9 @@ from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel
 
-from ...types import AgentType
 from .base import AgentRuntime
+from surfkit.types import AgentType
+from surfkit.llm import LLMProvider
 
 
 class ConnectConfig(BaseModel):
@@ -36,9 +38,13 @@ class DockerAgentRuntime(AgentRuntime):
         return cls(cfg)
 
     def run(
-        self, agent_type: AgentType, name: str, version: Optional[str] = None
+        self,
+        agent_type: AgentType,
+        name: str,
+        version: Optional[str] = None,
+        env_vars: Optional[dict] = None,
+        llm_providers_local: bool = False,
     ) -> None:
-        env_vars = {}
         labels = {
             "provisioner": "surfkit",
             "agent_type": agent_type.name,
@@ -47,6 +53,25 @@ class DockerAgentRuntime(AgentRuntime):
 
         port = find_open_port(8000, 9000)
         print("running container")
+
+        if llm_providers_local:
+            if not agent_type.llm_providers:
+                raise ValueError(
+                    "no llm providers in agent type, yet llm_providers_local is True"
+                )
+            if not env_vars:
+                env_vars = {}
+            for provider_name in agent_type.llm_providers.preference:
+                api_key_env = LLMProvider.provider_api_keys.get(provider_name)
+                if not api_key_env:
+                    raise ValueError(f"no api key env for provider {provider_name}")
+                key = os.getenv(api_key_env)
+                if not key:
+                    raise ValueError(
+                        f"no api key for provider {provider_name} in env var {api_key_env} with llmprovider_local=True"
+                    )
+
+                env_vars[api_key_env] = key
 
         img = agent_type.image
         if version:

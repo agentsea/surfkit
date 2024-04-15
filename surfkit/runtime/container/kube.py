@@ -70,12 +70,12 @@ class KubernetesRuntime(ContainerRuntime):
         self,
         image: str,
         name: Optional[str] = None,
+        env_vars: Optional[dict] = None,
         mem_request: Optional[str] = "500m",
         mem_limit: Optional[str] = "2Gi",
         cpu_request: Optional[str] = "1",
         cpu_limit: Optional[str] = "4",
         gpu_mem: Optional[str] = None,
-        env_vars: Optional[dict] = None,
     ) -> None:
         if not name:
             name = get_random_name("-")

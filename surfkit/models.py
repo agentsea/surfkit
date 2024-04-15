@@ -34,6 +34,13 @@ class LLMProviderModel(BaseModel):
     options: List[LLMProviderOption]
 
 
+class MeterModel(BaseModel):
+    name: str
+    unit: str
+    cost: float
+    description: Optional[str] = None
+
+
 class RuntimeModel(BaseModel):
     type: str
     preference: List[str] = []
@@ -44,8 +51,9 @@ class AgentTypeModel(BaseModel):
     kind: Optional[str] = None
     id: Optional[str] = None
     name: str
-    owner_id: Optional[str] = None
     description: str
+    owner_id: Optional[str] = None
+    repo: Optional[str] = None
     image: Optional[str] = None
     versions: Optional[Dict[str, str]] = None
     env_opts: List[EnvVarOptModel] = []
@@ -61,6 +69,7 @@ class AgentTypeModel(BaseModel):
     gpu_mem: Optional[str] = None
     llm_providers: Optional[LLMProviders] = None
     devices: List[DeviceConfig] = []
+    meters: List[MeterModel] = []
 
 
 class AgentTypesModel(BaseModel):

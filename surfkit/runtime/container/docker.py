@@ -32,11 +32,20 @@ class DockerRuntime(ContainerRuntime):
     def connect(cls, cfg: ConnectConfig) -> "DockerRuntime":
         return cls()
 
-    def create(self, image: str, name: Optional[str] = None) -> None:
+    def create(
+        self,
+        image: str,
+        name: Optional[str] = None,
+        env_vars: Optional[dict] = None,
+        mem_request: Optional[str] = "500m",
+        mem_limit: Optional[str] = "2Gi",
+        cpu_request: Optional[str] = "1",
+        cpu_limit: Optional[str] = "4",
+        gpu_mem: Optional[str] = None,
+    ) -> None:
         if not name:
             name = get_random_name("-")
 
-        env_vars = {}
         labels = {
             "provisioner": "surfkit",
         }
@@ -50,20 +59,12 @@ class DockerRuntime(ContainerRuntime):
             detach=True,
             labels=labels,
             name=name,
+            mem_limit=mem_limit,
+            mem_reservation=mem_request,
+            nano_cpus=int(float(cpu_limit) * 1e9),  # type: ignore
         )
         if container and type(container) != bytes:
             print(f"ran container '{container.id}'")  # type: ignore
-
-    # def call(
-    #     self,
-    #     name: str,
-    #     route: str,
-    #     method: str = "GET",
-    #     port: int = 8080,
-    #     params: Optional[dict] = None,
-    #     body: Optional[dict] = None,
-    #     headers: Optional[dict] = None,
-    # ) -> requests.Response:
 
     def call(
         self,
