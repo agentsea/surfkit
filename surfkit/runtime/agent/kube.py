@@ -560,7 +560,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             # Making the call to the specified path to initiate the task
             status_code, response_text = self.call(
                 name=agent_name,
-                path="/v1/solve_task",
+                path="/v1/tasks",
                 method="POST",
                 port=8000,
                 data=task.model_dump(),
