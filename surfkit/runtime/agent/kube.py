@@ -94,14 +94,14 @@ class KubernetesAgentRuntime(AgentRuntime):
                 namespace=self.namespace,
                 # This ensures that the secret is deleted when the pod is deleted.
                 labels={"provisioner": "surfkit"},
-                # owner_references=[
-                #     client.V1OwnerReference(
-                #         api_version="v1",
-                #         kind="Pod",
-                #         name=name,
-                #         uid="the UID of the Pod here",  # This should be set dynamically after pod creation
-                #     )
-                # ],
+                owner_references=[
+                    client.V1OwnerReference(
+                        api_version="v1",
+                        kind="Pod",
+                        name=name,
+                        uid="the UID of the Pod here",  # This should be set dynamically after pod creation
+                    )
+                ],
             ),
             string_data=env_vars,
             type="Opaque",
