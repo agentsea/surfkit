@@ -85,6 +85,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         Returns:
             client.V1Secret: The created Kubernetes Secret object.
         """
+        print("creating secret with envs: ", env_vars)
         secret = client.V1Secret(
             api_version="v1",
             kind="Secret",
@@ -93,19 +94,16 @@ class KubernetesAgentRuntime(AgentRuntime):
                 namespace=self.namespace,
                 # This ensures that the secret is deleted when the pod is deleted.
                 labels={"provisioner": "surfkit"},
-                owner_references=[
-                    client.V1OwnerReference(
-                        api_version="v1",
-                        kind="Pod",
-                        name=name,
-                        uid="the UID of the Pod here",  # This should be set dynamically after pod creation
-                    )
-                ],
+                # owner_references=[
+                #     client.V1OwnerReference(
+                #         api_version="v1",
+                #         kind="Pod",
+                #         name=name,
+                #         uid="the UID of the Pod here",  # This should be set dynamically after pod creation
+                #     )
+                # ],
             ),
-            data={
-                key: base64.b64encode(value.encode("utf-8")).decode("utf-8")
-                for key, value in env_vars.items()
-            },
+            string_data=env_vars,
             type="Opaque",
         )
         try:
@@ -139,6 +137,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             # Create a secret for the environment variables
             print("creating secret...")
             secret: Optional[client.V1Secret] = self.create_secret(name, env_vars)
+            print("secret created: ", secret.__dict__)
             env_from = [
                 client.V1EnvFromSource(
                     secret_ref=client.V1SecretEnvSource(name=secret.metadata.name)  # type: ignore
