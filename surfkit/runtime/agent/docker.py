@@ -124,6 +124,12 @@ class DockerAgentRuntime(AgentRuntime):
             except Exception as e:
                 print(f"Error while streaming logs: {e}")
 
+    def proxy(
+        self, local_port: int, pod_port: int = 8000, background: bool = True
+    ) -> None:
+        print("no proxy needed")
+        return
+
     def list(self) -> List[str]:
         label_filter = {"label": ["provisioner=surfkit"]}
         containers = self.client.containers.list(filters=label_filter)

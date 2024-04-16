@@ -8,6 +8,9 @@ import urllib.request
 from tenacity import retry, stop_after_attempt, wait_fixed
 import socket
 import base64
+import subprocess
+import atexit
+import signal
 
 from kubernetes import client, config
 from google.oauth2 import service_account
@@ -21,6 +24,7 @@ from namesgenerator import get_random_name
 from tenacity import retry
 from pydantic import BaseModel
 from taskara.models import SolveTaskModel
+from agentdesk.util import find_open_port
 
 from .base import AgentRuntime
 from surfkit.types import AgentType
@@ -441,6 +445,66 @@ class KubernetesAgentRuntime(AgentRuntime):
                     response.close()
             except:
                 pass
+
+    def proxy(
+        self,
+        name: str,
+        local_port: Optional[int] = None,
+        pod_port: int = 8000,
+        background: bool = True,
+    ) -> None:
+        """
+        Sets up a port forwarding between a local port and a pod port using kubectl command.
+
+        Parameters:
+            name (str): The name of the pod to port-forward to.
+            local_port (int): The local port number to forward to pod_port.
+            pod_port (int): The pod port number to be forwarded, defaults to 8000.
+            background (bool): If True, runs the port forwarding in the background and returns immediately.
+        """
+        if local_port is None:
+            local_port = find_open_port(8000, 9000)
+        cmd = f"kubectl port-forward pod/{name} {local_port}:{pod_port} -n {self.namespace}"
+        if background:
+            # Start the subprocess in the background
+            proc = subprocess.Popen(
+                cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            self._register_cleanup(proc)
+            print(
+                f"Port-forwarding setup: Local port {local_port} -> Pod {name}:{pod_port}"
+            )
+        else:
+            # Run the subprocess in the foreground, block until the user terminates it
+            try:
+                print(
+                    f"Starting port-forwarding: Local port {local_port} -> Pod {name}:{pod_port}"
+                )
+                subprocess.run(cmd, shell=True, check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to start port-forwarding: {e}")
+                raise
+
+    def _register_cleanup(self, proc: subprocess.Popen):
+        """
+        Registers cleanup actions on process termination.
+
+        Parameters:
+            proc (subprocess.Popen): The process to clean up.
+        """
+
+        def cleanup():
+            if proc.poll() is None:  # Process is still running
+                proc.terminate()  # or send any other signal you think necessary
+                try:
+                    proc.wait(timeout=10)  # Give it a few seconds to terminate
+                except subprocess.TimeoutExpired:
+                    proc.kill()  # Force kill if not terminated in time
+                print("Port-forwarding process terminated.")
+
+        atexit.register(cleanup)
+        signal.signal(signal.SIGINT, lambda s, f: cleanup())
+        signal.signal(signal.SIGTERM, lambda s, f: cleanup())
 
     def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
         """

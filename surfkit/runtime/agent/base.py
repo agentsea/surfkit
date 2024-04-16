@@ -48,6 +48,12 @@ class AgentRuntime(Generic[R, C], ABC):
         pass
 
     @abstractmethod
+    def proxy(
+        self, name: str, local_port: int, pod_port: int = 8000, background: bool = True
+    ) -> None:
+        pass
+
+    @abstractmethod
     def delete(self, name: str) -> None:
         pass
 

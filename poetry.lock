@@ -3855,19 +3855,20 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.17"
+version = "0.1.25"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.17-py3-none-any.whl", hash = "sha256:e2ad540425f8e780d0728f98e77c234d4512bbc0583cdc601a3ca3b037e8ced4"},
-    {file = "taskara-0.1.17.tar.gz", hash = "sha256:d40d583ddfb449d199bb46a266353eea3f8b546fb91efe92f3ba985743883693"},
+    {file = "taskara-0.1.25-py3-none-any.whl", hash = "sha256:a78aee546124c9190a7bf083ddb6ec81b5e62627946ba53d8a26479feaef3cd0"},
+    {file = "taskara-0.1.25.tar.gz", hash = "sha256:831097521299a090d6efeabb2092bc77e46e3337b7cf937af1d55e7490797133"},
 ]
 
 [package.dependencies]
+devicebay = ">=0.1.8,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
-threadmem = ">=0.2.12,<0.3.0"
+threadmem = ">=0.2.14,<0.3.0"
 
 [[package]]
 name = "tenacity"
@@ -3899,13 +3900,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.12"
+version = "0.2.14"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.12-py3-none-any.whl", hash = "sha256:88c9116bd921ed94464c11f56a73f74ead5a537f9f7a02b8a42ce0deea05432b"},
-    {file = "threadmem-0.2.12.tar.gz", hash = "sha256:9cdeedd462221a5825a64ae3f9c6de5ffff1ad4e1ff777c71a20b7e7513b2ca8"},
+    {file = "threadmem-0.2.14-py3-none-any.whl", hash = "sha256:f7a9e327651263379bfaecad49d088c390621552a23b1adbb9b004587fe54525"},
+    {file = "threadmem-0.2.14.tar.gz", hash = "sha256:8769d5479f719b7b24fd4e63f493e90f7d9873ed5338de9017b02418923b2c85"},
 ]
 
 [package.dependencies]
@@ -4769,4 +4770,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "66ae4b6283b3c09a7ed44a1400e5216294a314bf2d12741b260d997debf18655"
+content-hash = "ae39681a188ec7082f020fa99f8ac82e3768064612009f480ccbea24bbef65d6"
