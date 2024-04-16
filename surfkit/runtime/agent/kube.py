@@ -89,7 +89,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             api_version="v1",
             kind="Secret",
             metadata=client.V1ObjectMeta(
-                name=f"{name}-secret",
+                name=name,
                 namespace=self.namespace,
                 # This ensures that the secret is deleted when the pod is deleted.
                 labels={"provisioner": "surfkit"},
@@ -112,7 +112,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             self.core_api.create_namespaced_secret(
                 namespace=self.namespace, body=secret
             )
-            print(f"Secret created: {name}-secret")
+            print(f"Secret created: {name}")
             return secret
         except ApiException as e:
             print(f"Failed to create secret: {e}")
@@ -137,6 +137,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         secret = None
         if env_vars:
             # Create a secret for the environment variables
+            print("creating secret...")
             secret: Optional[client.V1Secret] = self.create_secret(name, env_vars)
             env_from = [
                 client.V1EnvFromSource(
@@ -152,7 +153,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             limits={"memory": mem_limit, "cpu": cpu_limit},
         )
         if gpu_mem:
-            resources.limits["nvidia.com/gpu"] = gpu_mem  # type: ignore
+            raise ValueError("GPU support not yet implemented")
 
         print("\nusing resources: ", resources.__dict__)
 
