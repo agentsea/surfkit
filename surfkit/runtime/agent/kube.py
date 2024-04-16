@@ -94,14 +94,6 @@ class KubernetesAgentRuntime(AgentRuntime):
                 namespace=self.namespace,
                 # This ensures that the secret is deleted when the pod is deleted.
                 labels={"provisioner": "surfkit"},
-                owner_references=[
-                    client.V1OwnerReference(
-                        api_version="v1",
-                        kind="Pod",
-                        name=name,
-                        uid="the UID of the Pod here",  # This should be set dynamically after pod creation
-                    )
-                ],
             ),
             string_data=env_vars,
             type="Opaque",
@@ -160,7 +152,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         container = client.V1Container(
             name=name,
             image=image,
-            ports=[client.V1ContainerPort(container_port=8000)],
+            ports=[client.V1ContainerPort(container_port=9090)],
             resources=resources,
             env_from=env_from,  # Using envFrom to source env vars from the secret
             image_pull_policy="Always",
@@ -183,14 +175,26 @@ class KubernetesAgentRuntime(AgentRuntime):
         )
 
         try:
-            created_pod = self.core_api.create_namespaced_pod(
+            created_pod: client.V1Pod = self.core_api.create_namespaced_pod(  # type: ignore
                 namespace=self.namespace, body=pod
             )
             print(f"Pod created with name='{name}'")
+            # print("created pod: ", created_pod.__dict__)
             # Update secret's owner reference UID to newly created pod's UID
             if secret:
                 print("updating secret refs...")
-                secret.metadata.owner_references[0].uid = created_pod.metadata.uid  # type: ignore
+                if not secret.metadata:
+                    raise ValueError("expected secret metadata to be set")
+                if not created_pod.metadata:
+                    raise ValueError("expected pod metadata to be set")
+                secret.metadata.owner_references = [
+                    client.V1OwnerReference(
+                        api_version="v1",
+                        kind="Pod",
+                        name=name,
+                        uid=created_pod.metadata.uid,  # This should be set dynamically after pod creation
+                    )
+                ]
                 self.core_api.patch_namespaced_secret(
                     name=secret.metadata.name, namespace=self.namespace, body=secret  # type: ignore
                 )
@@ -293,14 +297,14 @@ class KubernetesAgentRuntime(AgentRuntime):
         return v1_client, project_id, cluster_name
 
     @retry(stop=stop_after_attempt(200), wait=wait_fixed(2))
-    def wait_for_http_200(self, name: str, path: str = "/", port: int = 8000):
+    def wait_for_http_200(self, name: str, path: str = "/", port: int = 9090):
         """
         Waits for an HTTP 200 response from the specified path on the given pod.
 
         Parameters:
             name (str): The name of the pod.
             path (str): The path to query. Defaults to root '/'.
-            port (int): The port on which the pod service is exposed. Defaults to 8000.
+            port (int): The port on which the pod service is exposed. Defaults to 9090.
 
         Raises:
             RuntimeError: If the response is not 200 after the specified retries.
@@ -312,6 +316,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             raise Exception(
                 f"Pod {name} at path {path} is not ready. Status code: {status_code}"
             )
+        print(f"Pod {name} at path {path} responded with: ", response_text)
         print(f"Pod {name} at path {path} is ready with status 200.")
 
     @retry(stop=stop_after_attempt(200), wait=wait_fixed(2))
@@ -345,7 +350,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         name: str,
         path: str,
         method: str,
-        port: int = 8000,
+        port: int = 9090,
         data: Optional[dict] = None,
         headers: Optional[dict] = None,
     ) -> Tuple[int, str]:
@@ -500,7 +505,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         self,
         name: str,
         local_port: Optional[int] = None,
-        pod_port: int = 8000,
+        pod_port: int = 9090,
         background: bool = True,
     ) -> None:
         """
@@ -509,11 +514,11 @@ class KubernetesAgentRuntime(AgentRuntime):
         Parameters:
             name (str): The name of the pod to port-forward to.
             local_port (int): The local port number to forward to pod_port.
-            pod_port (int): The pod port number to be forwarded, defaults to 8000.
+            pod_port (int): The pod port number to be forwarded, defaults to 9090.
             background (bool): If True, runs the port forwarding in the background and returns immediately.
         """
         if local_port is None:
-            local_port = find_open_port(8000, 9000)
+            local_port = find_open_port(8001, 9000)
         cmd = f"kubectl port-forward pod/{name} {local_port}:{pod_port} -n {self.namespace}"
         if background:
             # Start the subprocess in the background
@@ -573,6 +578,7 @@ class KubernetesAgentRuntime(AgentRuntime):
                 name=name,
                 namespace=self.namespace,
                 follow=follow,
+                pretty=True,
                 _preload_content=False,  # Important to return a generator when following
             )
         except ApiException as e:
@@ -593,6 +599,7 @@ class KubernetesAgentRuntime(AgentRuntime):
                 namespace="default",
                 body=client.V1DeleteOptions(grace_period_seconds=5),
             )
+            self.core_api.delete_namespaced_secret(name=name, namespace=self.namespace)
             print(f"Successfully deleted pod: {name}")
         except ApiException as e:
             print(f"Failed to delete pod '{name}': {e}")
@@ -679,7 +686,7 @@ class KubernetesAgentRuntime(AgentRuntime):
                 name=agent_name,
                 path="/v1/tasks",
                 method="POST",
-                port=8000,
+                port=9090,
                 data=task.model_dump(),
             )
             print(

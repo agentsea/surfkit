@@ -31,7 +31,7 @@ RUN pip install surfkit
 COPY . .
 
 # Run the application
-CMD ["uvicorn", "{package_name}.server:app", "--host=0.0.0.0", "--port=8000", "--log-level", "debug"]
+CMD ["uvicorn", "{package_name}.server:app", "--host=0.0.0.0", "--port=9090", "--log-level", "debug"]
 """
 
 

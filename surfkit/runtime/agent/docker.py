@@ -51,7 +51,7 @@ class DockerAgentRuntime(AgentRuntime):
             "agent_name": name,
         }
 
-        port = find_open_port(8000, 9000)
+        port = find_open_port(8001, 9000)
         print("running container")
 
         if llm_providers_local:
@@ -107,7 +107,7 @@ class DockerAgentRuntime(AgentRuntime):
             container = self.client.containers.get(agent_name)
             print(f"Container '{agent_name}' found.")
             response = requests.post(
-                f"http://localhost:{container.attrs['NetworkSettings']['Ports']['8000/tcp'][0]['HostPort']}/v1/tasks",  # type: ignore
+                f"http://localhost:{container.attrs['NetworkSettings']['Ports']['9090/tcp'][0]['HostPort']}/v1/tasks",  # type: ignore
                 json=task.model_dump(),
             )
             print(f"Task posted with response: {response.status_code}, {response.text}")
@@ -130,7 +130,7 @@ class DockerAgentRuntime(AgentRuntime):
         self,
         name: str,
         local_port: Optional[int] = None,
-        pod_port: int = 8000,
+        pod_port: int = 9090,
         background: bool = True,
     ) -> None:
         print("no proxy needed")

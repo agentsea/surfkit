@@ -33,7 +33,7 @@ class AgentInstance:
     def proxy(
         self,
         local_port: Optional[int] = None,
-        pod_port: int = 8000,
+        pod_port: int = 9090,
         background: bool = True,
     ) -> None:
         return self._runtime.proxy(self._name, local_port, pod_port, background)
@@ -99,7 +99,7 @@ class AgentRuntime(Generic[R, C], ABC):
         self,
         name: str,
         local_port: Optional[int] = None,
-        pod_port: int = 8000,
+        pod_port: int = 9090,
         background: bool = True,
     ) -> None:
         pass
