@@ -8,7 +8,7 @@ from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel
 
-from .base import AgentRuntime
+from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
 from surfkit.llm import LLMProvider
 
@@ -44,7 +44,7 @@ class DockerAgentRuntime(AgentRuntime):
         version: Optional[str] = None,
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
-    ) -> None:
+    ) -> AgentInstance:
         labels = {
             "provisioner": "surfkit",
             "agent_type": agent_type.name,
@@ -98,6 +98,8 @@ class DockerAgentRuntime(AgentRuntime):
         if container and type(container) != bytes:
             print(f"ran container '{container.id}'")  # type: ignore
 
+        return AgentInstance(name, agent_type, self)
+
     def solve_task(
         self, agent_name: str, task: SolveTaskModel, follow_logs: bool = False
     ) -> None:
@@ -125,7 +127,11 @@ class DockerAgentRuntime(AgentRuntime):
                 print(f"Error while streaming logs: {e}")
 
     def proxy(
-        self, local_port: int, pod_port: int = 8000, background: bool = True
+        self,
+        name: str,
+        local_port: Optional[int] = None,
+        pod_port: int = 8000,
+        background: bool = True,
     ) -> None:
         print("no proxy needed")
         return

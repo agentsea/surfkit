@@ -26,7 +26,7 @@ from pydantic import BaseModel
 from taskara.models import SolveTaskModel
 from agentdesk.util import find_open_port
 
-from .base import AgentRuntime
+from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
 from surfkit.llm import LLMProvider
 
@@ -570,7 +570,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         version: Optional[str] = None,
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
-    ) -> None:
+    ) -> AgentInstance:
         if not agent_type.image:
             raise ValueError(f"Image not specified for agent type: {agent_type.name}")
         img = agent_type.image
@@ -616,6 +616,8 @@ class KubernetesAgentRuntime(AgentRuntime):
             gpu_mem=agent_type.gpu_mem,
             env_vars=env_vars,
         )
+
+        return AgentInstance(name, agent_type, self)
 
     def solve_task(
         self, agent_name: str, task: SolveTaskModel, follow_logs: bool = False

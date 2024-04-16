@@ -4,10 +4,57 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel
 from taskara.models import SolveTaskModel
 
-from ...types import AgentType
+from surfkit.types import AgentType
 
 R = TypeVar("R", bound="AgentRuntime")
 C = TypeVar("C", bound="BaseModel")
+
+
+class AgentInstance:
+    """A running agent instance"""
+
+    def __init__(self, name: str, type: AgentType, runtime: "AgentRuntime") -> None:
+        self._runtime = runtime
+        self._type = type
+        self._name = name
+
+    @property
+    def type(self) -> AgentType:
+        return self._type
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def runtime(self) -> "AgentRuntime":
+        return self._runtime
+
+    def proxy(
+        self,
+        local_port: Optional[int] = None,
+        pod_port: int = 8000,
+        background: bool = True,
+    ) -> None:
+        return self._runtime.proxy(self._name, local_port, pod_port, background)
+
+    def solve_task(self, task: SolveTaskModel, follow_logs: bool = False) -> None:
+        return self._runtime.solve_task(self._name, task, follow_logs)
+
+    def delete(self) -> None:
+        return self._runtime.delete(self._name)
+
+    def logs(self, follow: bool = False) -> Union[str, Iterator[str]]:
+        """
+        Fetches the logs from the specified pod.
+
+        Parameters:
+            follow (bool): If True, stream logs until the connection
+
+        Returns:
+            str: The logs from the pod.
+        """
+        return self._runtime.logs(self._name, follow)
 
 
 class AgentRuntime(Generic[R, C], ABC):
@@ -34,7 +81,7 @@ class AgentRuntime(Generic[R, C], ABC):
         version: Optional[str] = None,
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
-    ) -> None:
+    ) -> AgentInstance:
         pass
 
     @abstractmethod
@@ -49,7 +96,11 @@ class AgentRuntime(Generic[R, C], ABC):
 
     @abstractmethod
     def proxy(
-        self, name: str, local_port: int, pod_port: int = 8000, background: bool = True
+        self,
+        name: str,
+        local_port: Optional[int] = None,
+        pod_port: int = 8000,
+        background: bool = True,
     ) -> None:
         pass
 
