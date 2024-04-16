@@ -74,6 +74,50 @@ class KubernetesAgentRuntime(AgentRuntime):
     def name(cls) -> str:
         return "kube"
 
+    def create_secret(self, name: str, env_vars: dict) -> client.V1Secret:
+        """
+        Creates a Kubernetes Secret object to store environment variables.
+
+        Parameters:
+            name (str): The base name of the secret, usually related to the pod name.
+            env_vars (dict): A dictionary containing the environment variables as key-value pairs.
+
+        Returns:
+            client.V1Secret: The created Kubernetes Secret object.
+        """
+        secret = client.V1Secret(
+            api_version="v1",
+            kind="Secret",
+            metadata=client.V1ObjectMeta(
+                name=f"{name}-secret",
+                namespace=self.namespace,
+                # This ensures that the secret is deleted when the pod is deleted.
+                labels={"provisioner": "surfkit"},
+                owner_references=[
+                    client.V1OwnerReference(
+                        api_version="v1",
+                        kind="Pod",
+                        name=name,
+                        uid="the UID of the Pod here",  # This should be set dynamically after pod creation
+                    )
+                ],
+            ),
+            data={
+                key: base64.b64encode(value.encode("utf-8")).decode("utf-8")
+                for key, value in env_vars.items()
+            },
+            type="Opaque",
+        )
+        try:
+            self.core_api.create_namespaced_secret(
+                namespace=self.namespace, body=secret
+            )
+            print(f"Secret created: {name}-secret")
+            return secret
+        except ApiException as e:
+            print(f"Failed to create secret: {e}")
+            raise
+
     def create(
         self,
         image: str,
@@ -85,69 +129,75 @@ class KubernetesAgentRuntime(AgentRuntime):
         gpu_mem: Optional[str] = None,
         env_vars: Optional[dict] = None,
     ) -> None:
-        if mem_request:
-            if mem_request.isdigit():
-                mem_request = f"{mem_request}Gi"
-        if mem_limit:
-            if mem_limit.isdigit():
-                mem_limit = f"{mem_limit}Gi"
         if not name:
             name = get_random_name("-")
             if not name:
                 raise ValueError("Could not generate a random name")
 
-        labels = {"provisioner": "surfkit"}
+        secret = None
+        if env_vars:
+            # Create a secret for the environment variables
+            secret: Optional[client.V1Secret] = self.create_secret(name, env_vars)
+            env_from = [
+                client.V1EnvFromSource(
+                    secret_ref=client.V1SecretEnvSource(name=secret.metadata.name)  # type: ignore
+                )
+            ]
+        else:
+            env_from = []
 
-        # Define resource requirements
+        # Resource configurations as before
         resources = client.V1ResourceRequirements(
             requests={"memory": mem_request, "cpu": cpu_request},
             limits={"memory": mem_limit, "cpu": cpu_limit},
         )
-
         if gpu_mem:
-            if "limits" in resources:  # type: ignore
-                resources.limits["nvidia.com/gpu"] = gpu_mem  # type: ignore
-            else:
-                resources.limits = {"nvidia.com/gpu": gpu_mem}
+            resources.limits["nvidia.com/gpu"] = gpu_mem  # type: ignore
 
-        print("running with resources: ", resources)
+        print("\nusing resources: ", resources.__dict__)
 
-        # Define the container with environment variables
-        env_list = []
-        if env_vars:
-            for key, value in env_vars.items():
-                env_list.append(client.V1EnvVar(name=key, value=value))
-
+        # Container configuration
         container = client.V1Container(
             name=name,
             image=image,
-            ports=[client.V1ContainerPort(container_port=8080)],
+            ports=[client.V1ContainerPort(container_port=8000)],
             resources=resources,
-            env=env_list,
+            env_from=env_from,  # Using envFrom to source env vars from the secret
             image_pull_policy="Always",
         )
 
-        # Create a Pod specification
+        print("\ncreating container: ", container.__dict__)
+
+        # Pod specification
         pod_spec = client.V1PodSpec(
             containers=[container],
-            restart_policy="Never",  # 'Always' if you want the pod to restart on failure
+            restart_policy="Never",
         )
 
-        # Create the Pod
+        # Pod creation
         pod = client.V1Pod(
             api_version="v1",
             kind="Pod",
-            metadata=client.V1ObjectMeta(name=name, labels=labels),
+            metadata=client.V1ObjectMeta(name=name, labels={"provisioner": "surfkit"}),
             spec=pod_spec,
         )
 
-        # Launch the Pod
-        print("Creating pod")
         try:
-            self.core_api.create_namespaced_pod(namespace="default", body=pod)
-            print(f"Pod created. name='{name}'")
+            created_pod = self.core_api.create_namespaced_pod(
+                namespace=self.namespace, body=pod
+            )
+            print(f"Pod created with name='{name}'")
+            # Update secret's owner reference UID to newly created pod's UID
+            if secret:
+                print("updating secret refs...")
+                secret.metadata.owner_references[0].uid = created_pod.metadata.uid  # type: ignore
+                self.core_api.patch_namespaced_secret(
+                    name=secret.metadata.name, namespace=self.namespace, body=secret  # type: ignore
+                )
+                print("secret refs updated")
         except ApiException as e:
             print(f"Exception when creating pod: {e}")
+            raise
 
         self.wait_pod_ready(name)
         self.wait_for_http_200(name)
@@ -571,6 +621,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
     ) -> AgentInstance:
+        print("creating agent with type: ", agent_type.__dict__)
         if not agent_type.image:
             raise ValueError(f"Image not specified for agent type: {agent_type.name}")
         img = agent_type.image
