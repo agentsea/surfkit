@@ -7,21 +7,7 @@ import yaml
 import typer
 import webbrowser
 from namesgenerator import get_random_name
-from taskara.models import SolveTaskModel
-from taskara import Task
 import requests
-
-from surfkit.config import GlobalConfig, HUB_URL
-from surfkit.runtime.agent.docker import (
-    DockerAgentRuntime,
-    ConnectConfig as DockerConnectConfig,
-)
-from surfkit.runtime.agent.kube import (
-    KubernetesAgentRuntime,
-    ConnectConfig as KubeConnectConfig,
-)
-from surfkit.models import AgentTypeModel
-from surfkit.types import AgentType
 
 
 art = """
@@ -139,6 +125,8 @@ def get_type(name: str):
 # Other commands
 @app.command(help="Login to the hub")
 def login():
+    from surfkit.config import GlobalConfig, HUB_URL
+
     url = urljoin(HUB_URL, "cli-login")
     typer.echo(f"\nVisit {url} to get an API key\n")
 
@@ -158,11 +146,15 @@ def deploy():
 
 
 @app.command(help="Publish an agent")
-def publish():
-    url = urljoin(HUB_URL, "agenttypes")
+def publish(path: str = "./agent.yaml"):
+    from surfkit.config import GlobalConfig, HUB_URL
+
+    url = urljoin(HUB_URL, "v1/agenttypes")
     typer.echo(f"\nPublishing agent to {url}...\n")
 
-    with open("agent.yaml", "r") as f:
+    from surfkit.models import AgentTypeModel
+
+    with open(path, "r") as f:
         agent_type = AgentTypeModel.model_validate(yaml.safe_load(f))
 
     config = GlobalConfig.read()
@@ -189,12 +181,24 @@ def solve(
     runtime: str = "docker",
 ):
     typer.echo(f"Solving task {description}...")
+    from taskara.models import SolveTaskModel
+    from taskara import Task
 
     if runtime == "docker":
+        from surfkit.runtime.agent.docker import (
+            DockerAgentRuntime,
+            ConnectConfig as DockerConnectConfig,
+        )
+
         dconf = DockerConnectConfig()
         runt = DockerAgentRuntime(config=dconf)
 
     elif runtime == "kube":
+        from surfkit.runtime.agent.kube import (
+            KubernetesAgentRuntime,
+            ConnectConfig as KubeConnectConfig,
+        )
+
         kconf = KubeConnectConfig()
         runt = KubernetesAgentRuntime(cfg=kconf)
 
@@ -221,11 +225,24 @@ def run(
             raise ValueError("could not generate name")
     typer.echo(f"Running agent '{agent_file}' with runtime '{runtime}'...")
 
+    from surfkit.models import AgentTypeModel
+    from surfkit.types import AgentType
+
     if runtime == "docker":
+        from surfkit.runtime.agent.docker import (
+            DockerAgentRuntime,
+            ConnectConfig as DockerConnectConfig,
+        )
+
         conf = DockerConnectConfig()
         runt = DockerAgentRuntime(config=conf)
 
     elif runtime == "kube":
+        from surfkit.runtime.agent.kube import (
+            KubernetesAgentRuntime,
+            ConnectConfig as KubeConnectConfig,
+        )
+
         conf = KubeConnectConfig()
         runt = KubernetesAgentRuntime(cfg=conf)
 

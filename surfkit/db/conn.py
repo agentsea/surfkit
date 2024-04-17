@@ -37,9 +37,9 @@ def get_pg_conn() -> Engine:
 
 
 def get_sqlite_conn() -> Engine:
-    print("\nconnecting to local sqlite db ./data/guisurfer.db")
-    os.makedirs(os.path.dirname("./data/guisurfer.db"), exist_ok=True)
-    engine = create_engine("sqlite:///./data/guisurfer.db")
+    print("\nconnecting to local sqlite db ./data/surfkit.db")
+    os.makedirs(os.path.dirname("./data/surfkit.db"), exist_ok=True)
+    engine = create_engine("sqlite:///./data/surfkit.db")
     return engine
 
 
