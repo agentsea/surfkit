@@ -132,8 +132,8 @@ class AgentType(WithDB):
             owner_id=self.owner_id,
             public=self.public,
             icon=self.icon,
-            resource_limits=json.dumps(self.resource_limits),
-            resource_requests=json.dumps(self.resource_requests),
+            resource_limits=json.dumps(self.resource_limits.model_dump()),
+            resource_requests=json.dumps(self.resource_requests.model_dump()),
             llm_providers=llm_providers,
             devices=devices,
             meters=meters,
@@ -247,11 +247,6 @@ class AgentType(WithDB):
         """
         # Track if any updates are needed
         updated = False
-
-        # Compare and update fields
-        if self.name != model.name:
-            self.name = model.name
-            updated = True
 
         if self.description != model.description:
             self.description = model.description
