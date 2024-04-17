@@ -35,10 +35,6 @@ CMD ["uvicorn", "{package_name}.server:app", "--host=0.0.0.0", "--port=9090", "-
 """
 
 
-def generate_main() -> str:
-    return ""
-
-
 def generate_server(agent_name: str) -> str:
     return f"""
 from fastapi import FastAPI, BackgroundTasks
@@ -184,6 +180,163 @@ def get_remote_task(id: str, owner_id: str) -> Task:
         print("error getting remote task: ", e)
         raise e
 
+"""
+
+
+def generate_main() -> str:
+    return f"""
+import argparse
+import logging
+import yaml
+
+from rich.console import Console
+from agentdesk.device import Desktop, ProvisionConfig
+from agentdesk.vm.gce import GCEProvider
+from agentdesk.vm.ec2 import EC2Provider
+from agentdesk.vm.qemu import QemuProvider
+from taskara import Task
+from taskara.models import SolveTaskModel
+from surfkit.types import AgentType
+from surfkit.models import AgentTypeModel
+from surfkit.runtime.agent.load import (
+    load_agent_runtime,
+    AgentRuntimeConfig,
+    DockerConnectConfig,
+    KubeConnectConfig,
+)
+from namesgenerator import get_random_name
+
+
+console = Console()
+
+DEFAULT_PROXY_PORT = 9123
+
+parser = argparse.ArgumentParser(description="Run the agent with optional debug mode.")
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="Enable debug mode for more verbose output.",
+    default=False,
+)
+parser.add_argument(
+    "--task",
+    type=str,
+    help="Specify the task to run.",
+    required=True,
+)
+parser.add_argument(
+    "--max_steps",
+    type=int,
+    help="Max steps the agent can take",
+    default=10,
+)
+parser.add_argument(
+    "--site",
+    type=str,
+    help="Max steps the agent can take",
+    default=None,
+)
+parser.add_argument(
+    "--version",
+    type=str,
+    help="Agent version to use",
+    default=None,
+)
+parser.add_argument(
+    "--device-runtime",
+    type=str,
+    help="Device runtime to use",
+    default="gce",
+)
+parser.add_argument(
+    "--agent-runtime",
+    type=str,
+    help="Agent runtime to use",
+    default="kube",
+)
+parser.add_argument(
+    "--region",
+    type=str,
+    help="Region to use",
+    default="us-east-1",
+)
+parser.add_argument(
+    "--agent-type",
+    type=str,
+    help="Agent type filepath",
+    default="./agent.yaml",
+)
+parser.add_argument(
+    "--name",
+    type=str,
+    help="Agent name",
+    default=get_random_name("-"),
+)
+parser.add_argument(
+    "--namespace",
+    type=str,
+    help="Kubernetes namespace",
+    default="default",
+)
+args = parser.parse_args()
+
+if args.debug:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
+
+console.print(
+    f"solving task '{{args.task}}' on site '{{args.site}}' with max steps {{args.max_steps}}",
+    style="green",
+)
+
+if args.device_runtime == "gce":
+    provider = GCEProvider()
+elif args.device_runtime == "ec2":
+    provider = EC2Provider(region=args.region)
+else:
+    provider = QemuProvider()
+
+parameters = {{"site": args.site}}
+task = Task(description=args.task, owner_id="local", parameters=parameters)
+
+with open(args.agent_type) as f:
+    agent_data = yaml.safe_load(f)
+    agent_schema = AgentTypeModel(**agent_data)
+agent_type = AgentType.from_schema(agent_schema)
+
+console.print("Creating device...", style="green")
+print("\nprovider data: ", provider.to_data())
+config = ProvisionConfig(provider=provider.to_data())
+device: Desktop = Desktop.ensure("gpt4v-demo1", config=config)
+
+# View the desktop, we'll run in the background so it doesn't block
+device.view(background=True)
+
+if args.agent_runtime == "docker":
+    print("using docker runtime...")
+    dconf = DockerConnectConfig()
+    conf = AgentRuntimeConfig(provider="docker", docker_config=dconf)
+elif args.agent_runtime == "kube":
+    print("using kube runtime...")
+    kconf = KubeConnectConfig()
+    conf = AgentRuntimeConfig(provider="kube", kube_config=kconf)
+else:
+    raise ValueError("Unknown agent runtime")
+
+runtime = load_agent_runtime(conf)
+
+print("\ndevice schema: ", device.to_schema())
+console.print("Running agent...", style="green")
+agent = runtime.run(agent_type, args.name, args.version, llm_providers_local=True)
+
+agent.proxy(DEFAULT_PROXY_PORT)
+console.print(f"Proxying agent to port {{DEFAULT_PROXY_PORT}}", style="green")
+
+task_model = SolveTaskModel(
+    task=task.to_schema(), device=device.to_schema(), max_steps=args.max_steps
+)
+agent.solve_task(task_model, follow_logs=True)
 """
 
 

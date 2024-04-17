@@ -15,6 +15,8 @@ from .models import (
     DeviceConfig,
     RuntimeModel,
     MeterModel,
+    ResourceLimitsModel,
+    ResourceRequestsModel,
 )
 
 
@@ -32,11 +34,8 @@ class AgentType(WithDB):
         env_opts: List[EnvVarOptModel] = [],
         public: bool = False,
         icon: Optional[str] = None,
-        mem_request: Optional[str] = "500m",
-        mem_limit: Optional[str] = "2Gi",
-        cpu_request: Optional[str] = "1",
-        cpu_limit: Optional[str] = "4",
-        gpu_mem: Optional[str] = None,
+        resource_requests: ResourceRequestsModel = ResourceRequestsModel(),
+        resource_limits: ResourceLimitsModel = ResourceLimitsModel(),
         llm_providers: Optional[LLMProviders] = None,
         devices: List[DeviceConfig] = [],
         repo: Optional[str] = None,
@@ -52,11 +51,8 @@ class AgentType(WithDB):
         self.env_opts = env_opts
         self.public = public
         self.icon = icon
-        self.mem_request = mem_request
-        self.mem_limit = mem_limit
-        self.cpu_request = cpu_request
-        self.cpu_limit = cpu_limit
-        self.gpu_mem = gpu_mem
+        self.resource_requests = resource_requests
+        self.resource_limits = resource_limits
         self.created = time.time()
         self.updated = time.time()
         self.llm_providers: Optional[LLMProviders] = llm_providers
@@ -78,11 +74,8 @@ class AgentType(WithDB):
             updated=self.updated,
             public=self.public,
             icon=self.icon,
-            mem_request=self.mem_request,
-            mem_limit=self.mem_limit,
-            cpu_request=self.cpu_request,
-            cpu_limit=self.cpu_limit,
-            gpu_mem=self.gpu_mem,
+            resource_requests=self.resource_requests,
+            resource_limits=self.resource_limits,
             llm_providers=self.llm_providers,
             devices=self.devices,
             owner_id=self.owner_id,
@@ -104,11 +97,8 @@ class AgentType(WithDB):
         obj.updated = schema.updated
         obj.public = schema.public
         obj.icon = schema.icon
-        obj.mem_limit = schema.mem_limit
-        obj.mem_request = schema.mem_request
-        obj.cpu_limit = schema.cpu_limit
-        obj.cpu_request = schema.cpu_request
-        obj.gpu_mem = schema.gpu_mem
+        obj.resource_requests = schema.resource_requests
+        obj.resource_limits = schema.resource_limits
         obj.versions = schema.versions
         obj.llm_providers = schema.llm_providers
         obj.devices = schema.devices
@@ -136,17 +126,14 @@ class AgentType(WithDB):
             image=self.image,
             versions=versions,
             env_opts=json.dumps([opt.model_dump() for opt in self.env_opts]),
-            runtimes=json.dumps(self.runtimes),
+            runtimes=json.dumps([runtime.model_dump() for runtime in self.runtimes]),
             created=self.created,
             updated=self.updated,
             owner_id=self.owner_id,
             public=self.public,
             icon=self.icon,
-            mem_limit=self.mem_limit,
-            mem_request=self.mem_request,
-            cpu_limit=self.cpu_limit,
-            cpu_request=self.cpu_request,
-            gpu_mem=self.gpu_mem,
+            resource_limits=json.dumps(self.resource_limits),
+            resource_requests=json.dumps(self.resource_requests),
             llm_providers=llm_providers,
             devices=devices,
             meters=meters,
@@ -181,17 +168,24 @@ class AgentType(WithDB):
         obj.env_opts = [
             EnvVarOptModel(**opt) for opt in json.loads(str(record.env_opts))
         ]
-        obj.runtimes = json.loads(str(record.runtimes))
+        obj.runtimes = [
+            RuntimeModel(**runtime) for runtime in json.loads(str(record.runtimes))
+        ]
         obj.created = record.created
         obj.updated = record.updated
         obj.owner_id = record.owner_id
         obj.public = record.public
         obj.icon = record.icon
-        obj.mem_limit = record.mem_limit
-        obj.mem_request = record.mem_request
-        obj.cpu_limit = record.cpu_limit
-        obj.cpu_request = record.cpu_request
-        obj.gpu_mem = record.gpu_mem
+        obj.resource_requests = (
+            ResourceRequestsModel(**json.loads(str(record.resource_requests)))
+            if record.resource_requests  # type: ignore
+            else ResourceRequestsModel()
+        )
+        obj.resource_limits = (
+            ResourceLimitsModel(**json.loads(str(record.resource_limits)))
+            if record.resource_limits  # type: ignore
+            else ResourceLimitsModel()
+        )
         obj.llm_providers = llm_providers
         obj.devices = devices
         obj.meters = meters
@@ -287,24 +281,12 @@ class AgentType(WithDB):
             self.icon = model.icon
             updated = True
 
-        if self.mem_request != model.mem_request:
-            self.mem_request = model.mem_request
+        if self.resource_requests != model.resource_requests:
+            self.resource_requests = model.resource_requests
             updated = True
 
-        if self.mem_limit != model.mem_limit:
-            self.mem_limit = model.mem_limit
-            updated = True
-
-        if self.cpu_request != model.cpu_request:
-            self.cpu_request = model.cpu_request
-            updated = True
-
-        if self.cpu_limit != model.cpu_limit:
-            self.cpu_limit = model.cpu_limit
-            updated = True
-
-        if self.gpu_mem != model.gpu_mem:
-            self.gpu_mem = model.gpu_mem
+        if self.resource_limits != model.resource_limits:
+            self.resource_limits = model.resource_limits
             updated = True
 
         if self.llm_providers != model.llm_providers:

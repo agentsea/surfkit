@@ -11,6 +11,7 @@ import base64
 import subprocess
 import atexit
 import signal
+import sys
 
 from kubernetes import client, config
 from google.oauth2 import service_account
@@ -29,6 +30,7 @@ from agentdesk.util import find_open_port
 from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
 from surfkit.llm import LLMProvider
+from surfkit.models import ResourceLimitsModel, ResourceRequestsModel
 
 
 class GKEOpts(BaseModel):
@@ -69,6 +71,8 @@ class KubernetesAgentRuntime(AgentRuntime):
 
         self.core_api = core_v1_api.CoreV1Api()
         self.namespace = cfg.namespace
+        self.subprocesses = []
+        self.setup_signal_handlers()
 
     @classmethod
     def name(cls) -> str:
@@ -112,11 +116,8 @@ class KubernetesAgentRuntime(AgentRuntime):
         self,
         image: str,
         name: Optional[str] = None,
-        mem_request: Optional[str] = "500m",
-        mem_limit: Optional[str] = "2Gi",
-        cpu_request: Optional[str] = "1",
-        cpu_limit: Optional[str] = "4",
-        gpu_mem: Optional[str] = None,
+        resource_requests: ResourceRequestsModel = ResourceRequestsModel(),
+        resource_limits: ResourceLimitsModel = ResourceLimitsModel(),
         env_vars: Optional[dict] = None,
     ) -> None:
         if not name:
@@ -129,7 +130,6 @@ class KubernetesAgentRuntime(AgentRuntime):
             # Create a secret for the environment variables
             print("creating secret...")
             secret: Optional[client.V1Secret] = self.create_secret(name, env_vars)
-            print("secret created: ", secret.__dict__)
             env_from = [
                 client.V1EnvFromSource(
                     secret_ref=client.V1SecretEnvSource(name=secret.metadata.name)  # type: ignore
@@ -140,11 +140,11 @@ class KubernetesAgentRuntime(AgentRuntime):
 
         # Resource configurations as before
         resources = client.V1ResourceRequirements(
-            requests={"memory": mem_request, "cpu": cpu_request},
-            limits={"memory": mem_limit, "cpu": cpu_limit},
+            requests={"memory": resource_requests.memory, "cpu": resource_requests.cpu},
+            limits={"memory": resource_limits.memory, "cpu": resource_limits.cpu},
         )
-        if gpu_mem:
-            raise ValueError("GPU support not yet implemented")
+        if resource_requests.gpu:
+            raise ValueError("GPU resource requests are not supported")
 
         print("\nusing resources: ", resources.__dict__)
 
@@ -158,7 +158,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             image_pull_policy="Always",
         )
 
-        print("\ncreating container: ", container.__dict__)
+        # print("\ncreating container: ", container.__dict__)
 
         # Pod specification
         pod_spec = client.V1PodSpec(
@@ -309,8 +309,12 @@ class KubernetesAgentRuntime(AgentRuntime):
         Raises:
             RuntimeError: If the response is not 200 after the specified retries.
         """
-        print(f"Checking HTTP 200 readiness for pod {name} on path {path}")
-        status_code, response_text = self.call(name, path, "GET", port)
+        print(
+            f"Checking HTTP 200 readiness for pod {name} on path {path} and port: {port}"
+        )
+        status_code, response_text = self.call(
+            name=name, path=path, method="GET", port=port
+        )
         if status_code != 200:
             print(f"Received status code {status_code}, retrying...")
             raise Exception(
@@ -501,65 +505,48 @@ class KubernetesAgentRuntime(AgentRuntime):
             except:
                 pass
 
+    def setup_signal_handlers(self):
+        signal.signal(signal.SIGINT, self.graceful_exit)
+        signal.signal(signal.SIGTERM, self.graceful_exit)
+        atexit.register(self.cleanup_subprocesses)
+
+    def _register_cleanup(self, proc: subprocess.Popen):
+        self.subprocesses.append(proc)
+
+    def cleanup_subprocesses(self):
+        for proc in self.subprocesses:
+            if proc.poll() is None:  # Process is still running
+                proc.terminate()
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+        self.subprocesses = []  # Clear the list after cleaning up
+
+    def graceful_exit(self, signum, frame):
+        self.cleanup_subprocesses()
+        sys.exit(signum)  # Exit with the signal number
+
     def proxy(
         self,
         name: str,
         local_port: Optional[int] = None,
         pod_port: int = 9090,
         background: bool = True,
-    ) -> None:
-        """
-        Sets up a port forwarding between a local port and a pod port using kubectl command.
-
-        Parameters:
-            name (str): The name of the pod to port-forward to.
-            local_port (int): The local port number to forward to pod_port.
-            pod_port (int): The pod port number to be forwarded, defaults to 9090.
-            background (bool): If True, runs the port forwarding in the background and returns immediately.
-        """
+    ):
         if local_port is None:
             local_port = find_open_port(8001, 9000)
         cmd = f"kubectl port-forward pod/{name} {local_port}:{pod_port} -n {self.namespace}"
         if background:
-            # Start the subprocess in the background
             proc = subprocess.Popen(
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             self._register_cleanup(proc)
-            print(
-                f"Port-forwarding setup: Local port {local_port} -> Pod {name}:{pod_port}"
-            )
         else:
-            # Run the subprocess in the foreground, block until the user terminates it
             try:
-                print(
-                    f"Starting port-forwarding: Local port {local_port} -> Pod {name}:{pod_port}"
-                )
                 subprocess.run(cmd, shell=True, check=True)
             except subprocess.CalledProcessError as e:
-                print(f"Failed to start port-forwarding: {e}")
-                raise
-
-    def _register_cleanup(self, proc: subprocess.Popen):
-        """
-        Registers cleanup actions on process termination.
-
-        Parameters:
-            proc (subprocess.Popen): The process to clean up.
-        """
-
-        def cleanup():
-            if proc.poll() is None:  # Process is still running
-                proc.terminate()  # or send any other signal you think necessary
-                try:
-                    proc.wait(timeout=10)  # Give it a few seconds to terminate
-                except subprocess.TimeoutExpired:
-                    proc.kill()  # Force kill if not terminated in time
-                print("Port-forwarding process terminated.")
-
-        atexit.register(cleanup)
-        signal.signal(signal.SIGINT, lambda s, f: cleanup())
-        signal.signal(signal.SIGTERM, lambda s, f: cleanup())
+                raise RuntimeError(f"Port forwarding failed: {e}")
 
     def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
         """
@@ -578,7 +565,7 @@ class KubernetesAgentRuntime(AgentRuntime):
                 name=name,
                 namespace=self.namespace,
                 follow=follow,
-                pretty=True,
+                pretty="true",
                 _preload_content=False,  # Important to return a generator when following
             )
         except ApiException as e:
@@ -667,11 +654,8 @@ class KubernetesAgentRuntime(AgentRuntime):
         self.create(
             image=img,
             name=name,
-            mem_request=agent_type.mem_request,
-            mem_limit=agent_type.mem_limit,
-            cpu_request=agent_type.cpu_request,
-            cpu_limit=agent_type.cpu_limit,
-            gpu_mem=agent_type.gpu_mem,
+            resource_requests=agent_type.resource_requests,
+            resource_limits=agent_type.resource_limits,
             env_vars=env_vars,
         )
 
@@ -705,7 +689,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             try:
                 log_lines = self.logs(name=agent_name, follow=True)
                 for line in log_lines:
-                    print(line)
+                    print(line.decode("utf-8"))  # type: ignore
             except ApiException as e:
                 print(f"Failed to follow logs for pod '{agent_name}': {e}")
                 raise

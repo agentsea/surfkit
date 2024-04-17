@@ -5,6 +5,7 @@ import json
 
 from litellm import Router
 from taskara import Task
+from litellm._logging import handler
 
 from .models import EnvVarOptModel, LLMProviderOption
 from .types import AgentType
@@ -16,7 +17,7 @@ class LLMProvider:
     """
 
     provider_api_keys: Dict[str, str] = {
-        "gpt-4-vision-preview": "OPENAI_API_KEY",
+        "gpt-4-turbo": "OPENAI_API_KEY",
         "anthropic/claude-3-opus-20240229": "ANTHROPIC_API_KEY",
         "gemini/gemini-pro-vision": "GEMINI_API_KEY",
     }
@@ -72,9 +73,16 @@ class LLMProvider:
             timeout=timeout,
             allowed_fails=allow_fails,
             num_retries=num_retries,
-            # set_verbose=True,
+            set_verbose=False,
+            debug_level="INFO",
             fallbacks=fallbacks,
         )
+
+        verbose_router_logger = logging.getLogger("LiteLLM Router")
+        verbose_router_logger.setLevel(logging.ERROR)
+        verbose_logger = logging.getLogger("LiteLLM")
+        verbose_logger.setLevel(logging.ERROR)
+        handler.setLevel(logging.ERROR)
 
     @classmethod
     def opts_for_type(cls, type: AgentType) -> List[LLMProviderOption]:
@@ -132,10 +140,13 @@ class LLMProvider:
         if not model:
             model = self.model
 
+        def log_fn(model_call_dict):
+            print(f"\nmodel call details: {model_call_dict}")
+
         # print(f"calling chat completion for model {self.model} with msgs: ", msgs)
         response = self.router.completion(model, msgs)
 
-        # print("llm response: ", response.__dict__)
+        print("llm response: ", response.__dict__)
         logging.debug("response: ", response)
 
         if task:

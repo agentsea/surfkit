@@ -9,6 +9,7 @@ import webbrowser
 from namesgenerator import get_random_name
 from taskara.models import SolveTaskModel
 from taskara import Task
+import requests
 
 from surfkit.config import GlobalConfig, HUB_URL
 from surfkit.runtime.agent.docker import (
@@ -158,7 +159,20 @@ def deploy():
 
 @app.command(help="Publish an agent")
 def publish():
-    typer.echo("Publishing...")
+    url = urljoin(HUB_URL, "agenttypes")
+    typer.echo(f"\nPublishing agent to {url}...\n")
+
+    with open("agent.yaml", "r") as f:
+        agent_type = AgentTypeModel.model_validate(yaml.safe_load(f))
+
+    config = GlobalConfig.read()
+    if not config.api_key:
+        raise ValueError("No API key found. Please run `surfkit login` first.")
+
+    headers = {"Authorization": f"Bearer {config.api_key}"}
+    resp = requests.post(url, json=agent_type.model_dump(), headers=headers)
+    resp.raise_for_status()
+    typer.echo(f"Agent published!")
 
 
 @app.command(help="Initialize an agent repo")

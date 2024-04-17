@@ -46,6 +46,17 @@ class RuntimeModel(BaseModel):
     preference: List[str] = []
 
 
+class ResourceLimitsModel(BaseModel):
+    cpu: str = "2"
+    memory: str = "2Gi"
+
+
+class ResourceRequestsModel(BaseModel):
+    cpu: str = "1"
+    memory: str = "500m"
+    gpu: Optional[str] = None
+
+
 class AgentTypeModel(BaseModel):
     version: Optional[str] = None
     kind: Optional[str] = None
@@ -62,11 +73,8 @@ class AgentTypeModel(BaseModel):
     updated: Optional[float] = None
     public: bool = False
     icon: Optional[str] = None
-    mem_request: Optional[str] = "500m"
-    mem_limit: Optional[str] = "2Gi"
-    cpu_request: Optional[str] = "1"
-    cpu_limit: Optional[str] = "4"
-    gpu_mem: Optional[str] = None
+    resource_requests: ResourceRequestsModel = ResourceRequestsModel()
+    resource_limits: ResourceLimitsModel = ResourceLimitsModel()
     llm_providers: Optional[LLMProviders] = None
     devices: List[DeviceConfig] = []
     meters: List[MeterModel] = []
@@ -83,6 +91,7 @@ class CreateAgentTypeModel(BaseModel):
     image: str
     env_opts: List[EnvVarOptModel] = []
     supported_runtimes: List[str] = []
+    versions: Dict[str, str] = {}
     public: bool = False
     icon: Optional[str] = None
 
