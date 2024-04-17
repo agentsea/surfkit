@@ -5,12 +5,13 @@ from typing import Optional
 import os
 import yaml
 
-from .env import AGENTSEA_HUB_URL_ENV, HUB_SERVER_ENV
+from .env import AGENTSEA_HUB_URL_ENV, HUB_SERVER_ENV, HUB_SERVER_API_ENV
 
 import rootpath
 
 AGENTSEA_HUB_URL = os.getenv(AGENTSEA_HUB_URL_ENV, "https://hub.agentsea.ai")
 HUB_URL = os.getenv(HUB_SERVER_ENV, "https://surf.agentlabs.xyz")
+HUB_API_URL = os.getenv(HUB_SERVER_API_ENV, "https://api.surf.agentlabs.xyz")
 
 
 @dataclass

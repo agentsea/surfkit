@@ -147,9 +147,9 @@ def deploy():
 
 @app.command(help="Publish an agent")
 def publish(path: str = "./agent.yaml"):
-    from surfkit.config import GlobalConfig, HUB_URL
+    from surfkit.config import GlobalConfig, HUB_API_URL
 
-    url = urljoin(HUB_URL, "v1/agenttypes")
+    url = urljoin(HUB_API_URL, "v1/agenttypes")
     typer.echo(f"\nPublishing agent to {url}...\n")
 
     from surfkit.models import AgentTypeModel
