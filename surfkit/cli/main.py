@@ -94,32 +94,38 @@ def create_agent(name: str, type: str = "SurfDino"):
 @list_group.command("agents")
 def list_agents():
     typer.echo("Listing agents")
+    raise NotImplementedError()
 
 
 @list_group.command("devices")
 def list_devices():
     typer.echo("Listing devices")
+    raise NotImplementedError()
 
 
 @list_group.command("types")
 def list_types():
-    typer.echo("Listing desktops")
+    typer.echo("Listing agent types")
+    raise NotImplementedError()
 
 
 # 'get' sub-commands
 @get.command("agent")
 def get_agent(name: str):
     typer.echo(f"Getting agent: {name}")
+    raise NotImplementedError()
 
 
 @get.command("device")
 def get_device(name: str):
     typer.echo(f"Getting device: {name}")
+    raise NotImplementedError()
 
 
 @get.command("type")
 def get_type(name: str):
     typer.echo(f"Getting type: {name}")
+    raise NotImplementedError()
 
 
 # Other commands
@@ -138,11 +144,6 @@ def login():
     config.write()
 
     typer.echo("\nLogin successful!")
-
-
-@app.command(help="Deploy an agent")
-def deploy():
-    typer.echo("Deploying...")
 
 
 @app.command(help="Publish an agent")
@@ -167,9 +168,9 @@ def publish(path: str = "./agent.yaml"):
     typer.echo(f"Agent published!")
 
 
-@app.command(help="Initialize an agent repo")
-def init():
-    typer.echo("Initializing...")
+@app.command(help="Create a new agent repo")
+def new():
+    raise NotImplementedError()
 
 
 @app.command(help="Use an agent to solve a task")
