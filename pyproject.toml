@@ -19,7 +19,7 @@ kubernetes = "^29.0.0"
 devicebay = "^0.1.11"
 litellm = "^1.35.8"
 taskara = "^0.1.32"
-agentdesk = "^0.2.64"
+agentdesk = "^0.2.65"
 
 
 [tool.poetry.group.dev.dependencies]

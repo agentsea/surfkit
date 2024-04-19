@@ -119,6 +119,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         resource_requests: ResourceRequestsModel = ResourceRequestsModel(),
         resource_limits: ResourceLimitsModel = ResourceLimitsModel(),
         env_vars: Optional[dict] = None,
+        owner_id: Optional[str] = None,
     ) -> None:
         if not name:
             name = get_random_name("-")
@@ -170,7 +171,11 @@ class KubernetesAgentRuntime(AgentRuntime):
         pod = client.V1Pod(
             api_version="v1",
             kind="Pod",
-            metadata=client.V1ObjectMeta(name=name, labels={"provisioner": "surfkit"}),
+            metadata=client.V1ObjectMeta(
+                name=name,
+                labels={"provisioner": "surfkit"},
+                annotations={"owner": owner_id},
+            ),
             spec=pod_spec,
         )
 
@@ -614,6 +619,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         version: Optional[str] = None,
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
+        owner_id: Optional[str] = None,
     ) -> AgentInstance:
         print("creating agent with type: ", agent_type.__dict__)
         if not agent_type.image:
@@ -657,6 +663,7 @@ class KubernetesAgentRuntime(AgentRuntime):
             resource_requests=agent_type.resource_requests,
             resource_limits=agent_type.resource_limits,
             env_vars=env_vars,
+            owner_id=owner_id,
         )
 
         return AgentInstance(name, agent_type, self)

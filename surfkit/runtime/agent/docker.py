@@ -44,6 +44,7 @@ class DockerAgentRuntime(AgentRuntime):
         version: Optional[str] = None,
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
+        owner_id: Optional[str] = None,
     ) -> AgentInstance:
         labels = {
             "provisioner": "surfkit",
