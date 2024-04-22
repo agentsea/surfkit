@@ -3850,20 +3850,20 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.32"
+version = "0.1.33"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.32-py3-none-any.whl", hash = "sha256:30177e73b318e3e9a2bdb0ff617bdd77bc74b6c36688cf79c80394a9efeeaec9"},
-    {file = "taskara-0.1.32.tar.gz", hash = "sha256:58f6e98855f21e0db9cc8949bb52466c4e3818fea6819207133c698fb149d97e"},
+    {file = "taskara-0.1.33-py3-none-any.whl", hash = "sha256:d376f57b1713be3e117b06a8fd560b1df6ef4cbfddb7a34603f35bb95c4610dc"},
+    {file = "taskara-0.1.33.tar.gz", hash = "sha256:b2fe210b048c7239d823d7357cc5226359dcbbb5c292054c3be2a7574d5ff96d"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.8,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
-threadmem = ">=0.2.15,<0.3.0"
+threadmem = ">=0.2.17,<0.3.0"
 
 [[package]]
 name = "tenacity"
@@ -3895,13 +3895,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.16"
+version = "0.2.17"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.16-py3-none-any.whl", hash = "sha256:a727c88637434e433c3a8c7576e72f01566ce6286ea01b5411fab742c7115f42"},
-    {file = "threadmem-0.2.16.tar.gz", hash = "sha256:3973c5cbb46854835eba944b4bb7d72ad2a186216260342cd859db7636c9506e"},
+    {file = "threadmem-0.2.17-py3-none-any.whl", hash = "sha256:2dc7cdeee97b3d9ebcbfdb5ce9aad02fcdbd6718171355d6a0434bd6654b3520"},
+    {file = "threadmem-0.2.17.tar.gz", hash = "sha256:69bb71ccad6cf5be397dde1c8f26b4188140a09ed32ea1c92e70660749ceb0b6"},
 ]
 
 [package.dependencies]
@@ -4755,4 +4755,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "d9764e0340b4e9e4d9e8484b7f5218b8be2d8d72b9a7e7527a1b1895cc2862c2"
+content-hash = "02ca2faf6f76393cd34ebcf2520da0029108f4eda73083b8e206f6e0c5120312"
