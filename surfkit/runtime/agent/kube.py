@@ -24,7 +24,7 @@ from kubernetes.client.api import core_v1_api
 from namesgenerator import get_random_name
 from tenacity import retry
 from pydantic import BaseModel
-from taskara.models import SolveTaskModel
+from taskara.server.models import SolveTaskModel
 from agentdesk.util import find_open_port
 
 from .base import AgentRuntime, AgentInstance

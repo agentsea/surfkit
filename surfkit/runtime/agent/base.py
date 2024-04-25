@@ -2,7 +2,7 @@ from typing import List, TypeVar, Type, Generic, Union, Iterator, Optional
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
-from taskara.models import SolveTaskModel
+from taskara.server.models import SolveTaskModel
 
 from surfkit.types import AgentType
 

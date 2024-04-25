@@ -86,6 +86,7 @@ def create_app(name: str, type: str = "desktop"):
 @create.command("agents")
 def create_agent(name: str, type: str = "SurfDino"):
     typer.echo(f"Creating agent: {name}")
+    raise NotImplementedError()
 
 
 # 'list' sub-commands
@@ -182,7 +183,7 @@ def solve(
     runtime: str = "docker",
 ):
     typer.echo(f"Solving task {description}...")
-    from taskara.models import SolveTaskModel
+    from taskara.server.models import SolveTaskModel
     from taskara import Task
 
     if runtime == "docker":

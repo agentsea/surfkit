@@ -24,7 +24,7 @@ class TaskAgent(Generic[C, T], ABC):
 
         Args:
             task (Task): The task
-            device (Desktop): Device to perform the task on.
+            device (Device): Device to perform the task on.
             max_steps (int, optional): Max steps allowed. Defaults to 30.
 
         Returns:

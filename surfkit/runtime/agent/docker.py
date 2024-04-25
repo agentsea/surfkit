@@ -3,7 +3,7 @@ import os
 
 import docker
 from docker.errors import NotFound
-from taskara.models import SolveTaskModel
+from taskara.server.models import SolveTaskModel
 from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel

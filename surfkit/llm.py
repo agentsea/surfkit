@@ -1,14 +1,31 @@
 import os
 import logging
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TypeVar, Type, Generic
 import json
+import time
 
-from litellm import Router
-from taskara import Task
+from litellm import Router, ModelResponse
+from taskara import Task, Prompt
+from threadmem import RoleThread, RoleMessage
 from litellm._logging import handler
+from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt
 
 from .models import EnvVarOptModel, LLMProviderOption
 from .types import AgentType
+from .util import extract_parse_json
+
+
+T = TypeVar("T", bound=BaseModel)
+
+
+class ChatResponse(Generic[T], BaseModel):
+    model: str
+    msg: RoleMessage
+    parsed: Optional[T] = None
+    time_elapsed: float
+    tokens_request: int
+    tokens_response: int
 
 
 class LLMProvider:
@@ -121,55 +138,86 @@ class LLMProvider:
 
     def chat(
         self,
-        msgs: list,
+        thread: RoleThread,
         model: Optional[str] = None,
         task: Optional[Task] = None,
-        namespace: Optional[str] = None,
-    ) -> dict:
+        namespace: str = "default",
+        response_schema: Optional[Type[T]] = None,
+        retries: int = 3,
+    ) -> ChatResponse:
         """Chat with a language model
 
         Args:
-            msgs (list): Messages in openai schema format
+            thread (RoleThread): A role thread
             model (Optional[str], optional): Model to use. Defaults to None.
             task (Optional[Task], optional): Optional task to log into. Defaults to None.
-            namespace (Optional[str], optional): Namespace to log into. Defaults to None.
+            namespace (Optional[str], optional): Namespace to log into. Defaults to "default".
+            response_schema (Optional[Type[T]], optional): Schema to validate response against. Defaults to None.
+            retries (int, optional): Number of retries if model fails. Defaults to 3.
 
         Returns:
-            dict: The message dictionary
+            ChatResponse: A chat response
         """
         if not model:
             model = self.model
 
-        def log_fn(model_call_dict):
-            print(f"\nmodel call details: {model_call_dict}")
+        @retry(stop=stop_after_attempt(retries))
+        def call_llm(
+            thread: RoleThread,
+            model: str,
+            task: Optional[Task] = None,
+            namespace: str = "default",
+            response_schema: Optional[Type[T]] = None,
+        ) -> ChatResponse:
+            start = time.time()
+            response = self.router.completion(model, thread.to_openai())
 
-        # print(f"calling chat completion for model {self.model} with msgs: ", msgs)
-        response = self.router.completion(model, msgs)
+            if not isinstance(response, ModelResponse):
+                raise Exception(f"Unexpected response type: {type(response)}")
 
-        print("llm response: ", response.__dict__)
-        logging.debug("response: ", response)
+            end = time.time()
 
-        if task:
-            dump = {"request": msgs, "response": response.json()}  # type: ignore
-            if namespace:
-                dump["namespace"] = namespace
-            # print("\ndump: ", dump)
-            task.post_message("assistant", json.dumps(dump), thread="prompt")
+            elapsed = end - start
 
-        return response["choices"][0]["message"].model_dump()  # type: ignore
+            print("llm response: ", response.__dict__)
+            logging.debug("response: ", response)
+
+            response_obj = None
+            msg = response["choices"][0]["message"].model_dump()
+            if response_schema:
+                try:
+                    # type: ignore
+                    response_obj = response_schema.model_validate(
+                        extract_parse_json(msg["text"])
+                    )
+                except Exception as e:
+                    print("Validation error: ", e)
+                    raise
+
+            resp_msg = RoleMessage(role=msg["role"], text=msg["text"])
+            out = ChatResponse(
+                model=response.model or model,
+                msg=resp_msg,
+                parsed=response_obj,
+                time_elapsed=elapsed,
+                tokens_request=0,  # TODO
+                tokens_response=0,
+            )
+            if task:
+                task.store_prompt(thread, resp_msg, namespace)
+
+            return out
+
+        return call_llm(thread, model, task, namespace, response_schema)
 
     def check_model(self) -> None:
         """Check if the model is available"""
-        msg = {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "Just checking if you are working... please return 'yes' if you are",
-                },
-            ],
-        }
-        response = self.chat([msg])
+
+        thread = RoleThread()
+        thread.post(
+            "user", "Just checking if you are working... please return 'yes' if you are"
+        )
+        response = self.chat(thread)
         print("response from checking oai functionality: ", response)
 
     def options(self) -> List[LLMProviderOption]:
