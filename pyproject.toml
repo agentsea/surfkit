@@ -20,7 +20,7 @@ devicebay = "^0.1.11"
 litellm = "^1.35.8"
 agentdesk = "^0.2.65"
 tiktoken = "^0.6.0"
-taskara = "^0.1.41"
+taskara = "^0.1.42"
 
 
 [tool.poetry.group.dev.dependencies]

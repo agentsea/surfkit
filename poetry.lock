@@ -3852,20 +3852,20 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.41"
+version = "0.1.42"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.41-py3-none-any.whl", hash = "sha256:478ef33bdd3dfa93d80429c1b53f58bbf37b6946f9731f4c0338f7ca74d39d94"},
-    {file = "taskara-0.1.41.tar.gz", hash = "sha256:47748d5aa3c1209829873b01646535aa063173d94c9dfa5783b0824d733a920e"},
+    {file = "taskara-0.1.42-py3-none-any.whl", hash = "sha256:8f4d796ba4d40c53802d15db5a1690b94190dc4be936de9193ffacd517123d80"},
+    {file = "taskara-0.1.42.tar.gz", hash = "sha256:96029ef517d3f5e5627073a744802f772fc03988cec7ad2000ea8bf763070441"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.8,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
-threadmem = ">=0.2.22,<0.3.0"
+threadmem = ">=0.2.24,<0.3.0"
 
 [[package]]
 name = "tenacity"
@@ -3897,13 +3897,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.22"
+version = "0.2.24"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.22-py3-none-any.whl", hash = "sha256:28ff6cf07cfeb4fc05b17343d3f6b7e4937f30d8f7baad64d349626e03da91b3"},
-    {file = "threadmem-0.2.22.tar.gz", hash = "sha256:1cc9c896baaf057ec4f302fae0fd2f8d01d81de524ee8f80187fc682f5fc95ea"},
+    {file = "threadmem-0.2.24-py3-none-any.whl", hash = "sha256:3998ddabc4146f2f8ba385dc0bf0714f4f3aae84f3a8265f0a2865568dc7de15"},
+    {file = "threadmem-0.2.24.tar.gz", hash = "sha256:e1464f1006b8ddfd62320a0631750a5b9f3f66645886c847006a07263924b5ae"},
 ]
 
 [package.dependencies]
@@ -4757,4 +4757,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "58e7300be88b2744cc6fba9dba61311408ff42701a0c206c93e3bc0a38c727f3"
+content-hash = "95b72c42c28f77b6973dd8f80e48bfb4115f8596ed0fea5e83aec36bc3f4a21b"
