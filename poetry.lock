@@ -3852,20 +3852,20 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.39"
+version = "0.1.41"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.39-py3-none-any.whl", hash = "sha256:78cf5127c378ea451574a48fbb0ebaec1f335f1be0d923cc776dd03d6c638748"},
-    {file = "taskara-0.1.39.tar.gz", hash = "sha256:844b7c516a88112a7720e8df05a1c8bdf337120746d3ded19140315f119a6565"},
+    {file = "taskara-0.1.41-py3-none-any.whl", hash = "sha256:478ef33bdd3dfa93d80429c1b53f58bbf37b6946f9731f4c0338f7ca74d39d94"},
+    {file = "taskara-0.1.41.tar.gz", hash = "sha256:47748d5aa3c1209829873b01646535aa063173d94c9dfa5783b0824d733a920e"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.8,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
-threadmem = ">=0.2.21,<0.3.0"
+threadmem = ">=0.2.22,<0.3.0"
 
 [[package]]
 name = "tenacity"
@@ -3897,13 +3897,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.21"
+version = "0.2.22"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.21-py3-none-any.whl", hash = "sha256:a74243341de10244618af2bd1dfc18fb24b1d8dddbb34e958764945929a30b76"},
-    {file = "threadmem-0.2.21.tar.gz", hash = "sha256:758b9347f4003ebd8f2fb84a2d4a75b3ca0ad38c4cdf8d4c4e6e4a25cdd2e1d5"},
+    {file = "threadmem-0.2.22-py3-none-any.whl", hash = "sha256:28ff6cf07cfeb4fc05b17343d3f6b7e4937f30d8f7baad64d349626e03da91b3"},
+    {file = "threadmem-0.2.22.tar.gz", hash = "sha256:1cc9c896baaf057ec4f302fae0fd2f8d01d81de524ee8f80187fc682f5fc95ea"},
 ]
 
 [package.dependencies]
@@ -4757,4 +4757,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "97ce14305871d749ff5eea3671a9960d50f9fb4dfb081e4171ae7ffe8c8f7e3b"
+content-hash = "58e7300be88b2744cc6fba9dba61311408ff42701a0c206c93e3bc0a38c727f3"
