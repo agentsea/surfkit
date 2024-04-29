@@ -1,6 +1,21 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel
+
+
+class Action(BaseModel):
+    """An action"""
+
+    name: str
+    parameters: Dict[str, Any]
+
+
+class ActionSelection(BaseModel):
+    """An action selection from the model"""
+
+    observation: str
+    reason: str
+    action: Action
 
 
 class EnvVarOptModel(BaseModel):

@@ -144,7 +144,7 @@ class LLMProvider:
         namespace: str = "default",
         response_schema: Optional[Type[T]] = None,
         retries: int = 3,
-    ) -> ChatResponse:
+    ) -> ChatResponse[T]:
         """Chat with a language model
 
         Args:
@@ -168,7 +168,7 @@ class LLMProvider:
             task: Optional[Task] = None,
             namespace: str = "default",
             response_schema: Optional[Type[T]] = None,
-        ) -> ChatResponse:
+        ) -> ChatResponse[T]:
             start = time.time()
             response = self.router.completion(model, thread.to_openai())
 

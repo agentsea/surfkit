@@ -9,7 +9,6 @@ import webbrowser
 from namesgenerator import get_random_name
 import requests
 
-
 art = """
  _______                ___  __  __  __  __   
 |     __|.--.--..----..'  _||  |/  ||__||  |_ 
@@ -171,7 +170,39 @@ def publish(path: str = "./agent.yaml"):
 
 @app.command(help="Create a new agent repo")
 def new():
-    raise NotImplementedError()
+    from rich.prompt import Prompt
+    from .new import new_agent
+    from .util import get_git_global_user_config
+
+    name = Prompt.ask("Enter agent name")
+    if not name.isalnum() or len(name) > 50:
+        typer.echo(
+            "Invalid agent name. Must be alphanumeric and less than 50 characters."
+        )
+
+    name = Prompt.ask("Enter agent name")
+    if not name.isalnum() or len(name) > 50:
+        typer.echo(
+            "Invalid agent name. Must be alphanumeric and less than 50 characters."
+        )
+        raise typer.Exit()
+
+    description = Prompt.ask("Describe the agent")
+    git_user_ref = Prompt.ask(
+        "Enter git user reference", default=get_git_global_user_config()
+    )
+    image_repo = Prompt.ask("Enter docker image repo")
+    icon_url = Prompt.ask(
+        "Enter icon url",
+        default="https://upload.wikimedia.org/wikipedia/commons/a/a5/Tsunami_by_hokusai_19th_century.jpg",
+    )
+    new_agent(
+        name=name,
+        description=description,
+        git_user_ref=git_user_ref,
+        img_repo=image_repo,
+        icon_url=icon_url,
+    )
 
 
 @app.command(help="Use an agent to solve a task")
