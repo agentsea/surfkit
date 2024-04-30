@@ -3,22 +3,47 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
 
-class Action(BaseModel):
+class V1Action(BaseModel):
     """An action"""
 
     name: str
     parameters: Dict[str, Any]
 
 
-class ActionSelection(BaseModel):
+class V1ActionSelection(BaseModel):
     """An action selection from the model"""
 
     observation: str
     reason: str
-    action: Action
+    action: V1Action
 
 
-class EnvVarOptModel(BaseModel):
+class V1DeviceConfig(BaseModel):
+    name: str
+    provision: bool = False
+
+
+class V1DevicesConfig(BaseModel):
+    preference: List[V1DeviceConfig] = []
+
+
+class V1Runtime(BaseModel):
+    type: str
+    preference: List[str] = []
+
+
+class V1ResourceLimits(BaseModel):
+    cpu: str = "2"
+    memory: str = "2Gi"
+
+
+class V1ResourceRequests(BaseModel):
+    cpu: str = "1"
+    memory: str = "500m"
+    gpu: Optional[str] = None
+
+
+class V1EnvVarOpt(BaseModel):
     name: str
     description: Optional[str] = None
     required: bool = False
@@ -27,76 +52,54 @@ class EnvVarOptModel(BaseModel):
     options: List[str] = []
 
 
-class LLMProviders(BaseModel):
+class V1LLMProviders(BaseModel):
     preference: List[str] = []
 
 
-class DeviceConfig(BaseModel):
-    name: str
-    provision: bool = False
-
-
-class DevicesConfig(BaseModel):
-    preference: List[DeviceConfig] = []
-
-
-class LLMProviderOption(BaseModel):
-    model: str
-    env_var: EnvVarOptModel
-
-
-class LLMProviderModel(BaseModel):
-    options: List[LLMProviderOption]
-
-
-class MeterModel(BaseModel):
+class V1Meter(BaseModel):
     name: str
     unit: str
     cost: float
     description: Optional[str] = None
 
 
-class RuntimeModel(BaseModel):
-    type: str
-    preference: List[str] = []
-
-
-class ResourceLimitsModel(BaseModel):
-    cpu: str = "2"
-    memory: str = "2Gi"
-
-
-class ResourceRequestsModel(BaseModel):
-    cpu: str = "1"
-    memory: str = "500m"
-    gpu: Optional[str] = None
-
-
-class AgentTypeModel(BaseModel):
+class V1AgentType(BaseModel):
     version: Optional[str] = None
     kind: Optional[str] = None
     id: Optional[str] = None
     name: str
     description: str
+    cmd: str
     owner_id: Optional[str] = None
     repo: Optional[str] = None
     image: Optional[str] = None
     versions: Optional[Dict[str, str]] = None
-    env_opts: List[EnvVarOptModel] = []
-    runtimes: List[RuntimeModel] = []
+    env_opts: List[V1EnvVarOpt] = []
+    runtimes: List[V1Runtime] = []
     created: Optional[float] = None
     updated: Optional[float] = None
     public: bool = False
     icon: Optional[str] = None
-    resource_requests: ResourceRequestsModel = ResourceRequestsModel()
-    resource_limits: ResourceLimitsModel = ResourceLimitsModel()
-    llm_providers: Optional[LLMProviders] = None
-    devices: List[DeviceConfig] = []
-    meters: List[MeterModel] = []
+    resource_requests: V1ResourceRequests = V1ResourceRequests()
+    resource_limits: V1ResourceLimits = V1ResourceLimits()
+    llm_providers: Optional[V1LLMProviders] = None
+    devices: List[V1DeviceConfig] = []
+    meters: List[V1Meter] = []
 
 
-class AgentTypesModel(BaseModel):
-    types: List[AgentTypeModel]
+class V1AgentInstance(BaseModel):
+    name: str
+    type: V1AgentType
+    runtime: str
+    port: int = 9090
+
+
+class V1Find(BaseModel):
+    args: dict = {}
+
+
+class V1AgentTypes(BaseModel):
+    types: List[V1AgentType]
 
 
 class CreateAgentTypeModel(BaseModel):
@@ -104,7 +107,7 @@ class CreateAgentTypeModel(BaseModel):
     name: str
     description: str
     image: str
-    env_opts: List[EnvVarOptModel] = []
+    env_opts: List[V1EnvVarOpt] = []
     supported_runtimes: List[str] = []
     versions: Dict[str, str] = {}
     public: bool = False

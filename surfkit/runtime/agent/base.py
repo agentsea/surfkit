@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from taskara.server.models import SolveTaskModel
 
 from surfkit.types import AgentType
+from surfkit.models import V1AgentInstance
 
 R = TypeVar("R", bound="AgentRuntime")
 C = TypeVar("C", bound="BaseModel")
@@ -13,10 +14,13 @@ C = TypeVar("C", bound="BaseModel")
 class AgentInstance:
     """A running agent instance"""
 
-    def __init__(self, name: str, type: AgentType, runtime: "AgentRuntime") -> None:
+    def __init__(
+        self, name: str, type: AgentType, runtime: "AgentRuntime", port: int = 9090
+    ) -> None:
         self._runtime = runtime
         self._type = type
         self._name = name
+        self._port = port
 
     @property
     def type(self) -> AgentType:
@@ -29,6 +33,10 @@ class AgentInstance:
     @property
     def runtime(self) -> "AgentRuntime":
         return self._runtime
+
+    @property
+    def port(self) -> int:
+        return self._port
 
     def proxy(
         self,
@@ -55,6 +63,15 @@ class AgentInstance:
             str: The logs from the pod.
         """
         return self._runtime.logs(self._name, follow)
+
+    def to_v1(self) -> V1AgentInstance:
+        """Convert to V1 API model"""
+        return V1AgentInstance(
+            name=self._name,
+            type=self._type.to_v1(),
+            runtime=self._runtime.name(),
+            port=self._port,
+        )
 
 
 class AgentRuntime(Generic[R, C], ABC):
@@ -92,7 +109,11 @@ class AgentRuntime(Generic[R, C], ABC):
         pass
 
     @abstractmethod
-    def list(self) -> List[str]:
+    def list(self) -> List[AgentInstance]:
+        pass
+
+    @abstractmethod
+    def get(self, name: str) -> AgentInstance:
         pass
 
     @abstractmethod

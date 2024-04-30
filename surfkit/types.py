@@ -1,23 +1,31 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import uuid
 import time
 import json
+import os
+import logging
 
 from sqlalchemy import or_
+import requests
 
 from .db.models import AgentTypeRecord
 from .db.conn import WithDB
 from .models import (
-    EnvVarOptModel,
-    AgentTypeModel,
-    LLMProviders,
-    LLMProviders,
-    DeviceConfig,
-    RuntimeModel,
-    MeterModel,
-    ResourceLimitsModel,
-    ResourceRequestsModel,
+    V1EnvVarOpt,
+    V1AgentType,
+    V1AgentTypes,
+    V1LLMProviders,
+    V1DeviceConfig,
+    V1Runtime,
+    V1Meter,
+    V1ResourceLimits,
+    V1ResourceRequests,
+    V1Find,
 )
+from .env import HUB_API_KEY_ENV, HUB_SERVER_API_ENV
+from surfkit.config import GlobalConfig
+
+logger = logging.getLogger(__name__)
 
 
 class AgentType(WithDB):
@@ -27,23 +35,28 @@ class AgentType(WithDB):
         self,
         name: str,
         description: str,
+        kind: str,
+        cmd: str,
         image: str,
         versions: Dict[str, str],
-        runtimes: List[RuntimeModel] = [],
+        runtimes: List[V1Runtime] = [],
         owner_id: Optional[str] = None,
-        env_opts: List[EnvVarOptModel] = [],
+        env_opts: List[V1EnvVarOpt] = [],
         public: bool = False,
         icon: Optional[str] = None,
-        resource_requests: ResourceRequestsModel = ResourceRequestsModel(),
-        resource_limits: ResourceLimitsModel = ResourceLimitsModel(),
-        llm_providers: Optional[LLMProviders] = None,
-        devices: List[DeviceConfig] = [],
+        resource_requests: V1ResourceRequests = V1ResourceRequests(),
+        resource_limits: V1ResourceLimits = V1ResourceLimits(),
+        llm_providers: Optional[V1LLMProviders] = None,
+        devices: List[V1DeviceConfig] = [],
         repo: Optional[str] = None,
-        meters: List[MeterModel] = [],
+        meters: List[V1Meter] = [],
+        remote: Optional[str] = None,
     ):
         self.id = str(uuid.uuid4())
         self.name = name
         self.description = description
+        self.kind = kind
+        self.cmd = cmd
         self.image = image
         self.versions = versions
         self.runtimes = runtimes
@@ -55,17 +68,20 @@ class AgentType(WithDB):
         self.resource_limits = resource_limits
         self.created = time.time()
         self.updated = time.time()
-        self.llm_providers: Optional[LLMProviders] = llm_providers
+        self.llm_providers: Optional[V1LLMProviders] = llm_providers
         self.devices = devices
         self.repo = repo
         self.meters = meters
+        self.remote = remote
         self.save()
 
-    def to_schema(self) -> AgentTypeModel:
-        return AgentTypeModel(
+    def to_v1(self) -> V1AgentType:
+        return V1AgentType(
             id=self.id,
             name=self.name,
             description=self.description,
+            kind=self.kind,
+            cmd=self.cmd,
             image=self.image,
             versions=self.versions,
             env_opts=self.env_opts,
@@ -84,12 +100,16 @@ class AgentType(WithDB):
         )
 
     @classmethod
-    def from_schema(cls, schema: AgentTypeModel) -> "AgentType":
+    def from_v1(
+        cls, schema: V1AgentType, owner_id: Optional[str] = None
+    ) -> "AgentType":
         obj = cls.__new__(cls)
         obj.id = schema.id
         obj.name = schema.name
+        obj.kind = schema.kind
         obj.owner_id = schema.owner_id
         obj.description = schema.description
+        obj.cmd = schema.cmd
         obj.image = schema.image
         obj.env_opts = schema.env_opts
         obj.runtimes = schema.runtimes
@@ -104,6 +124,7 @@ class AgentType(WithDB):
         obj.devices = schema.devices
         obj.repo = schema.repo
         obj.meters = schema.meters
+        obj.owner_id = owner_id
         return obj
 
     def to_record(self) -> AgentTypeRecord:
@@ -123,6 +144,8 @@ class AgentType(WithDB):
             id=self.id,
             name=self.name,
             description=self.description,
+            kind=self.kind,
+            cmd=self.cmd,
             image=self.image,
             versions=versions,
             env_opts=json.dumps([opt.model_dump() for opt in self.env_opts]),
@@ -148,7 +171,7 @@ class AgentType(WithDB):
 
         llm_providers = None
         if record.llm_providers:  # type: ignore
-            llm_providers = LLMProviders(**json.loads(str(record.llm_providers)))
+            llm_providers = V1LLMProviders(**json.loads(str(record.llm_providers)))
 
         devices = []
         if record.devices:  # type: ignore
@@ -157,19 +180,19 @@ class AgentType(WithDB):
         meters = []
         if record.meters:  # type: ignore
             meters_mod = json.loads(str(record.meters))
-            meters = [MeterModel(**m) for m in meters_mod]
+            meters = [V1Meter(**m) for m in meters_mod]
 
         obj = cls.__new__(cls)
         obj.id = record.id
         obj.name = record.name
+        obj.kind = record.kind
         obj.description = record.description
+        obj.cmd = record.cmd
         obj.image = record.image
         obj.versions = versions
-        obj.env_opts = [
-            EnvVarOptModel(**opt) for opt in json.loads(str(record.env_opts))
-        ]
+        obj.env_opts = [V1EnvVarOpt(**opt) for opt in json.loads(str(record.env_opts))]
         obj.runtimes = [
-            RuntimeModel(**runtime) for runtime in json.loads(str(record.runtimes))
+            V1Runtime(**runtime) for runtime in json.loads(str(record.runtimes))
         ]
         obj.created = record.created
         obj.updated = record.updated
@@ -177,14 +200,14 @@ class AgentType(WithDB):
         obj.public = record.public
         obj.icon = record.icon
         obj.resource_requests = (
-            ResourceRequestsModel(**json.loads(str(record.resource_requests)))
+            V1ResourceRequests(**json.loads(str(record.resource_requests)))
             if record.resource_requests  # type: ignore
-            else ResourceRequestsModel()
+            else V1ResourceRequests()
         )
         obj.resource_limits = (
-            ResourceLimitsModel(**json.loads(str(record.resource_limits)))
+            V1ResourceLimits(**json.loads(str(record.resource_limits)))
             if record.resource_limits  # type: ignore
-            else ResourceLimitsModel()
+            else V1ResourceLimits()
         )
         obj.llm_providers = llm_providers
         obj.devices = devices
@@ -200,12 +223,35 @@ class AgentType(WithDB):
                 session.commit()
 
     @classmethod
-    def find(cls, **kwargs) -> List["AgentType"]:
-        for session in cls.get_db():
-            records = session.query(AgentTypeRecord).filter_by(**kwargs).all()
-            return [cls.from_record(record) for record in records]
+    def find(cls, remote: Optional[str] = None, **kwargs) -> List["AgentType"]:
+        if remote:
+            logger.debug(
+                "finding remote agent_types for: ", remote, kwargs.get("owner_id")
+            )
+            remote_response = cls._remote_request(
+                remote,
+                "GET",
+                "/v1/agenttypes",
+                json_data=V1Find(args=kwargs).model_dump(),
+            )
+            agent_types = V1AgentTypes(**remote_response)
+            if remote_response is not None:
+                out = [
+                    cls.from_v1(record, kwargs.get("owner_id"))
+                    for record in agent_types.types
+                ]
+                for type in out:
+                    type.remote = remote
+                    logger.debug("returning type: ", type.__dict__)
+                return out
+            else:
+                return []
+        else:
+            for session in cls.get_db():
+                records = session.query(AgentTypeRecord).filter_by(**kwargs).all()
+                return [cls.from_record(record) for record in records]
 
-        return []
+            return []
 
     @classmethod
     def find_for_user(
@@ -241,7 +287,7 @@ class AgentType(WithDB):
                     session.delete(record)
                     session.commit()
 
-    def update(self, model: AgentTypeModel) -> None:
+    def update(self, model: V1AgentType) -> None:
         """
         Updates the current AgentType instance with values from an AgentTypeModel instance.
         """
@@ -250,6 +296,14 @@ class AgentType(WithDB):
 
         if self.description != model.description:
             self.description = model.description
+            updated = True
+
+        if self.kind != model.kind:
+            self.kind = model.kind
+            updated = True
+
+        if self.cmd != model.cmd:
+            self.cmd = model.cmd
             updated = True
 
         if self.image != model.image:
@@ -304,3 +358,69 @@ class AgentType(WithDB):
         if updated:
             self.updated = time.time()
             self.save()
+
+    @classmethod
+    def _remote_request(
+        cls,
+        addr: str,
+        method: str,
+        endpoint: str,
+        json_data: Optional[dict] = None,
+        auth_token: Optional[str] = None,
+    ) -> Any:
+        url = f"{addr}{endpoint}"
+        headers = {}
+        if not auth_token:
+            auth_token = os.getenv(HUB_API_KEY_ENV)
+            if not auth_token:
+                config = GlobalConfig.read()
+                if not config.api_key:
+                    raise ValueError(
+                        "No API key found. Please run `surfkit login` first."
+                    )
+                auth_token = config.api_key
+        logger.debug(f"auth_token: {auth_token}")
+        headers["Authorization"] = f"Bearer {auth_token}"
+        try:
+            if method.upper() == "GET":
+                logger.debug("\ncalling remote task GET with url: ", url)
+                logger.debug("\ncalling remote task GET with headers: ", headers)
+                response = requests.get(url, headers=headers)
+            elif method.upper() == "POST":
+                logger.debug("\ncalling remote task POST with: ", url)
+                logger.debug("\ncalling remote task POST with headers: ", headers)
+                response = requests.post(url, json=json_data, headers=headers)
+            elif method.upper() == "PUT":
+                logger.debug("\ncalling remote task PUT with: ", url)
+                logger.debug("\ncalling remote task PUT with headers: ", headers)
+                response = requests.put(url, json=json_data, headers=headers)
+            elif method.upper() == "DELETE":
+                logger.debug("\ncalling remote task DELETE with: ", url)
+                logger.debug("\ncalling remote task DELETE with headers: ", headers)
+                response = requests.delete(url, headers=headers)
+            else:
+                return None
+
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                print("HTTP Error:", e)
+                print("Status Code:", response.status_code)
+                try:
+                    print("Response Body:", response.json())
+                except ValueError:
+                    print("Raw Response:", response.text)
+                raise
+            logger.debug("\nresponse: ", response.__dict__)
+            logger.debug("\response.status_code: ", response.status_code)
+
+            try:
+                response_json = response.json()
+                logger.debug("\nresponse_json: ", response_json)
+                return response_json
+            except ValueError:
+                print("Raw Response:", response.text)
+                return None
+
+        except requests.RequestException as e:
+            raise e

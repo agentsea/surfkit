@@ -7,10 +7,12 @@ from taskara.server.models import SolveTaskModel
 from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel
+from mllm import Router
+
+from surfkit.models import V1AgentType
 
 from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
-from surfkit.llm import LLMProvider
 
 
 class ConnectConfig(BaseModel):
@@ -50,6 +52,7 @@ class DockerAgentRuntime(AgentRuntime):
             "provisioner": "surfkit",
             "agent_type": agent_type.name,
             "agent_name": name,
+            "agent_type_model": agent_type.to_v1().model_dump_json(),
         }
 
         port = find_open_port(8001, 9000)
@@ -64,7 +67,7 @@ class DockerAgentRuntime(AgentRuntime):
                 env_vars = {}
             found = {}
             for provider_name in agent_type.llm_providers.preference:
-                api_key_env = LLMProvider.provider_api_keys.get(provider_name)
+                api_key_env = Router.provider_api_keys.get(provider_name)
                 if not api_key_env:
                     raise ValueError(f"no api key env for provider {provider_name}")
                 key = os.getenv(api_key_env)
@@ -137,13 +140,53 @@ class DockerAgentRuntime(AgentRuntime):
         print("no proxy needed")
         return
 
-    def list(self) -> List[str]:
-        label_filter = {"label": ["provisioner=surfkit"]}
+    def list(self) -> List[AgentInstance]:
+        label_filter = {"label": "provisioner=surfkit"}
         containers = self.client.containers.list(filters=label_filter)
+        instances = []
 
-        container_names_or_ids = [container.name for container in containers]  # type: ignore
+        for container in containers:
+            agent_type_model = container.labels.get("agent_type_model")  # type: ignore
+            if not agent_type_model:
+                continue  # Skip containers where the agent type model is not found
 
-        return container_names_or_ids
+            agentv1 = V1AgentType.model_validate_json(agent_type_model)
+            agent_type = AgentType.from_v1(agentv1)
+            agent_name = container.name  # type: ignore
+
+            # Extract port information
+            ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
+            exposed_port = 9090  # Default application port inside container
+            host_port = ports.get(f"{exposed_port}/tcp")
+            if not host_port:
+                raise ValueError("No host port found for exposed container port")
+            port = int(host_port[0]["HostPort"])
+            instance = AgentInstance(agent_name, agent_type, self, port)
+            instances.append(instance)
+
+        return instances
+
+    def get(self, name: str) -> AgentInstance:
+        try:
+            container = self.client.containers.get(name)
+            agent_type_model = container.labels.get("agent_type_model")  # type: ignore
+            if not agent_type_model:
+                raise ValueError("Expected agent type model in labels")
+
+            agentv1 = V1AgentType.model_validate_json(agent_type_model)
+            agent_type = AgentType.from_v1(agentv1)
+
+            # Extract port information
+            ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
+            exposed_port = 9090  # Default application port inside container
+            host_port = ports.get(f"{exposed_port}/tcp")
+            if not host_port:
+                raise ValueError("Expected agent port in container network settings")
+            port = int(host_port[0]["HostPort"])
+
+            return AgentInstance(name, agent_type, self, port)
+        except NotFound:
+            raise ValueError(f"Container '{name}' not found")
 
     def delete(self, name: str) -> None:
         try:

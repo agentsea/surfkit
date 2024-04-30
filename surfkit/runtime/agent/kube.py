@@ -1,4 +1,3 @@
-from curses.ascii import isdigit
 from typing import List, Optional, Tuple, Type, Union, Iterator
 import os
 import json
@@ -26,11 +25,11 @@ from tenacity import retry
 from pydantic import BaseModel
 from taskara.server.models import SolveTaskModel
 from agentdesk.util import find_open_port
+from mllm import Router
 
 from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
-from surfkit.llm import LLMProvider
-from surfkit.models import ResourceLimitsModel, ResourceRequestsModel
+from surfkit.models import V1ResourceLimits, V1ResourceRequests, V1AgentType
 
 
 class GKEOpts(BaseModel):
@@ -115,9 +114,10 @@ class KubernetesAgentRuntime(AgentRuntime):
     def create(
         self,
         image: str,
+        type: AgentType,
         name: Optional[str] = None,
-        resource_requests: ResourceRequestsModel = ResourceRequestsModel(),
-        resource_limits: ResourceLimitsModel = ResourceLimitsModel(),
+        resource_requests: V1ResourceRequests = V1ResourceRequests(),
+        resource_limits: V1ResourceLimits = V1ResourceLimits(),
         env_vars: Optional[dict] = None,
         owner_id: Optional[str] = None,
     ) -> None:
@@ -174,7 +174,12 @@ class KubernetesAgentRuntime(AgentRuntime):
             metadata=client.V1ObjectMeta(
                 name=name,
                 labels={"provisioner": "surfkit"},
-                annotations={"owner": owner_id},
+                annotations={
+                    "owner": owner_id,
+                    "agent_name": name,
+                    "agent_type": type.name,
+                    "agent_model": type.to_v1().model_dump_json(),
+                },
             ),
             spec=pod_spec,
         )
@@ -577,11 +582,43 @@ class KubernetesAgentRuntime(AgentRuntime):
             print(f"Failed to get logs for pod '{name}': {e}")
             raise
 
-    def list(self) -> List[str]:
-        pods = self.core_api.list_namespaced_pod(
-            namespace="default", label_selector="provisioner=surfkit"
-        )
-        return [pod.metadata.name for pod in pods.items]
+    def list(self) -> List[AgentInstance]:
+        instances = []
+        try:
+            pods = self.core_api.list_namespaced_pod(
+                namespace=self.namespace, label_selector="provisioner=surfkit"
+            )
+            for pod in pods.items:
+                agent_type_model = pod.metadata.annotations.get("agent_model")
+                if not agent_type_model:
+                    continue  # Skip if no agent model annotation
+
+                agent_type = AgentType.from_v1(
+                    V1AgentType.model_validate_json(agent_type_model)
+                )
+                name = pod.metadata.name
+
+                instances.append(AgentInstance(name, agent_type, self, 9090))
+        except ApiException as e:
+            print(f"Failed to list pods: {e}")
+            raise
+        return instances
+
+    def get(self, name: str) -> AgentInstance:
+        try:
+            pod = self.core_api.read_namespaced_pod(name=name, namespace=self.namespace)
+            agent_type_model = pod.metadata.annotations.get("agent_model")  # type: ignore
+            if not agent_type_model:
+                raise ValueError("Agent model annotation missing in pod metadata")
+
+            agent_type = AgentType.from_v1(
+                V1AgentType.model_validate_json(agent_type_model)
+            )
+
+            return AgentInstance(name, agent_type, self, 9090)
+        except ApiException as e:
+            print(f"Failed to get pod '{name}': {e}")
+            raise
 
     def delete(self, name: str) -> None:
         try:
@@ -640,7 +677,7 @@ class KubernetesAgentRuntime(AgentRuntime):
                 env_vars = {}
             found = {}
             for provider_name in agent_type.llm_providers.preference:
-                api_key_env = LLMProvider.provider_api_keys.get(provider_name)
+                api_key_env = Router.provider_api_keys.get(provider_name)
                 if not api_key_env:
                     raise ValueError(f"no api key env for provider {provider_name}")
                 key = os.getenv(api_key_env)
@@ -659,6 +696,7 @@ class KubernetesAgentRuntime(AgentRuntime):
 
         self.create(
             image=img,
+            type=agent_type,
             name=name,
             resource_requests=agent_type.resource_requests,
             resource_limits=agent_type.resource_limits,

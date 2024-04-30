@@ -2291,13 +2291,13 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "litellm"
-version = "1.35.26"
+version = "1.35.31"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.35.26-py3-none-any.whl", hash = "sha256:8b05c3024e097b2e4917ec33b4b076c25502eb557f0c9d0945d0d1113358dbe9"},
-    {file = "litellm-1.35.26.tar.gz", hash = "sha256:374998799e3409fac965c6f13b7946ea01fa64ac423df135f44fccba343be61b"},
+    {file = "litellm-1.35.31-py3-none-any.whl", hash = "sha256:bf8b437201bbcde50f8508f8712dd7ac7f323a1cdc2628aba0d35a4c312a801d"},
+    {file = "litellm-1.35.31.tar.gz", hash = "sha256:8691fddef3c14733dfef2f34c11daf47a317790a258c5315eabe7d1eafbfeb24"},
 ]
 
 [package.dependencies]
@@ -2432,6 +2432,22 @@ files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
 ]
+
+[[package]]
+name = "mllm"
+version = "0.1.5"
+description = "Multimodal Large Language Models"
+optional = false
+python-versions = "<4.0,>=3.10"
+files = [
+    {file = "mllm-0.1.5-py3-none-any.whl", hash = "sha256:a73bee84f20ac97fcd3117b790ac647f9e48d5d5356309602582550c7d6c8a7a"},
+    {file = "mllm-0.1.5.tar.gz", hash = "sha256:d207e62842b7c5dd457d0586400f1c1ac79e4ba1e9187c3c0a2501e447c05b08"},
+]
+
+[package.dependencies]
+litellm = ">=1.35.29,<2.0.0"
+tenacity = ">=8.2.3,<9.0.0"
+threadmem = ">=0.2.24,<0.3.0"
 
 [[package]]
 name = "multidict"
@@ -3755,6 +3771,22 @@ files = [
 ]
 
 [[package]]
+name = "skillpacks"
+version = "0.1.3"
+description = "Pluggable skills for AI agents"
+optional = false
+python-versions = "<4.0,>=3.10"
+files = [
+    {file = "skillpacks-0.1.3-py3-none-any.whl", hash = "sha256:e0a4bb6a30715f59556582461035de620669ab86d5a00d962c82dd984510a3c3"},
+    {file = "skillpacks-0.1.3.tar.gz", hash = "sha256:debdd549d217673bf38d9c3762963b5984438860beba379835172a588f9cfa6f"},
+]
+
+[package.dependencies]
+mllm = ">=0.1.5,<0.2.0"
+pydantic = ">=2.6.1,<3.0.0"
+sqlalchemy = ">=2.0.27,<3.0.0"
+
+[[package]]
 name = "sniffio"
 version = "1.3.1"
 description = "Sniff out which async library your code is running under"
@@ -4809,4 +4841,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "8b958c6e92c4295d9aad7f300eba3d2e154a74081fb7de120963b68ef2b072ca"
+content-hash = "3fabeca9a87210dcde19d6f5b5cdf660dec28d3f044e4acacee279f68f37bcdc"

@@ -1,13 +1,18 @@
+from logging import config
+from tkinter.font import names
 from urllib.parse import urljoin
 from typing import Optional
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkgversion
+from click import Option
+import rich
 import yaml
 
 import typer
 import webbrowser
 from namesgenerator import get_random_name
 import requests
+from tabulate import tabulate
 
 art = """
  _______                ___  __  __  __  __   
@@ -49,7 +54,7 @@ except PackageNotFoundError:
 @app.command(help="Show the version of the CLI")
 def version():
     """Show the CLI version."""
-    typer.echo(f"CLI Version: {__version__}")
+    typer.echo(__version__)
 
 
 # Root command callback
@@ -77,55 +82,361 @@ def get_default(ctx: typer.Context):
 
 
 # 'create' sub-commands
-@create.command("devices")
-def create_app(name: str, type: str = "desktop"):
-    typer.echo(f"Creating device: {name}")
+@create.command("device")
+def create_device(
+    name: Optional[str] = typer.Option(
+        None, help="The name of the desktop to create. Defaults to a generated name."
+    ),
+    provider: str = typer.Option(
+        "qemu",
+        help="The provider type for the desktop. Options are 'ec2', 'gce', and 'qemu'",
+    ),
+    image: Optional[str] = typer.Option(
+        None, help="The image to use for the desktop. Defaults to Ubuntu Jammy."
+    ),
+    memory: int = typer.Option(4, help="The amount of memory (in GB) for the desktop."),
+    cpu: int = typer.Option(2, help="The number of CPU cores for the desktop."),
+    disk: str = typer.Option(
+        "30gb",
+        help="The disk size for the desktop. Format as '<size>gb'.",
+    ),
+    reserve_ip: bool = typer.Option(
+        False,
+        help="Whether to reserve an IP address for the desktop.",
+    ),
+):
+    from agentdesk.server.models import V1ProviderData
+    from agentdesk.vm.load import load_provider
+
+    if not name:
+        name = get_random_name(sep="-")
+
+    data = V1ProviderData(type=provider)
+    _provider = load_provider(data)
+
+    typer.echo(f"Creating desktop '{name}' using '{provider}' provider")
+    try:
+        _provider.create(
+            name=name,
+            image=image,
+            memory=memory,
+            cpu=cpu,
+            disk=disk,
+            reserve_ip=reserve_ip,
+        )
+    except KeyboardInterrupt:
+        print("Keyboard interrupt received, exiting...")
+        return
 
 
-@create.command("agents")
-def create_agent(name: str, type: str = "SurfDino"):
-    typer.echo(f"Creating agent: {name}")
-    raise NotImplementedError()
+@create.command("agent")
+def create_agent(
+    runtime: str = typer.Option("docker", help="The runtime to use."),
+    file: str = typer.Option(
+        "./agent.yaml", help="Path to the agent configuration file."
+    ),
+    name: Optional[str] = typer.Option(
+        None, help="Name of the agent. Defaults to a generated name."
+    ),
+    type: Optional[str] = typer.Option(None, help="Type of the agent if predefined."),
+):
+    if not name:
+        name = get_random_name(sep="-")
+        if not name:
+            raise ValueError("could not generate name")
+    typer.echo(f"Running agent '{file}' with runtime '{runtime}'...")
+
+    from surfkit.models import V1AgentType
+    from surfkit.types import AgentType
+
+    if runtime == "docker":
+        from surfkit.runtime.agent.docker import (
+            DockerAgentRuntime,
+            ConnectConfig as DockerConnectConfig,
+        )
+
+        conf = DockerConnectConfig()
+        runt = DockerAgentRuntime.connect(cfg=conf)
+
+    elif runtime == "kube":
+        from surfkit.runtime.agent.kube import (
+            KubernetesAgentRuntime,
+            ConnectConfig as KubeConnectConfig,
+        )
+
+        conf = KubeConnectConfig()
+        runt = KubernetesAgentRuntime.connect(cfg=conf)
+
+    elif runtime == "process":
+        from surfkit.runtime.agent.process import (
+            ProcessAgentRuntime,
+            ConnectConfig as ProcessConnectConfig,
+        )
+
+        conf = ProcessConnectConfig()
+        runt = ProcessAgentRuntime.connect(cfg=conf)
+
+    else:
+        raise ValueError(f"Unknown runtime '{runtime}'")
+
+    if type:
+        from surfkit.config import HUB_API_URL
+
+        types = AgentType.find(remote=HUB_API_URL, name=type)
+        if not types:
+            raise ValueError(f"Agent type '{type}' not found")
+        agent_type = types[0]
+    else:
+        try:
+            with open(file, "r") as f:
+                data = yaml.safe_load(f)
+                agent_type_model = V1AgentType(**data)
+        except Exception as e:
+            raise ValueError(f"Failed to parse find or parse agent.yaml: {e}")
+
+        agent_type = AgentType.from_v1(agent_type_model)
+
+    runt.run(agent_type, name)
+    typer.echo(f"Successfully created agent")
 
 
 # 'list' sub-commands
 
 
 @list_group.command("agents")
-def list_agents():
-    typer.echo("Listing agents")
-    raise NotImplementedError()
+def list_agents(runtime: str = "docker"):
+    if runtime == "docker":
+        from surfkit.runtime.agent.docker import (
+            DockerAgentRuntime,
+            ConnectConfig as DockerConnectConfig,
+        )
+
+        dconf = DockerConnectConfig()
+        runt = DockerAgentRuntime.connect(cfg=dconf)
+
+    elif runtime == "kube":
+        from surfkit.runtime.agent.kube import (
+            KubernetesAgentRuntime,
+            ConnectConfig as KubeConnectConfig,
+        )
+
+        kconf = KubeConnectConfig()
+        runt = KubernetesAgentRuntime.connect(cfg=kconf)
+
+    elif runtime == "process":
+        from surfkit.runtime.agent.process import (
+            ProcessAgentRuntime,
+            ConnectConfig as ProcessConnectConfig,
+        )
+
+        pconf = ProcessConnectConfig()
+        runt = ProcessAgentRuntime.connect(cfg=pconf)
+
+    else:
+        raise ValueError(f"Unknown runtime '{runtime}'")
+
+    agents = runt.list()
+    table = []
+    for name in agents:
+        table.append([name, runtime])
+
+    print(
+        tabulate(
+            table,
+            headers=[
+                "Name",
+                "Runtime",
+                "Type",
+            ],
+        )
+    )
+    print("")
 
 
 @list_group.command("devices")
-def list_devices():
-    typer.echo("Listing devices")
-    raise NotImplementedError()
+def list_devices(
+    provider: Optional[str] = typer.Option(
+        None, help="The provider type for the desktop."
+    ),
+):
+    from agentdesk.vm import DesktopVM
+    from agentdesk.vm.load import load_provider
+    from surfkit.util import convert_unix_to_datetime
+
+    provider_is_refreshed = {}
+    vms = DesktopVM.find()
+    if not vms:
+        print("No desktops found")
+    else:
+        table = []
+        for desktop in vms:
+            if not desktop.provider:
+                continue
+            if provider:
+                if desktop.provider.type != provider:
+                    continue
+            _provider = load_provider(desktop.provider)
+
+            if not provider_is_refreshed.get(desktop.provider.type):
+                if not desktop.reserved_ip:
+                    _provider.refresh(log=False)
+                    provider_is_refreshed[desktop.provider.type] = True
+                    desktop = DesktopVM.get(desktop.name)
+                    if not desktop:
+                        continue
+
+            table.append(
+                [
+                    desktop.name,
+                    "desktop",
+                    desktop.addr,
+                    desktop.ssh_port,
+                    desktop.status,
+                    convert_unix_to_datetime(int(desktop.created)),
+                    desktop.provider.type,  # type: ignore
+                    desktop.reserved_ip,
+                ]
+            )
+
+        print(
+            tabulate(
+                table,
+                headers=[
+                    "Name",
+                    "Type",
+                    "Address",
+                    "SSH Port",
+                    "Status",
+                    "Created",
+                    "Provider",
+                    "Reserved IP",
+                ],
+            )
+        )
+        print("")
 
 
 @list_group.command("types")
 def list_types():
-    typer.echo("Listing agent types")
-    raise NotImplementedError()
+    from surfkit.types import AgentType
+    from surfkit.config import HUB_API_URL
+
+    types = AgentType.find(remote=HUB_API_URL)
+    if not types:
+        raise ValueError(f"Agent type '{type}' not found")
+
+    table = []
+    for typ in types:
+        table.append(
+            [
+                typ.name,
+                typ.kind,
+                typ.description,
+            ]
+        )
+
+    print(
+        tabulate(
+            table,
+            headers=[
+                "Name",
+                "Kind",
+                "Description",
+            ],
+        )
+    )
+    print("")
 
 
 # 'get' sub-commands
 @get.command("agent")
-def get_agent(name: str):
-    typer.echo(f"Getting agent: {name}")
-    raise NotImplementedError()
+def get_agent(
+    name: str = typer.Option(..., help="The name of the agent to retrieve."),
+    runtime: str = typer.Option("docker", help="The runtime of the agent to retrieve."),
+):
+    if runtime == "docker":
+        from surfkit.runtime.agent.docker import (
+            DockerAgentRuntime,
+            ConnectConfig as DockerConnectConfig,
+        )
+
+        dconf = DockerConnectConfig()
+        runt = DockerAgentRuntime.connect(cfg=dconf)
+
+    elif runtime == "kube":
+        from surfkit.runtime.agent.kube import (
+            KubernetesAgentRuntime,
+            ConnectConfig as KubeConnectConfig,
+        )
+
+        kconf = KubeConnectConfig()
+        runt = KubernetesAgentRuntime.connect(cfg=kconf)
+
+    elif runtime == "process":
+        from surfkit.runtime.agent.process import (
+            ProcessAgentRuntime,
+            ConnectConfig as ProcessConnectConfig,
+        )
+
+        pconf = ProcessConnectConfig()
+        runt = ProcessAgentRuntime.connect(cfg=pconf)
+
+    else:
+        raise ValueError(f"Unknown runtime '{runtime}'")
+
+    instance = runt.get(name)
+    rich.print_json(instance.to_v1().model_dump_json())
 
 
 @get.command("device")
-def get_device(name: str):
-    typer.echo(f"Getting device: {name}")
-    raise NotImplementedError()
+def get_device(
+    name: str = typer.Option(
+        help="The name of the desktop to retrieve.",
+    ),
+    provider: Optional[str] = typer.Option(
+        None, help="The provider type for the desktop."
+    ),
+):
+    from agentdesk.vm import DesktopVM
+    from agentdesk.vm.load import load_provider
+
+    if name:
+        desktop = DesktopVM.get(name)
+        if not desktop:
+            raise ValueError("desktop not found")
+        if not desktop.provider:
+            raise ValueError("no desktop provider")
+        if provider and desktop.provider.type != provider:
+            print(f"Desktop '{name}' not found")
+            return
+
+        _provider = load_provider(desktop.provider)
+        if not desktop.reserved_ip:
+            _provider.refresh(log=False)
+            desktop = DesktopVM.get(name)
+            if not desktop:
+                print(f"Desktop '{name}' not found")
+                return
+
+        if desktop:
+            rich.print_json(desktop.to_v1_schema().model_dump_json())
+        else:
+            print(f"Desktop '{name}' not found")
+        return
 
 
 @get.command("type")
 def get_type(name: str):
+    from surfkit.types import AgentType
+
     typer.echo(f"Getting type: {name}")
-    raise NotImplementedError()
+    from surfkit.config import HUB_API_URL
+
+    types = AgentType.find(remote=HUB_API_URL, name=name)
+    if not types:
+        raise ValueError(f"Agent type '{type}' not found")
+    agent_type = types[0]
+    rich.print_json(agent_type.to_v1().model_dump_json())
 
 
 # Other commands
@@ -153,10 +464,10 @@ def publish(path: str = "./agent.yaml"):
     url = urljoin(HUB_API_URL, "v1/agenttypes")
     typer.echo(f"\nPublishing agent to {url}...\n")
 
-    from surfkit.models import AgentTypeModel
+    from surfkit.models import V1AgentType
 
     with open(path, "r") as f:
-        agent_type = AgentTypeModel.model_validate(yaml.safe_load(f))
+        agent_type = V1AgentType.model_validate(yaml.safe_load(f))
 
     config = GlobalConfig.read()
     if not config.api_key:
@@ -180,12 +491,12 @@ def new():
             "Invalid agent name. Must be alphanumeric and less than 50 characters."
         )
 
-    name = Prompt.ask("Enter agent name")
-    if not name.isalnum() or len(name) > 50:
-        typer.echo(
-            "Invalid agent name. Must be alphanumeric and less than 50 characters."
-        )
-        raise typer.Exit()
+        name = Prompt.ask("Enter agent name")
+        if not name.isalnum() or len(name) > 50:
+            typer.echo(
+                "Invalid agent name. Must be alphanumeric and less than 50 characters."
+            )
+            raise typer.Exit()
 
     description = Prompt.ask("Describe the agent")
     git_user_ref = Prompt.ask(
@@ -194,7 +505,7 @@ def new():
     image_repo = Prompt.ask("Enter docker image repo")
     icon_url = Prompt.ask(
         "Enter icon url",
-        default="https://upload.wikimedia.org/wikipedia/commons/a/a5/Tsunami_by_hokusai_19th_century.jpg",
+        default="https://tinyurl.com/y5u4u7te",
     )
     new_agent(
         name=name,
@@ -207,11 +518,13 @@ def new():
 
 @app.command(help="Use an agent to solve a task")
 def solve(
-    description: str,
-    agent_name: str,
-    max_steps: int = 20,
-    starting_url: Optional[str] = None,
-    runtime: str = "docker",
+    description: str = typer.Option(..., help="Description of the task."),
+    agent_name: str = typer.Option(..., help="Name of the agent to use."),
+    max_steps: int = typer.Option(20, help="Maximum steps for the task."),
+    starting_url: Optional[str] = typer.Option(
+        None, help="Starting URL if applicable."
+    ),
+    runtime: str = typer.Option("docker", help="Runtime environment for the agent."),
 ):
     typer.echo(f"Solving task {description}...")
     from taskara.server.models import SolveTaskModel
@@ -224,7 +537,7 @@ def solve(
         )
 
         dconf = DockerConnectConfig()
-        runt = DockerAgentRuntime(config=dconf)
+        runt = DockerAgentRuntime.connect(cfg=dconf)
 
     elif runtime == "kube":
         from surfkit.runtime.agent.kube import (
@@ -233,7 +546,16 @@ def solve(
         )
 
         kconf = KubeConnectConfig()
-        runt = KubernetesAgentRuntime(cfg=kconf)
+        runt = KubernetesAgentRuntime.connect(cfg=kconf)
+
+    elif runtime == "process":
+        from surfkit.runtime.agent.process import (
+            ProcessAgentRuntime,
+            ConnectConfig as ProcessConnectConfig,
+        )
+
+        pconf = ProcessConnectConfig()
+        runt = ProcessAgentRuntime.connect(cfg=pconf)
 
     else:
         raise ValueError(f"Unknown runtime '{runtime}'")
@@ -244,50 +566,6 @@ def solve(
         max_steps=max_steps,
     )
     runt.solve_task(agent_name, mdl)
-
-
-@app.command(help="Run an agent")
-def run(
-    runtime: str = "docker",
-    agent_file: str = "./agent.yaml",
-    name: Optional[str] = None,
-):
-    if not name:
-        name = get_random_name(sep="-")
-        if not name:
-            raise ValueError("could not generate name")
-    typer.echo(f"Running agent '{agent_file}' with runtime '{runtime}'...")
-
-    from surfkit.models import AgentTypeModel
-    from surfkit.types import AgentType
-
-    if runtime == "docker":
-        from surfkit.runtime.agent.docker import (
-            DockerAgentRuntime,
-            ConnectConfig as DockerConnectConfig,
-        )
-
-        conf = DockerConnectConfig()
-        runt = DockerAgentRuntime(config=conf)
-
-    elif runtime == "kube":
-        from surfkit.runtime.agent.kube import (
-            KubernetesAgentRuntime,
-            ConnectConfig as KubeConnectConfig,
-        )
-
-        conf = KubeConnectConfig()
-        runt = KubernetesAgentRuntime(cfg=conf)
-
-    else:
-        raise ValueError(f"Unknown runtime '{runtime}'")
-
-    with open(agent_file, "r") as f:
-        data = yaml.safe_load(f)
-        agent_type_model = AgentTypeModel(**data)
-
-    agent_type = AgentType.from_schema(agent_type_model)
-    runt.run(agent_type, name)
 
 
 if __name__ == "__main__":

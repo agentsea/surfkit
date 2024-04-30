@@ -1,4 +1,5 @@
 import os
+import time
 
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker
@@ -10,22 +11,21 @@ DB_TYPE = os.environ.get("DB_TYPE", "sqlite")
 
 
 def get_pg_conn() -> Engine:
-    # Env Vars
-    db_user = os.environ.get("DB_USER")
-    if not db_user:
-        raise ValueError("$DB_USER must be set to a valid postgres db user")
+    # Helper function to get environment variable with fallback
+    def get_env_var(key: str) -> str:
+        task_key = f"SURFKIT_{key}"
+        value = os.environ.get(task_key)
+        if value is None:
+            value = os.environ.get(key)
+            if value is None:
+                raise ValueError(f"${key} must be set")
+        return value
 
-    db_password = os.environ.get("DB_PASS")
-    if not db_password:
-        raise ValueError("$DB_PASS must be set to a valid postgres db user password")
-
-    db_host = os.environ.get("DB_HOST")
-    if not db_user:
-        raise ValueError("$DB_HOST must be set to a running postgres server")
-
-    db_name = os.environ.get("DB_NAME")
-    if not db_name:
-        raise ValueError("$DB_NAME must be set to a postgres db name")
+    # Retrieve environment variables with fallbacks
+    db_user = get_env_var("DB_USER")
+    db_password = get_env_var("DB_PASS")
+    db_host = get_env_var("DB_HOST")
+    db_name = get_env_var("DB_NAME")
 
     print(f"\nconnecting to db on postgres host '{db_host}' with db '{db_name}'")
     engine = create_engine(
@@ -37,9 +37,14 @@ def get_pg_conn() -> Engine:
 
 
 def get_sqlite_conn() -> Engine:
-    print("\nconnecting to local sqlite db ./data/surfkit.db")
-    os.makedirs(os.path.dirname("./data/surfkit.db"), exist_ok=True)
-    engine = create_engine("sqlite:///./data/surfkit.db")
+    db_name = os.environ.get("SURFKIT_DB_NAME", "surfkit.db")
+    db_path = os.environ.get("SURFKIT_DB_PATH", "./.data")
+    db_test = os.environ.get("SURFKIT_DB_TEST", "false") == "true"
+    if db_test:
+        db_name = f"threads_test_{int(time.time())}.db"
+    print(f"connecting to local sqlite db ./.data/{db_name}")
+    os.makedirs(os.path.dirname(f"{db_path}/{db_name}"), exist_ok=True)
+    engine = create_engine(f"sqlite:///{db_path}/{db_name}")
     return engine
 
 

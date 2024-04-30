@@ -14,6 +14,8 @@ class AgentTypeRecord(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, unique=True, index=True)
     description = Column(String)
+    kind = Column(String)
+    cmd = Column(String)
     image = Column(String)
     versions = Column(String, nullable=True)
     repo = Column(String, nullable=True)
