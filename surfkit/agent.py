@@ -43,6 +43,10 @@ class TaskAgent(Generic[C, T], ABC):
         pass
 
     @classmethod
+    def is_supported(cls, device: Device) -> bool:
+        return type(device) in cls.supported_devices()
+
+    @classmethod
     @abstractmethod
     def config_type(cls) -> Type[C]:
         """Type to configure the agent

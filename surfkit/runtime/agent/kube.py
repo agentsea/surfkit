@@ -23,7 +23,7 @@ from kubernetes.client.api import core_v1_api
 from namesgenerator import get_random_name
 from tenacity import retry
 from pydantic import BaseModel
-from taskara.server.models import SolveTaskModel
+from taskara.server.models import V1SolveTask
 from agentdesk.util import find_open_port
 from mllm import Router
 
@@ -707,7 +707,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self)
 
     def solve_task(
-        self, agent_name: str, task: SolveTaskModel, follow_logs: bool = False
+        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
     ) -> None:
         try:
             # Making the call to the specified path to initiate the task

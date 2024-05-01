@@ -5,7 +5,7 @@ import time
 import signal
 import json
 
-from taskara.server.models import SolveTaskModel
+from taskara.server.models import V1SolveTask
 from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel
@@ -116,7 +116,7 @@ class ProcessAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self, port)
 
     def solve_task(
-        self, agent_name: str, task: SolveTaskModel, follow_logs: bool = False
+        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
     ) -> None:
         try:
             # Fetch the list of all processes to find the required agent

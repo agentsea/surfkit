@@ -3,7 +3,7 @@ import os
 
 import docker
 from docker.errors import NotFound
-from taskara.server.models import SolveTaskModel
+from taskara.server.models import V1SolveTask
 from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel
@@ -105,7 +105,7 @@ class DockerAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self)
 
     def solve_task(
-        self, agent_name: str, task: SolveTaskModel, follow_logs: bool = False
+        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
     ) -> None:
         try:
             container = self.client.containers.get(agent_name)

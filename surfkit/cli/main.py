@@ -527,7 +527,7 @@ def solve(
     runtime: str = typer.Option("docker", help="Runtime environment for the agent."),
 ):
     typer.echo(f"Solving task {description}...")
-    from taskara.server.models import SolveTaskModel
+    from taskara.server.models import V1SolveTask
     from taskara import Task
 
     if runtime == "docker":
@@ -561,8 +561,8 @@ def solve(
         raise ValueError(f"Unknown runtime '{runtime}'")
 
     task = Task(description=description, parameters={"site": starting_url})
-    mdl = SolveTaskModel(
-        task=task.to_schema(),
+    mdl = V1SolveTask(
+        task=task.to_v1(),
         max_steps=max_steps,
     )
     runt.solve_task(agent_name, mdl)
