@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel
+from taskara import V1Task
 
 
 class V1Action(BaseModel):
@@ -54,6 +55,21 @@ class V1EnvVarOpt(BaseModel):
 
 class V1LLMProviders(BaseModel):
     preference: List[str] = []
+
+
+class V1Agent(BaseModel):
+    name: str
+    config: BaseModel
+
+
+class V1SolveTask(BaseModel):
+    task: V1Task
+    agent: Optional[V1Agent] = None
+
+
+class V1CreateTask(BaseModel):
+    task: V1Task
+    agent: Optional[V1Agent] = None
 
 
 class V1Meter(BaseModel):
