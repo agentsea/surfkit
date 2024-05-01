@@ -102,7 +102,7 @@ class V1AgentTypes(BaseModel):
     types: List[V1AgentType]
 
 
-class CreateAgentTypeModel(BaseModel):
+class V1CreateAgentType(BaseModel):
     id: str
     name: str
     description: str
@@ -112,6 +112,11 @@ class CreateAgentTypeModel(BaseModel):
     versions: Dict[str, str] = {}
     public: bool = False
     icon: Optional[str] = None
+
+
+class V1Work:
+    remote: str
+    check_interval: int
 
 
 class V1UserProfile(BaseModel):

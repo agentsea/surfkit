@@ -519,12 +519,14 @@ def new():
 @app.command(help="Use an agent to solve a task")
 def solve(
     description: str = typer.Option(..., help="Description of the task."),
-    agent_name: str = typer.Option(..., help="Name of the agent to use."),
+    agent_name: Optional[str] = typer.Option(None, help="Name of the agent to use."),
+    agent_type: Optional[str] = typer.Option(None, help="Type of agent to use."),
     max_steps: int = typer.Option(20, help="Maximum steps for the task."),
     starting_url: Optional[str] = typer.Option(
         None, help="Starting URL if applicable."
     ),
     runtime: str = typer.Option("docker", help="Runtime environment for the agent."),
+    kill: bool = typer.Option(False, help="Whether to kill the agent when done"),
 ):
     typer.echo(f"Solving task {description}...")
     from taskara.server.models import V1SolveTask

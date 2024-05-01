@@ -31,3 +31,11 @@ class AgentTypeRecord(Base):
     llm_providers = Column(String, nullable=True)
     devices = Column(String, nullable=True)
     meters = Column(String, nullable=True)
+
+
+class AgentStatus(Base):
+    __tablename__ = "agent_status"
+
+    agent_id = Column(String, primary_key=True)
+    status = Column(String)
+    task_id = Column(String, nullable=True)

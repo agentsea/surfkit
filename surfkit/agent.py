@@ -13,6 +13,10 @@ T = TypeVar("T", bound="TaskAgent")
 class TaskAgent(Generic[C, T], ABC):
     """An agent that works on tasks"""
 
+    @classmethod
+    def name(cls) -> str:
+        return cls.__name__
+
     @abstractmethod
     def solve_task(
         self,
