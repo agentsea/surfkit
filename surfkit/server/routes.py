@@ -3,7 +3,7 @@ import os
 from typing import List, Final
 import logging
 
-from taskara.server.models import V1SolveTask, V1Task, V1Tasks
+from taskara.server.models import V1Task, V1Tasks
 from taskara.task import Task
 from surfkit.hub import Hub
 from fastapi import FastAPI, BackgroundTasks
@@ -45,7 +45,7 @@ async def health():
 
 
 @app.post("/v1/tasks")
-async def solve_task(background_tasks: BackgroundTasks, task_model: V1SolveTask):
+async def solve_task(background_tasks: BackgroundTasks, task_model: V1Task):
     print(f"solving task: 
 {task_model.model_dump()}")
     try:
@@ -61,7 +61,7 @@ async def solve_task(background_tasks: BackgroundTasks, task_model: V1SolveTask)
     background_tasks.add_task(_solve_task, task_model)
     print("created background task...")
 
-def _solve_task(task_model: V1SolveTask):
+def _solve_task(task_model: V1Task):
     task = Task.from_v1(task_model.task, owner_id="local")
     if task.remote:
         print("connecting to remote task...")
@@ -139,7 +139,7 @@ async def get_task(id: str):
 
 
 @app.post("/v1/work")
-async def work(background_tasks: BackgroundTasks, work_model: V1SolveTask):
+async def work(background_tasks: BackgroundTasks, work_model: V1Task):
     print(f"solving task: {work_model.model_dump()}")
     try:
         # TODO: we need to find a way to do this earlier but get status back
@@ -155,7 +155,7 @@ async def work(background_tasks: BackgroundTasks, work_model: V1SolveTask):
     print("created background task...")
 
 
-def _work(work_model: V1SolveTask):
+def _work(work_model: V1Task):
     while True:
         print("connecting to remote task...")
         HUB_SERVER = os.environ.get("SURF_HUB_SERVER", "https://surf.agentlabs.xyz")

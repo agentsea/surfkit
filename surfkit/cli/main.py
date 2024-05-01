@@ -14,6 +14,9 @@ from namesgenerator import get_random_name
 import requests
 from tabulate import tabulate
 
+from surfkit import agent
+from surfkit.types import AgentType
+
 art = """
  _______                ___  __  __  __  __   
 |     __|.--.--..----..'  _||  |/  ||__||  |_ 
@@ -521,16 +524,28 @@ def solve(
     description: str = typer.Option(..., help="Description of the task."),
     agent_name: Optional[str] = typer.Option(None, help="Name of the agent to use."),
     agent_type: Optional[str] = typer.Option(None, help="Type of agent to use."),
+    agent_file: Optional[str] = typer.Option(None, help="Path to agent config file."),
+    agent_version: Optional[str] = typer.Option(None, help="Version of agent to use."),
+    device: Optional[str] = typer.Option(
+        None, help="Name of device to use if applicable."
+    ),
+    device_type: Optional[str] = typer.Option(
+        None, help="Name of the type of device if using one."
+    ),
+    device_provider: Optional[str] = typer.Option(
+        None, help="The provider type for the device."
+    ),
     max_steps: int = typer.Option(20, help="Maximum steps for the task."),
     starting_url: Optional[str] = typer.Option(
         None, help="Starting URL if applicable."
     ),
     runtime: str = typer.Option("docker", help="Runtime environment for the agent."),
     kill: bool = typer.Option(False, help="Whether to kill the agent when done"),
+    view: bool = typer.Option(True, help="Whether to view the device"),
+    follow: bool = typer.Option(True, help="Whether to follow the agent logs"),
 ):
-    typer.echo(f"Solving task {description}...")
-    from taskara.server.models import V1SolveTask
     from taskara import Task
+    from agentdesk import Desktop
 
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
@@ -562,12 +577,86 @@ def solve(
     else:
         raise ValueError(f"Unknown runtime '{runtime}'")
 
-    task = Task(description=description, parameters={"site": starting_url})
-    mdl = V1SolveTask(
-        task=task.to_v1(),
+    v1device = None
+    _device = None
+    if device_type:
+        if device_type == "desktop":
+            from agentdesk.server.models import V1ProviderData
+            from agentdesk.vm.load import load_provider
+
+            data = V1ProviderData(type=device_provider)
+            _provider = load_provider(data)
+
+            typer.echo(
+                f"Creating desktop '{agent_name}' using '{device_provider}' provider"
+            )
+            try:
+                vm = _provider.create(
+                    name=agent_name,
+                )
+                _device = Desktop.from_vm(vm)
+                v1device = _device.to_v1()
+            except KeyboardInterrupt:
+                print("Keyboard interrupt received, exiting...")
+                return
+        else:
+            raise ValueError(f"unknown device type {device_type}")
+
+    if device:
+        typer.echo(f"finding device '{device}'...")
+        vms = Desktop.find(name=device)
+        if not vms:
+            raise ValueError(f"Device '{device}' not found")
+        vm = vms[0]
+        _device = Desktop.from_vm(vm)
+        v1device = _device.to_v1()
+        typer.echo(f"found device '{device}'...")
+
+    if _device and view:
+        typer.echo("viewing device...")
+        _device.view(True)
+
+    if agent_type:
+        from surfkit.config import HUB_API_URL
+
+        types = AgentType.find(remote=HUB_API_URL, name=agent_type)
+        if not types:
+            raise ValueError(f"Agent type '{agent_type}' not found")
+        typ = types[0]
+        if not agent_name:
+            agent_name = get_random_name("-")
+            if not agent_name:
+                raise ValueError("could not generate agent name")
+        typer.echo(f"creating agent {agent_name}...")
+        runt.run(agent_type=typ, name=agent_name, version=agent_version)
+
+    if agent_file:
+        typ = AgentType.from_file(agent_file)
+        if not agent_name:
+            agent_name = get_random_name("-")
+            if not agent_name:
+                raise ValueError("could not generate agent name")
+        typer.echo(f"creating agent {agent_name} from file {agent_file}...")
+        runt.run(agent_type=typ, name=agent_name, version=agent_version)
+
+    if not agent_name:
+        raise ValueError("Either agent_name or agent_type needs to be provided")
+
+    task = Task(
+        description=description,
+        parameters={"site": starting_url},
         max_steps=max_steps,
+        device=v1device,
+        assigned_to=agent_name,
+        assigned_type=agent_type,
     )
-    runt.solve_task(agent_name, mdl)
+
+    typer.echo(f"Solving task '{task.description}' with agent {agent_name}...")
+    runt.solve_task(agent_name, task.to_v1(), follow_logs=follow)
+
+    if kill:
+        typer.echo(f"Killing agent {agent_name}...")
+        runt.delete(agent_name)
 
 
 if __name__ == "__main__":

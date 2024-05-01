@@ -4,6 +4,7 @@ import time
 import json
 import os
 import logging
+import yaml
 
 from sqlalchemy import or_
 import requests
@@ -75,6 +76,16 @@ class AgentType(WithDB):
         self.remote = remote
         self.save()
 
+    @classmethod
+    def from_file(
+        cls, path: str = "./agent.yaml", owner_id: Optional[str] = None
+    ) -> "AgentType":
+        with open(path) as f:
+            data = yaml.safe_load(f)
+
+        v1 = V1AgentType.model_validate(data)
+        return cls.from_v1(v1, owner_id)
+
     def to_v1(self) -> V1AgentType:
         return V1AgentType(
             id=self.id,
@@ -100,30 +111,28 @@ class AgentType(WithDB):
         )
 
     @classmethod
-    def from_v1(
-        cls, schema: V1AgentType, owner_id: Optional[str] = None
-    ) -> "AgentType":
+    def from_v1(cls, v1: V1AgentType, owner_id: Optional[str] = None) -> "AgentType":
         obj = cls.__new__(cls)
-        obj.id = schema.id
-        obj.name = schema.name
-        obj.kind = schema.kind
-        obj.owner_id = schema.owner_id
-        obj.description = schema.description
-        obj.cmd = schema.cmd
-        obj.image = schema.image
-        obj.env_opts = schema.env_opts
-        obj.runtimes = schema.runtimes
-        obj.created = schema.created
-        obj.updated = schema.updated
-        obj.public = schema.public
-        obj.icon = schema.icon
-        obj.resource_requests = schema.resource_requests
-        obj.resource_limits = schema.resource_limits
-        obj.versions = schema.versions
-        obj.llm_providers = schema.llm_providers
-        obj.devices = schema.devices
-        obj.repo = schema.repo
-        obj.meters = schema.meters
+        obj.id = v1.id
+        obj.name = v1.name
+        obj.kind = v1.kind
+        obj.owner_id = v1.owner_id
+        obj.description = v1.description
+        obj.cmd = v1.cmd
+        obj.image = v1.image
+        obj.env_opts = v1.env_opts
+        obj.runtimes = v1.runtimes
+        obj.created = v1.created
+        obj.updated = v1.updated
+        obj.public = v1.public
+        obj.icon = v1.icon
+        obj.resource_requests = v1.resource_requests
+        obj.resource_limits = v1.resource_limits
+        obj.versions = v1.versions
+        obj.llm_providers = v1.llm_providers
+        obj.devices = v1.devices
+        obj.repo = v1.repo
+        obj.meters = v1.meters
         obj.owner_id = owner_id
         return obj
 
