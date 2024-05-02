@@ -109,6 +109,9 @@ def create_device(
     name: Optional[str] = typer.Option(
         None, help="The name of the desktop to create. Defaults to a generated name."
     ),
+    type: Optional[str] = typer.Option(
+        "desktop", help="The type of device to create. Options are 'desktop'"
+    ),
     provider: str = typer.Option(
         "qemu",
         help="The provider type for the desktop. Options are 'ec2', 'gce', and 'qemu'",
@@ -129,6 +132,10 @@ def create_device(
 ):
     from agentdesk.server.models import V1ProviderData
     from agentdesk.vm.load import load_provider
+
+    if type != "desktop":
+        typer.echo("Currently only 'desktop' type is supported.")
+        raise typer.Exit()
 
     if not name:
         name = get_random_name(sep="-")
