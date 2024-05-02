@@ -14,6 +14,8 @@ from namesgenerator import get_random_name
 import requests
 from tabulate import tabulate
 
+from surfkit.models import V1SolveTask
+
 art = """
  _______                ___  __  __  __  __   
 |     __|.--.--..----..'  _||  |/  ||__||  |_ 
@@ -689,6 +691,9 @@ def new():
 def solve(
     description: str = typer.Option(..., help="Description of the task."),
     agent: Optional[str] = typer.Option(None, help="Name of the agent to use."),
+    agent_runtime: str = typer.Option(
+        "docker", help="Runtime environment for the agent."
+    ),
     agent_type: Optional[str] = typer.Option(None, help="Type of agent to use."),
     agent_file: Optional[str] = typer.Option(None, help="Path to agent config file."),
     agent_version: Optional[str] = typer.Option(None, help="Version of agent to use."),
@@ -705,7 +710,6 @@ def solve(
     starting_url: Optional[str] = typer.Option(
         None, help="Starting URL if applicable."
     ),
-    runtime: str = typer.Option("docker", help="Runtime environment for the agent."),
     kill: bool = typer.Option(False, help="Whether to kill the agent when done"),
     view: bool = typer.Option(True, help="Whether to view the device"),
     follow: bool = typer.Option(True, help="Whether to follow the agent logs"),
@@ -714,7 +718,7 @@ def solve(
     from agentdesk import Desktop
     from surfkit.types import AgentType
 
-    if runtime == "docker":
+    if agent_runtime == "docker":
         from surfkit.runtime.agent.docker import (
             DockerAgentRuntime,
             ConnectConfig as DockerConnectConfig,
@@ -723,7 +727,7 @@ def solve(
         dconf = DockerConnectConfig()
         runt = DockerAgentRuntime.connect(cfg=dconf)
 
-    elif runtime == "kube":
+    elif agent_runtime == "kube":
         from surfkit.runtime.agent.kube import (
             KubernetesAgentRuntime,
             ConnectConfig as KubeConnectConfig,
@@ -732,7 +736,7 @@ def solve(
         kconf = KubeConnectConfig()
         runt = KubernetesAgentRuntime.connect(cfg=kconf)
 
-    elif runtime == "process":
+    elif agent_runtime == "process":
         from surfkit.runtime.agent.process import (
             ProcessAgentRuntime,
             ConnectConfig as ProcessConnectConfig,
@@ -742,7 +746,7 @@ def solve(
         runt = ProcessAgentRuntime.connect(cfg=pconf)
 
     else:
-        raise ValueError(f"Unknown runtime '{runtime}'")
+        raise ValueError(f"Unknown runtime '{agent_runtime}'")
 
     v1device = None
     _device = None
@@ -816,15 +820,16 @@ def solve(
         assigned_type=agent_type,
     )
 
-    typer.echo(f"Solving task '{task.description}' with agent {agent}...")
-    runt.solve_task(agent, task.to_v1(), follow_logs=follow)
+    typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
+    solve_v1 = V1SolveTask(task=task.to_v1())
+    runt.solve_task(agent, solve_v1, follow_logs=follow)
 
     if kill:
         typer.echo(f"Killing agent {agent}...")
         runt.delete(agent)
 
 
-@get.command("logs")
+@app.command("logs")
 def get_logs(
     name: str = typer.Option(
         ..., help="The name of the agent whose logs are to be retrieved."

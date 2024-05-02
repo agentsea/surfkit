@@ -29,7 +29,12 @@ from mllm import Router
 
 from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
-from surfkit.models import V1ResourceLimits, V1ResourceRequests, V1AgentType
+from surfkit.models import (
+    V1ResourceLimits,
+    V1ResourceRequests,
+    V1AgentType,
+    V1SolveTask,
+)
 
 
 class GKEOpts(BaseModel):
@@ -707,7 +712,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self)
 
     def solve_task(
-        self, agent_name: str, task: V1Task, follow_logs: bool = False
+        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
     ) -> None:
         try:
             # Making the call to the specified path to initiate the task

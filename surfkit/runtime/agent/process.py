@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from mllm import Router
 
 from .base import AgentRuntime, AgentInstance
-from surfkit.models import V1AgentType
+from surfkit.models import V1AgentType, V1SolveTask
 from surfkit.types import AgentType
 from surfkit.util import find_open_port
 
@@ -122,7 +122,7 @@ class ProcessAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self, port)
 
     def solve_task(
-        self, agent_name: str, task: V1Task, follow_logs: bool = False
+        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
     ) -> None:
         try:
             # Fetch the list of all processes to find the required agent

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from taskara import V1Task
 
 from surfkit.types import AgentType
-from surfkit.models import V1AgentInstance
+from surfkit.models import V1AgentInstance, V1SolveTask
 
 R = TypeVar("R", bound="AgentRuntime")
 C = TypeVar("C", bound="BaseModel")
@@ -46,7 +46,7 @@ class AgentInstance:
     ) -> None:
         return self._runtime.proxy(self._name, local_port, pod_port, background)
 
-    def solve_task(self, task: V1Task, follow_logs: bool = False) -> None:
+    def solve_task(self, task: V1SolveTask, follow_logs: bool = False) -> None:
         return self._runtime.solve_task(self._name, task, follow_logs)
 
     def delete(self) -> None:
@@ -104,7 +104,7 @@ class AgentRuntime(Generic[R, C], ABC):
 
     @abstractmethod
     def solve_task(
-        self, agent_name: str, task: V1Task, follow_logs: bool = False
+        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
     ) -> None:
         pass
 
