@@ -199,7 +199,7 @@ class ProcessAgentRuntime(AgentRuntime):
         instances = []
         metadata_dir = ".data/proc"
         all_processes = subprocess.check_output(
-            "ps ax -o pid,cmd", shell=True, text=True
+            "ps ax -o pid,command", shell=True, text=True
         )
 
         for filename in os.listdir(metadata_dir):
@@ -235,7 +235,7 @@ class ProcessAgentRuntime(AgentRuntime):
     def delete(self, name: str) -> None:
         try:
             process_list = subprocess.check_output(
-                f"ps ax -o pid,cmd | grep -v grep | grep SURFER={name}",
+                f"ps ax -o pid,command | grep -v grep | grep SURFER={name}",
                 shell=True,
                 text=True,
             )
