@@ -21,9 +21,9 @@ class ConnectConfig(BaseModel):
 
 class DockerAgentRuntime(AgentRuntime):
 
-    def __init__(self, config: ConnectConfig) -> None:
-        if config.timeout:
-            self.client = docker.from_env(timeout=config.timeout)
+    def __init__(self, cfg: ConnectConfig) -> None:
+        if cfg.timeout:
+            self.client = docker.from_env(timeout=cfg.timeout)
         else:
             self.client = docker.from_env()
 

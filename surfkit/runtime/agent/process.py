@@ -33,7 +33,7 @@ class ProcessAgentRuntime(AgentRuntime):
 
     @classmethod
     def connect(cls, cfg: ConnectConfig) -> "ProcessAgentRuntime":
-        return cls(cfg)
+        return cls()
 
     def run(
         self,

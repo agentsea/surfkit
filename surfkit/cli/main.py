@@ -14,9 +14,6 @@ from namesgenerator import get_random_name
 import requests
 from tabulate import tabulate
 
-from surfkit import agent
-from surfkit.types import AgentType
-
 art = """
  _______                ___  __  __  __  __   
 |     __|.--.--..----..'  _||  |/  ||__||  |_ 
@@ -546,6 +543,7 @@ def solve(
 ):
     from taskara import Task
     from agentdesk import Desktop
+    from surfkit.types import AgentType
 
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
