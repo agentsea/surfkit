@@ -274,7 +274,15 @@ def list_agents(runtime: str = "all"):
             runt = ProcessAgentRuntime.connect(cfg=pconf)
             agents = runt.list()
             for agent in agents:
-                agents_list.append([agent.name, agent.type.name, "process", agent.port])
+                agents_list.append(
+                    [
+                        agent.name,
+                        agent.type.kind,
+                        agent.type.name,
+                        "process",
+                        agent.port,
+                    ]
+                )
         except Exception as e:
             if runtime != "all":
                 raise
@@ -287,6 +295,7 @@ def list_agents(runtime: str = "all"):
                 agents_list,
                 headers=[
                     "Name",
+                    "Kind",
                     "Type",
                     "Runtime",
                     "Port",
