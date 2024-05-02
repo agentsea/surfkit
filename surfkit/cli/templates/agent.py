@@ -696,6 +696,7 @@ cython_debug/
 #.idea/
 
 .data/
+cidata.iso
 """
     file_path = Path(".gitignore")
 

@@ -27,14 +27,14 @@ app = typer.Typer()
 create = typer.Typer(help="Create an agent or device")
 list_group = typer.Typer(help="List resources")
 get = typer.Typer(help="Get resources")
-view = typer.Typer(help="View resources")
+view_group = typer.Typer(help="View resources")
 delete_group = typer.Typer(help="Delete resources")
 clean_group = typer.Typer(help="Clean resources")
 
 app.add_typer(create, name="create")
 app.add_typer(list_group, name="list")
 app.add_typer(get, name="get")
-app.add_typer(view, name="view")
+app.add_typer(view_group, name="view")
 app.add_typer(delete_group, name="delete")
 # app.add_typer(clean_group, name="clean")
 
@@ -89,6 +89,12 @@ def get_default(ctx: typer.Context):
 @delete_group.callback(invoke_without_command=True)
 def delete_default(ctx: typer.Context):
     show_help(ctx, "delete")
+
+
+# 'view' command group callback
+@view_group.callback(invoke_without_command=True)
+def view_default(ctx: typer.Context):
+    show_help(ctx, "view")
 
 
 # 'clean' command group callback
@@ -220,7 +226,7 @@ def create_agent(
 
 
 @list_group.command("agents")
-def list_agents(runtime: str = "docker"):
+def list_agents(runtime: str = "all"):
     agents_list = []
 
     if runtime == "docker" or runtime == "all":
@@ -234,7 +240,7 @@ def list_agents(runtime: str = "docker"):
             runt = DockerAgentRuntime.connect(cfg=dconf)
             agents = runt.list()
             for agent in agents:
-                agents_list.append([agent.name, "docker", agent.type, agent.port])
+                agents_list.append([agent.name, agent.type, "docker", agent.port])
         except Exception as e:
             if runtime != "all":
                 raise
@@ -251,7 +257,7 @@ def list_agents(runtime: str = "docker"):
             runt = KubernetesAgentRuntime.connect(cfg=kconf)
             agents = runt.list()
             for agent in agents:
-                agents_list.append([agent.name, "kube", agent.type, agent.port])
+                agents_list.append([agent.name, agent.type, "kube", agent.port])
         except Exception as e:
             if runtime != "all":
                 raise
@@ -268,7 +274,7 @@ def list_agents(runtime: str = "docker"):
             runt = ProcessAgentRuntime.connect(cfg=pconf)
             agents = runt.list()
             for agent in agents:
-                agents_list.append([agent.name, "process", agent.type, agent.port])
+                agents_list.append([agent.name, agent.type.name, "process", agent.port])
         except Exception as e:
             if runtime != "all":
                 raise
@@ -281,8 +287,8 @@ def list_agents(runtime: str = "docker"):
                 agents_list,
                 headers=[
                     "Name",
-                    "Runtime",
                     "Type",
+                    "Runtime",
                     "Port",
                 ],
             )
@@ -568,6 +574,23 @@ def delete_type(name: str):
     typer.echo("Agent type deleted")
 
 
+# View subcommands
+
+
+@view_group.command("device")
+def view_device(
+    name: str = typer.Option(..., help="The name of the device to view."),
+    background: bool = typer.Option(False, help="Run the viewer in background mode"),
+):
+    from agentdesk.vm import DesktopVM
+
+    desktop = DesktopVM.get(name)
+    if not desktop:
+        raise ValueError(f"Desktop '{name}' not found")
+
+    desktop.view(background=background)
+
+
 # Other commands
 @app.command(help="Login to the hub")
 def login():
@@ -648,7 +671,7 @@ def new():
 @app.command(help="Use an agent to solve a task")
 def solve(
     description: str = typer.Option(..., help="Description of the task."),
-    agent_name: Optional[str] = typer.Option(None, help="Name of the agent to use."),
+    agent: Optional[str] = typer.Option(None, help="Name of the agent to use."),
     agent_type: Optional[str] = typer.Option(None, help="Type of agent to use."),
     agent_file: Optional[str] = typer.Option(None, help="Path to agent config file."),
     agent_version: Optional[str] = typer.Option(None, help="Version of agent to use."),
@@ -714,12 +737,10 @@ def solve(
             data = V1ProviderData(type=device_provider)
             _provider = load_provider(data)
 
-            typer.echo(
-                f"Creating desktop '{agent_name}' using '{device_provider}' provider"
-            )
+            typer.echo(f"Creating desktop '{agent}' using '{device_provider}' provider")
             try:
                 vm = _provider.create(
-                    name=agent_name,
+                    name=agent,
                 )
                 _device = Desktop.from_vm(vm)
                 v1device = _device.to_v1()
@@ -750,40 +771,40 @@ def solve(
         if not types:
             raise ValueError(f"Agent type '{agent_type}' not found")
         typ = types[0]
-        if not agent_name:
-            agent_name = get_random_name("-")
-            if not agent_name:
+        if not agent:
+            agent = get_random_name("-")
+            if not agent:
                 raise ValueError("could not generate agent name")
-        typer.echo(f"creating agent {agent_name}...")
-        runt.run(agent_type=typ, name=agent_name, version=agent_version)
+        typer.echo(f"creating agent {agent}...")
+        runt.run(agent_type=typ, name=agent, version=agent_version)
 
     if agent_file:
         typ = AgentType.from_file(agent_file)
-        if not agent_name:
-            agent_name = get_random_name("-")
-            if not agent_name:
+        if not agent:
+            agent = get_random_name("-")
+            if not agent:
                 raise ValueError("could not generate agent name")
-        typer.echo(f"creating agent {agent_name} from file {agent_file}...")
-        runt.run(agent_type=typ, name=agent_name, version=agent_version)
+        typer.echo(f"creating agent {agent} from file {agent_file}...")
+        runt.run(agent_type=typ, name=agent, version=agent_version)
 
-    if not agent_name:
-        raise ValueError("Either agent_name or agent_type needs to be provided")
+    if not agent:
+        raise ValueError("Either agent or agent_type needs to be provided")
 
     task = Task(
         description=description,
         parameters={"site": starting_url},
         max_steps=max_steps,
         device=v1device,
-        assigned_to=agent_name,
+        assigned_to=agent,
         assigned_type=agent_type,
     )
 
-    typer.echo(f"Solving task '{task.description}' with agent {agent_name}...")
-    runt.solve_task(agent_name, task.to_v1(), follow_logs=follow)
+    typer.echo(f"Solving task '{task.description}' with agent {agent}...")
+    runt.solve_task(agent, task.to_v1(), follow_logs=follow)
 
     if kill:
-        typer.echo(f"Killing agent {agent_name}...")
-        runt.delete(agent_name)
+        typer.echo(f"Killing agent {agent}...")
+        runt.delete(agent)
 
 
 @get.command("logs")
