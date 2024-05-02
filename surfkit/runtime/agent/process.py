@@ -101,10 +101,12 @@ class ProcessAgentRuntime(AgentRuntime):
         os.makedirs(f".data/logs", exist_ok=True)
         command = f"nohup {agent_type.cmd} SURFER={name} SURF_PORT={port}> ./.data/logs/{name.lower()}.log 2>&1 &"
 
+        environment = os.environ.copy()
         process = subprocess.Popen(
             command,
             shell=True,
             preexec_fn=os.setsid,
+            env=environment,
             text=True,
         )
 
