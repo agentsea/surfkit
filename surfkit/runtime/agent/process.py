@@ -4,6 +4,7 @@ import subprocess
 import time
 import signal
 import json
+import logging
 
 from taskara.server.models import V1Task
 from agentdesk.util import find_open_port
@@ -15,6 +16,9 @@ from .base import AgentRuntime, AgentInstance
 from surfkit.models import V1AgentType
 from surfkit.types import AgentType
 from surfkit.util import find_open_port
+
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectConfig(BaseModel):
@@ -48,7 +52,7 @@ class ProcessAgentRuntime(AgentRuntime):
         port = find_open_port(9090, 9990)
         if not port:
             raise ValueError("Could not find open port")
-        print("running process")
+        logger.debug("running process")
 
         metadata = {
             "name": name,
@@ -74,10 +78,12 @@ class ProcessAgentRuntime(AgentRuntime):
                     )
                 key = os.getenv(api_key_env)
                 if not key:
-                    print(f"No API key found locally for provider: {provider_name}")
+                    logger.info(
+                        f"No API key found locally for provider: {provider_name}"
+                    )
                     continue
 
-                print(f"API key found locally for provider: {provider_name}")
+                logger.info(f"API key found locally for provider: {provider_name}")
                 found[api_key_env] = key
 
             if not found:
@@ -92,6 +98,7 @@ class ProcessAgentRuntime(AgentRuntime):
         with open(f".data/proc/{name}.json", "w") as f:
             json.dump(metadata, f, indent=4)
 
+        os.makedirs(f".data/logs", exist_ok=True)
         command = f"SURFER={name} SURF_PORT={port} nohup {agent_type.cmd} > ./.data/logs/{name.lower()}.log 2>&1 &"
 
         process = subprocess.Popen(
@@ -106,11 +113,10 @@ class ProcessAgentRuntime(AgentRuntime):
 
         # Check if there were any errors
         if process.returncode != 0:
-            print("Error running command:")
+            logger.error("Error running command:")
             print(stderr)
         else:
             # Print the output from stdout
-            print("Command output:")
             print(stdout)
 
         return AgentInstance(name, agent_type, self, port)
@@ -127,7 +133,7 @@ class ProcessAgentRuntime(AgentRuntime):
             )
 
             if process_list.strip() == "":
-                print(f"No running process found with the name {agent_name}.")
+                logger.info(f"No running process found with the name {agent_name}.")
                 return
 
             # Extract the port from the process command
@@ -148,21 +154,23 @@ class ProcessAgentRuntime(AgentRuntime):
 
             # Handle the response
             if response.status_code == 200:
-                print("Task successfully posted to the agent.")
+                logger.info("Task successfully posted to the agent.")
                 if follow_logs:
                     # If required, follow the logs
                     logs = self.logs(agent_name, follow=True)
                     for log in logs:
                         print(log)
             else:
-                print(f"Failed to post task: {response.status_code} - {response.text}")
+                logger.error(
+                    f"Failed to post task: {response.status_code} - {response.text}"
+                )
 
         except subprocess.CalledProcessError as e:
-            print("Error while attempting to find the process:", str(e))
+            logger.error("Error while attempting to find the process:", str(e))
         except requests.exceptions.RequestException as e:
-            print("Error while sending the POST request:", str(e))
+            logger.error("Error while sending the POST request:", str(e))
         except Exception as e:
-            print(f"An unexpected error occurred: {str(e)}")
+            logger.error(f"An unexpected error occurred: {str(e)}")
 
     def proxy(
         self,
@@ -171,7 +179,7 @@ class ProcessAgentRuntime(AgentRuntime):
         pod_port: int = 9090,
         background: bool = True,
     ) -> None:
-        print("no proxy needed")
+        logger.info("no proxy needed")
         return
 
     def get(self, name: str) -> AgentInstance:
@@ -215,12 +223,12 @@ class ProcessAgentRuntime(AgentRuntime):
                     else:
                         # Process is not running, delete the metadata file
                         os.remove(os.path.join(metadata_dir, filename))
-                        print(
+                        logger.info(
                             f"Deleted metadata for non-existing process {metadata['name']}."
                         )
 
                 except Exception as e:
-                    print(f"Error processing {filename}: {str(e)}")
+                    logger.error(f"Error processing {filename}: {str(e)}")
 
         return instances
 
@@ -235,22 +243,22 @@ class ProcessAgentRuntime(AgentRuntime):
                 # Process found, extract PID and kill it
                 pid = process_list.strip().split()[0]
                 os.kill(int(pid), signal.SIGTERM)
-                print(f"Process {name} with PID {pid} has been terminated.")
+                logger.info(f"Process {name} with PID {pid} has been terminated.")
             else:
-                print(f"No running process found with the name {name}.")
+                logger.info(f"No running process found with the name {name}.")
 
             # Delete the metadata file whether or not the process was found
             metadata_file = f".data/proc/{name}.json"
             if os.path.exists(metadata_file):
                 os.remove(metadata_file)
-                print(f"Deleted metadata file for {name}.")
+                logger.info(f"Deleted metadata file for {name}.")
 
         except subprocess.CalledProcessError as e:
-            print("Error while attempting to delete the process:", str(e))
+            logger.error("Error while attempting to delete the process:", str(e))
         except ValueError as e:
-            print("Error parsing process ID:", str(e))
+            logger.error("Error parsing process ID:", str(e))
         except Exception as e:
-            print(f"An unexpected error occurred: {str(e)}")
+            logger.error(f"An unexpected error occurred: {str(e)}")
 
     def clean(self) -> None:
         try:
@@ -267,16 +275,18 @@ class ProcessAgentRuntime(AgentRuntime):
                     os.kill(
                         int(pid), signal.SIGTERM
                     )  # Send SIGTERM signal to terminate the process
-                    print(f"Terminated process with PID {pid}.")
+                    logger.info(f"Terminated process with PID {pid}.")
                 except OSError as e:
-                    print(f"Failed to terminate process with PID {pid}: {str(e)}")
-            print("All relevant processes have been terminated.")
+                    logger.error(
+                        f"Failed to terminate process with PID {pid}: {str(e)}"
+                    )
+            logger.info("All relevant processes have been terminated.")
         except subprocess.CalledProcessError as e:
-            print(
+            logger.error(
                 "No relevant processes found or error executing the ps command:", str(e)
             )
         except Exception as e:
-            print(f"An unexpected error occurred during cleanup: {str(e)}")
+            logger.error(f"An unexpected error occurred during cleanup: {str(e)}")
 
     def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
         log_path = f"./.data/logs/{name.lower()}.log"
