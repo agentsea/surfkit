@@ -99,7 +99,7 @@ class ProcessAgentRuntime(AgentRuntime):
             json.dump(metadata, f, indent=4)
 
         os.makedirs(f".data/logs", exist_ok=True)
-        command = f"SURFER={name} SURF_PORT={port} nohup {agent_type.cmd} > ./.data/logs/{name.lower()}.log 2>&1 &"
+        command = f"nohup {agent_type.cmd} SURFER={name} SURF_PORT={port}> ./.data/logs/{name.lower()}.log 2>&1 &"
 
         process = subprocess.Popen(
             command,

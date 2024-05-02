@@ -144,7 +144,7 @@ def create_agent(
         name = get_random_name(sep="-")
         if not name:
             raise ValueError("could not generate name")
-    typer.echo(f"Running agent '{file}' with runtime '{runtime}'...")
+    typer.echo(f"Running agent '{file}' with runtime '{runtime}' and name {name}...")
 
     from surfkit.models import V1AgentType
     from surfkit.types import AgentType
@@ -197,7 +197,7 @@ def create_agent(
         agent_type = AgentType.from_v1(agent_type_model)
 
     runt.run(agent_type, name)
-    typer.echo(f"Successfully created agent")
+    typer.echo(f"Successfully created agent '{name}'")
 
 
 # 'list' sub-commands
