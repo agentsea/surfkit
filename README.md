@@ -10,16 +10,16 @@ pip install surfkit
 
 ## Usage
 
-Create a new agent
+Create a new agent repo
 
 ```sh
-surfkit init [NAME]
+surfkit new [NAME]
 ```
 
 Run the agent
 
 ```sh
-surfkit run . --provider kubernetes
+surfkit create agent --provider kubernetes
 ```
 
 Publish the agent
