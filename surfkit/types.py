@@ -296,6 +296,18 @@ class AgentType(WithDB):
                     session.delete(record)
                     session.commit()
 
+    def remove(self) -> None:
+        for session in self.get_db():
+            if session:
+                record = (
+                    session.query(AgentTypeRecord)
+                    .filter_by(name=self.name, owner_id=self.owner_id)
+                    .first()
+                )
+                if record:
+                    session.delete(record)
+                    session.commit()
+
     def update(self, model: V1AgentType) -> None:
         """
         Updates the current AgentType instance with values from an AgentTypeModel instance.
