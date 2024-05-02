@@ -2427,19 +2427,19 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.8"
+version = "0.1.10"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.8-py3-none-any.whl", hash = "sha256:ae641ded325532e329955d3f13c251c5c9b8788d72f6d665ffcd240da1485d79"},
-    {file = "mllm-0.1.8.tar.gz", hash = "sha256:afad52ee9cf9c10d1a20e7e11434c3386aad947752fb5c80d8732b28ee694c13"},
+    {file = "mllm-0.1.10-py3-none-any.whl", hash = "sha256:d194a46542256800e070c2f89dd03614d15092dca98563ac9bd33c885e83958a"},
+    {file = "mllm-0.1.10.tar.gz", hash = "sha256:4e2a5baaac592d515d02c7ad35df2a3daff927e546eabfa8bed95e32d70ee8cf"},
 ]
 
 [package.dependencies]
 litellm = ">=1.35.29,<2.0.0"
 tenacity = ">=8.2.3,<9.0.0"
-threadmem = ">=0.2.25,<0.3.0"
+threadmem = ">=0.2.26,<0.3.0"
 
 [[package]]
 name = "multidict"
@@ -3405,6 +3405,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -3764,17 +3765,17 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.8"
+version = "0.1.9"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.8-py3-none-any.whl", hash = "sha256:23c78d21c8647eda1948a68767007943cc83341a1e5f5595b326409008f2de67"},
-    {file = "skillpacks-0.1.8.tar.gz", hash = "sha256:e7c72202920f3d4d54296cd0e8608e37305a1479bea068472ede5fc2ef7b36f4"},
+    {file = "skillpacks-0.1.9-py3-none-any.whl", hash = "sha256:46fd9468b99407b021055dcc10e83e7483ff5e479021c0842c761514a7782047"},
+    {file = "skillpacks-0.1.9.tar.gz", hash = "sha256:098d138a61a8c8095dc47832411ebbb0649830e763da4606bacfe2ae984da7fc"},
 ]
 
 [package.dependencies]
-mllm = ">=0.1.8,<0.2.0"
+mllm = ">=0.1.10,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
@@ -3928,13 +3929,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.47"
+version = "0.1.48"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.47-py3-none-any.whl", hash = "sha256:6eacc9fab16c2b9b527784ce6f2e1bb58fccb16015d5fff919a11630ff7b89b0"},
-    {file = "taskara-0.1.47.tar.gz", hash = "sha256:5c884676ea37bb959b79376cf98a81c5774a74f9f4f15dda2f2338490abb72f1"},
+    {file = "taskara-0.1.48-py3-none-any.whl", hash = "sha256:4233c228aca4fa75c157451a7b464cb5a2e094e3567fb3b9859542e5a914e7dd"},
+    {file = "taskara-0.1.48.tar.gz", hash = "sha256:40c9a9b809b6b5ce08f1a5fd051744eefe301d2d50f131645e6ed58392b9e91e"},
 ]
 
 [package.dependencies]
@@ -3942,7 +3943,7 @@ devicebay = ">=0.1.16,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
 skillpacks = ">=0.1.8,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
-threadmem = ">=0.2.25,<0.3.0"
+threadmem = ">=0.2.26,<0.3.0"
 
 [[package]]
 name = "tenacity"
@@ -3974,13 +3975,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.25"
+version = "0.2.26"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.25-py3-none-any.whl", hash = "sha256:0a0ba1fceb7afd858cb8932a8d7bdc761a35a8bad30336fb4d4b32fc07425e3d"},
-    {file = "threadmem-0.2.25.tar.gz", hash = "sha256:04599d2f2089c67b2e232a5c275bf180b5e7b2fb2662a2c30d950fc44e4896b8"},
+    {file = "threadmem-0.2.26-py3-none-any.whl", hash = "sha256:16dbdfddcd801248153359658b37b6130d66ffefff6eda399b015d9e5c5a92bb"},
+    {file = "threadmem-0.2.26.tar.gz", hash = "sha256:375b08da85a106cd2cae7d948391f261b0659a93997b6cf8068c288b5f9f0955"},
 ]
 
 [package.dependencies]
@@ -4834,4 +4835,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "35372e03014334a062857501de0ef8d578736b1f82f2d2208d6136e9a728d391"
+content-hash = "ae372fef67916d3c4c7728d442946a3914d66fff59fbe86304347844a57910e3"

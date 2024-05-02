@@ -302,6 +302,7 @@ def list_agents(runtime: str = "all"):
                 ],
             )
         )
+        print("")
     else:
         print("No agents found.")
 
