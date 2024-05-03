@@ -85,16 +85,15 @@ def is_docker_installed():
 def build_docker_image(
     dockerfile_path: str, tag: str, push: bool = True, builder: str = "default"
 ):
-    """
-    Builds and pushes a Docker image using Docker buildx.
-
-    Args:
-    dockerfile_path (str): Path to the Dockerfile.
-    tag (str): Tag for the Docker image to use for the registry.
-    push (bool): Whether to push the image to the registry after building. Defaults to True.
-    builder (str): Name of the buildx builder instance (defaults to "default").
-    """
     try:
+        # Ensure using the correct Docker context
+        subprocess.run(
+            ["docker", "context", "use", "default"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
         # Setting up Docker buildx (ensure it uses the correct builder)
         subprocess.run(
             ["docker", "buildx", "use", builder],

@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 
-from ..util import pkg_from_name
+from grpc import server
+
+from surfkit.cli.util import pkg_from_name
 
 
 def generate_dockerfile(agent_name: str) -> None:
@@ -24,7 +26,7 @@ CMD ["uvicorn", "{pkg_from_name(agent_name)}.server:app", "--host=0.0.0.0", "--p
 
 
 def generate_server(agent_name: str) -> None:
-    out = """
+    out = f"""
 import os
 from typing import List, Final
 import logging
@@ -75,17 +77,17 @@ async def health():
 
 @app.post("/v1/tasks")
 async def solve_task(background_tasks: BackgroundTasks, task_model: V1SolveTask):
-    logger.info(f"solving task: {task_model.model_dump()}")
+    logger.info(f"solving task: {{task_model.model_dump()}}")
     try:
         # TODO: we need to find a way to do this earlier but get status back
         router.check_model()
     except Exception as e:
         logger.error(
-            f"Cannot connect to LLM providers: {e} -- did you provide a valid key?"
+            f"Cannot connect to LLM providers: {{e}} -- did you provide a valid key?"
         )
         raise HTTPException(
             status_code=500,
-            detail=f"failed to conect to LLM providers: {e} -- did you provide a valid key?",
+            detail=f"failed to conect to LLM providers: {{e}} -- did you provide a valid key?",
         )
 
     background_tasks.add_task(_solve_task, task_model)
@@ -99,38 +101,38 @@ def _solve_task(task_model: V1SolveTask):
         HUB_SERVER = os.environ.get(HUB_SERVER_ENV, "https://surf.agentlabs.xyz")
         HUB_API_KEY = os.environ.get(HUB_API_KEY_ENV)
         if not HUB_API_KEY:
-            raise Exception(f"${HUB_API_KEY_ENV} not set")
+            raise Exception(f"${{HUB_API_KEY_ENV}} not set")
 
         hub = Hub(HUB_SERVER)
         user_info = hub.get_user_info(HUB_API_KEY)
-        logger.debug(f"got user info: {user_info.__dict__}")
+        logger.debug(f"got user info: {{user_info.__dict__}}")
 
         task = get_remote_task(
             id=task.id,
             owner_id=user_info.email,  # type: ignore
             server=task.remote,
         )
-        logger.debug(f"got remote task: {task.__dict__}")
+        logger.debug(f"got remote task: {{task.__dict__}}")
 
     logger.info("Saving remote tasks status to running...")
     task.status = "in progress"
     task.save()
 
     if task_model.task.device:
-        logger.info(f"connecting to device {task_model.task.device.name}...")
+        logger.info(f"connecting to device {{task_model.task.device.name}}...")
         device = None
         for Device in Agent.supported_devices():
             if Device.name() == task_model.task.device.name:
-                logger.debug(f"found device: {task_model.task.device.model_dump()}")
+                logger.debug(f"found device: {{task_model.task.device.model_dump()}}")
                 config = Device.connect_config_type()(**task_model.task.device.config)
                 device = Device.connect(config=config)
 
         if not device:
             raise ValueError(
-                f"Device {task_model.task.device.name} provided in solve task, but not supported by agent"
+                f"Device {{task_model.task.device.name}} provided in solve task, but not supported by agent"
             )
 
-        logger.debug(f"connected to device: {device.__dict__}")
+        logger.debug(f"connected to device: {{device.__dict__}}")
     else:
         raise ValueError("No device provided")
 
@@ -144,11 +146,11 @@ def _solve_task(task_model: V1SolveTask):
     try:
         fin_task = agent.solve_task(task=task, device=device, max_steps=task.max_steps)
     except Exception as e:
-        logger.error(f"error running agent: {e}")
+        logger.error(f"error running agent: {{e}}")
         task.status = "failed"
         task.error = str(e)
         task.save()
-        task.post_message("assistant", f"Failed to run task '{task.description}': {e}")
+        task.post_message("assistant", f"Failed to run task '{{task.description}}': {{e}}")
         raise e
     if fin_task:
         fin_task.save()
@@ -160,11 +162,11 @@ async def get_tasks():
     return V1Tasks(tasks=[task.to_v1() for task in tasks])
 
 
-@app.get("/v1/tasks/{id}", response_model=V1Task)
+@app.get("/v1/tasks/{{id}}", response_model=V1Task)
 async def get_task(id: str):
     tasks = Task.find(id=id)
     if not tasks:
-        raise Exception(f"Task {id} not found")
+        raise Exception(f"Task {{id}} not found")
     return tasks[0].to_v1()
 
 
@@ -172,9 +174,9 @@ async def get_task(id: str):
 def get_remote_task(id: str, owner_id: str, server: str) -> Task:
     HUB_API_KEY = os.environ.get(HUB_API_KEY_ENV)
     if not HUB_API_KEY:
-        raise Exception(f"${HUB_API_KEY_ENV} not set")
+        raise Exception(f"${{HUB_API_KEY_ENV}} not set")
 
-    logger.debug(f"connecting to remote task: {id} key: {HUB_API_KEY}")
+    logger.debug(f"connecting to remote task: {{id}} key: {{HUB_API_KEY}}")
     try:
         tasks = Task.find(
             id=id,
@@ -182,18 +184,18 @@ def get_remote_task(id: str, owner_id: str, server: str) -> Task:
             owner_id=owner_id,
         )
         if not tasks:
-            raise Exception(f"Task {id} not found")
-        logger.debug(f"got remote task: {tasks[0].__dict__}")
+            raise Exception(f"Task {{id}} not found")
+        logger.debug(f"got remote task: {{tasks[0].__dict__}}")
         return tasks[0]
     except Exception as e:
-        logger.error(f"error getting remote task: {e}")
+        logger.error(f"error getting remote task: {{e}}")
         raise e
 
 
 if __name__ == "__main__":
     port = os.getenv("SURF_PORT", "9090")
     uvicorn.run(
-        "surfpizza.server:app",
+        "{pkg_from_name(agent_name)}.server:app",
         host="0.0.0.0",
         port=int(port),
         reload=True,
@@ -202,6 +204,8 @@ if __name__ == "__main__":
 """
     with open(f"{pkg_from_name(agent_name)}/server.py", "w") as f:
         f.write(out)
+
+    print(f"wrote {pkg_from_name(agent_name)}/server.py")
 
 
 def generate_agent(agent_name: str, template: str = "surf4v") -> None:
@@ -219,6 +223,8 @@ def generate_agent(agent_name: str, template: str = "surf4v") -> None:
 
     with open(f"{pkg_from_name(agent_name)}/agent.py", "w") as f:
         f.write(out)
+
+    print(f"wrote {pkg_from_name(agent_name)}/agent.py")
 
 
 def generate_dir(agent_name: str) -> None:
