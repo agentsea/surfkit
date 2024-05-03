@@ -2427,19 +2427,19 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.12"
+version = "0.1.13"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.12-py3-none-any.whl", hash = "sha256:a80dd90103fea7dfcf5226291f09c5e282032d99516358cbd10ae8a6cf887bfe"},
-    {file = "mllm-0.1.12.tar.gz", hash = "sha256:ea6e73bd64822964ecca4322e9a442a6b05619a92a08777b0e5b04f6829ca4eb"},
+    {file = "mllm-0.1.13-py3-none-any.whl", hash = "sha256:cd73489f11b7438b22c13819d52a38d078f931233631fb54a99347979b8704aa"},
+    {file = "mllm-0.1.13.tar.gz", hash = "sha256:2432cabdf97dd3cac3aa83a535d162defe31daf385e973bf8eba937b131f45aa"},
 ]
 
 [package.dependencies]
 litellm = ">=1.35.29,<2.0.0"
 tenacity = ">=8.2.3,<9.0.0"
-threadmem = ">=0.2.26,<0.3.0"
+threadmem = ">=0.2.27,<0.3.0"
 
 [[package]]
 name = "multidict"
@@ -3764,17 +3764,17 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.10"
+version = "0.1.11"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.10-py3-none-any.whl", hash = "sha256:1042804af6e201ee0f36a10c44f4e0c55f3b6c27b2ae89e4fce084bacc0229bb"},
-    {file = "skillpacks-0.1.10.tar.gz", hash = "sha256:8fbf7dc6d8cf3178b1dcdd2ff28caabd2b3b61663c28cc21bdaeec648a50cb97"},
+    {file = "skillpacks-0.1.11-py3-none-any.whl", hash = "sha256:16c2a41025f3075c2f9f0a00533875a6c86f553f15aeb4e99e9a426aaa8a75de"},
+    {file = "skillpacks-0.1.11.tar.gz", hash = "sha256:8407d9844f38be6eb1b172f13f306921dae4330ecc98510c1717253290264455"},
 ]
 
 [package.dependencies]
-mllm = ">=0.1.12,<0.2.0"
+mllm = ">=0.1.13,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
@@ -3928,19 +3928,19 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.51"
+version = "0.1.52"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.51-py3-none-any.whl", hash = "sha256:83386d8ea9166191228d96c94aad5f9700358feb4c2de83e1161b2f600aa7fc5"},
-    {file = "taskara-0.1.51.tar.gz", hash = "sha256:5e09a55a83e72de6ec4535558ab45be64fae90a35abbe3901d94b43d0f4b8de6"},
+    {file = "taskara-0.1.52-py3-none-any.whl", hash = "sha256:4c156f196c2516244d603343c77be2e140b474aa1d4e9c9eb14e506f20f08158"},
+    {file = "taskara-0.1.52.tar.gz", hash = "sha256:b3d7f46adb7e379e47e7a60e32e7f6c8407e45edffbd6495ecb9eaa9c5682163"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.16,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
-skillpacks = ">=0.1.8,<0.2.0"
+skillpacks = ">=0.1.11,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 
@@ -3974,13 +3974,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.26"
+version = "0.2.27"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.26-py3-none-any.whl", hash = "sha256:16dbdfddcd801248153359658b37b6130d66ffefff6eda399b015d9e5c5a92bb"},
-    {file = "threadmem-0.2.26.tar.gz", hash = "sha256:375b08da85a106cd2cae7d948391f261b0659a93997b6cf8068c288b5f9f0955"},
+    {file = "threadmem-0.2.27-py3-none-any.whl", hash = "sha256:75d69ccb617c7ee80204f569cd4397946461fcf07ec5e843d061253bbbdadc28"},
+    {file = "threadmem-0.2.27.tar.gz", hash = "sha256:ed24c9674fe7aebf3170dd2eb08ac685ddd5526e73272ad0ab27b68eb54d0ca1"},
 ]
 
 [package.dependencies]
@@ -4834,4 +4834,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "f0477872e44b914b8233af406d3e90d50c30c18748a1788e5c705995e9febbfe"
+content-hash = "5d353659a05cb41eb9c93a639218520d1d469c08e0cb589096ef968538c04585"
