@@ -6,6 +6,7 @@ from surfkit.cli.templates.agent import (
     generate_dockerfile,
     generate_main,
     generate_pyproject,
+    generate_readme,
     generate_server,
     generate_agentfile,
     generate_dir,
@@ -58,5 +59,6 @@ def new_agent(
     generate_agentfile(
         name, description=description, image_repo=img_repo, icon_url=icon_url
     )
+    generate_readme(name, description)
 
     run_poetry_install()

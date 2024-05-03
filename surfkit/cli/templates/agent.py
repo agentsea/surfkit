@@ -623,3 +623,39 @@ cidata.iso
     else:
         with file_path.open("w") as file:
             file.write(out)
+
+
+def generate_readme(agent_name: str, description: str) -> None:
+
+    out = f"""# {agent_name}
+
+{description}
+
+## Install
+```sh
+pip install surfkit
+```
+
+## Usage
+
+To create the agent
+```sh
+surfkit create agent -f ./agent.yaml -r process
+```
+
+To list running agents
+
+```sh
+surfkit list agents -r process
+```
+
+To use the agent to solve a task
+```sh
+surfkit solve --agent {{name}} --description "Search for french ducks" --device-type desktop -r process
+```
+"""
+    file_path = Path("README.md")
+
+    if not file_path.exists():
+        with file_path.open("w") as file:
+            file.write(out)
