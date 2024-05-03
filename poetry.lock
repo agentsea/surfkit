@@ -2,13 +2,13 @@
 
 [[package]]
 name = "agentdesk"
-version = "0.2.68"
+version = "0.2.69"
 description = "A desktop for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "agentdesk-0.2.68-py3-none-any.whl", hash = "sha256:c1fc98d8f34834f973843b52edf2abaa70b0b9d8e9454cada400a72652ccdda6"},
-    {file = "agentdesk-0.2.68.tar.gz", hash = "sha256:60995e64fc8d2ea7fd6f68cf665e60aafc297d038c2ca3c2e053413f8be6a613"},
+    {file = "agentdesk-0.2.69-py3-none-any.whl", hash = "sha256:4f37db48a962c5ef0ebf3c8238f6918e82adccca42a13bc0fab686924cf613f5"},
+    {file = "agentdesk-0.2.69.tar.gz", hash = "sha256:2b59d3f6b5164315b12890973a2d080cdad3f13520db7f72508627401ed01e91"},
 ]
 
 [package.dependencies]
@@ -294,17 +294,17 @@ six = "*"
 
 [[package]]
 name = "boto3"
-version = "1.34.96"
+version = "1.34.97"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.96-py3-none-any.whl", hash = "sha256:fe3d039631074a96374a354764641b6623036b6ea15381b8a04ac0a193b8c1e0"},
-    {file = "boto3-1.34.96.tar.gz", hash = "sha256:42ea7d46688e7cb27259780b9da2cddcfaf2763ff5d327f4d54eac12edba8e72"},
+    {file = "boto3-1.34.97-py3-none-any.whl", hash = "sha256:6c8125310005255ea998bccc3e8353b4df81a96ab105c89c118461f6c54c07c8"},
+    {file = "boto3-1.34.97.tar.gz", hash = "sha256:60e5dda0b29805fb410bfda1d98e898edaebedac0e6983e9c57cb88e44dfa64e"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.96,<1.35.0"
+botocore = ">=1.34.97,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -313,13 +313,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.34.96"
-description = "Type annotations for boto3 1.34.96 generated with mypy-boto3-builder 7.24.0"
+version = "1.34.97"
+description = "Type annotations for boto3 1.34.97 generated with mypy-boto3-builder 7.24.0"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3_stubs-1.34.96-py3-none-any.whl", hash = "sha256:131941815ee2c3008f3711f1ef284f321052fd6cb1d98a02cfa88e932d3a2b80"},
-    {file = "boto3_stubs-1.34.96.tar.gz", hash = "sha256:824a62997184e39c0fdf887b242c44a1d69ab87e2154c2b31d50c64afa8a4fc5"},
+    {file = "boto3_stubs-1.34.97-py3-none-any.whl", hash = "sha256:9f55147d67dc4a113a468f89f4a3dc75b9b3fa976f4f0988b8ba68a872e31e6a"},
+    {file = "boto3_stubs-1.34.97.tar.gz", hash = "sha256:8aebce123ca023c21bfd5b1f7dc96c53358368bb7224021619943ef7dd5b2947"},
 ]
 
 [package.dependencies]
@@ -371,7 +371,7 @@ bedrock-agent = ["mypy-boto3-bedrock-agent (>=1.34.0,<1.35.0)"]
 bedrock-agent-runtime = ["mypy-boto3-bedrock-agent-runtime (>=1.34.0,<1.35.0)"]
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.34.0,<1.35.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.34.0,<1.35.0)"]
-boto3 = ["boto3 (==1.34.96)", "botocore (==1.34.96)"]
+boto3 = ["boto3 (==1.34.97)", "botocore (==1.34.97)"]
 braket = ["mypy-boto3-braket (>=1.34.0,<1.35.0)"]
 budgets = ["mypy-boto3-budgets (>=1.34.0,<1.35.0)"]
 ce = ["mypy-boto3-ce (>=1.34.0,<1.35.0)"]
@@ -718,13 +718,13 @@ xray = ["mypy-boto3-xray (>=1.34.0,<1.35.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.96"
+version = "1.34.97"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.96-py3-none-any.whl", hash = "sha256:4c307f5772286f1ab58a91220ea8e180416a2ea0cc7e76983a6984e4ef8c212d"},
-    {file = "botocore-1.34.96.tar.gz", hash = "sha256:00e917cd8152d902a4771b9e1e4d0cf1ee096c90027ee35f2a76b6d394e2ada5"},
+    {file = "botocore-1.34.97-py3-none-any.whl", hash = "sha256:c98b1272e377c69e167cc68c0f2c9c79bc7a6098775eecdad41ee5a28de69324"},
+    {file = "botocore-1.34.97.tar.gz", hash = "sha256:e421b592add68547ed141643c8a8b4aa819a07059b85efd72e89b6758c956420"},
 ]
 
 [package.dependencies]
@@ -2542,13 +2542,13 @@ files = [
 
 [[package]]
 name = "mypy-boto3-ec2"
-version = "1.34.96"
-description = "Type annotations for boto3.EC2 1.34.96 service generated with mypy-boto3-builder 7.24.0"
+version = "1.34.97"
+description = "Type annotations for boto3.EC2 1.34.97 service generated with mypy-boto3-builder 7.24.0"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "mypy_boto3_ec2-1.34.96-py3-none-any.whl", hash = "sha256:e9bbed9c946d9e5f7ae157a2b21c7d564b0a9cde7d272c27bc4824ac1f99920f"},
-    {file = "mypy_boto3_ec2-1.34.96.tar.gz", hash = "sha256:094991853560d678d2b8ab3e1cd27bbb6e780456febddb5f6f2e7281a9b6ce17"},
+    {file = "mypy_boto3_ec2-1.34.97-py3-none-any.whl", hash = "sha256:fea2cb78e0a55ad77b79fac0702d0c28c17798fc116bf7b84cbea421c5fd9b9c"},
+    {file = "mypy_boto3_ec2-1.34.97.tar.gz", hash = "sha256:a38be6ad39bb18839ae349a0d1a6fe1c87ab8fe9cbc4a28a87aa5a972eedc361"},
 ]
 
 [package.dependencies]
@@ -4834,4 +4834,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "1ccb4e33fc0106844c7e0e0fd7df39f09d7c95da0889464cc3387a6470bf2afb"
+content-hash = "759986d9d26b2e9d8c81b7bf3c0f058b2398981757380ce6c5e17c25c3cc0244"

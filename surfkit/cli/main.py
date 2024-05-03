@@ -706,7 +706,7 @@ def solve(
     device_provider: Optional[str] = typer.Option(
         None, help="The provider type for the device."
     ),
-    max_steps: int = typer.Option(20, help="Maximum steps for the task."),
+    max_steps: int = typer.Option(30, help="Maximum steps for the task."),
     starting_url: Optional[str] = typer.Option(
         None, help="Starting URL if applicable."
     ),
