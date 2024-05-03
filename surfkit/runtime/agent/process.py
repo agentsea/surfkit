@@ -257,10 +257,13 @@ class ProcessAgentRuntime(AgentRuntime):
 
         except subprocess.CalledProcessError as e:
             logger.error("Error while attempting to delete the process:", str(e))
+            raise
         except ValueError as e:
             logger.error("Error parsing process ID:", str(e))
+            raise
         except Exception as e:
             logger.error(f"An unexpected error occurred: {str(e)}")
+            raise
 
     def clean(self) -> None:
         try:

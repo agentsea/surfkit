@@ -1,10 +1,7 @@
-from logging import config
-from tkinter.font import names
 from urllib.parse import urljoin
 from typing import Optional
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkgversion
-from click import Option
 import rich
 import yaml
 
@@ -26,16 +23,16 @@ art = """
 app = typer.Typer()
 
 # Sub-command groups
-create = typer.Typer(help="Create an agent or device")
+create_group = typer.Typer(help="Create an agent or device")
 list_group = typer.Typer(help="List resources")
-get = typer.Typer(help="Get resources")
+get_group = typer.Typer(help="Get resources")
 view_group = typer.Typer(help="View resources")
 delete_group = typer.Typer(help="Delete resources")
 clean_group = typer.Typer(help="Clean resources")
 
-app.add_typer(create, name="create")
+app.add_typer(create_group, name="create")
 app.add_typer(list_group, name="list")
-app.add_typer(get, name="get")
+app.add_typer(get_group, name="get")
 app.add_typer(view_group, name="view")
 app.add_typer(delete_group, name="delete")
 # app.add_typer(clean_group, name="clean")
@@ -70,7 +67,7 @@ def default(ctx: typer.Context):
 
 
 # 'create' command group callback
-@create.callback(invoke_without_command=True)
+@create_group.callback(invoke_without_command=True)
 def create_default(ctx: typer.Context):
     show_help(ctx, "create")
 
@@ -82,7 +79,7 @@ def list_default(ctx: typer.Context):
 
 
 # 'get' command group callback
-@get.callback(invoke_without_command=True)
+@get_group.callback(invoke_without_command=True)
 def get_default(ctx: typer.Context):
     show_help(ctx, "get")
 
@@ -106,7 +103,7 @@ def view_default(ctx: typer.Context):
 
 
 # 'create' sub-commands
-@create.command("device")
+@create_group.command("device")
 def create_device(
     name: Optional[str] = typer.Option(
         None, help="The name of the desktop to create. Defaults to a generated name."
@@ -160,7 +157,7 @@ def create_device(
         return
 
 
-@create.command("agent")
+@create_group.command("agent")
 def create_agent(
     runtime: str = typer.Option("docker", help="The runtime to use."),
     file: str = typer.Option(
@@ -412,7 +409,7 @@ def list_types():
 
 
 # 'get' sub-commands
-@get.command("agent")
+@get_group.command("agent")
 def get_agent(
     name: str = typer.Option(..., help="The name of the agent to retrieve."),
     runtime: str = typer.Option("docker", help="The runtime of the agent to retrieve."),
@@ -451,7 +448,7 @@ def get_agent(
     rich.print_json(instance.to_v1().model_dump_json())
 
 
-@get.command("device")
+@get_group.command("device")
 def get_device(
     name: str = typer.Option(
         help="The name of the desktop to retrieve.",
@@ -488,7 +485,7 @@ def get_device(
         return
 
 
-@get.command("type")
+@get_group.command("type")
 def get_type(name: str):
     from surfkit.types import AgentType
 

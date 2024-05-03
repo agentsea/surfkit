@@ -199,9 +199,11 @@ class DockerAgentRuntime(AgentRuntime):
         except NotFound:
             # Handle the case where the container does not exist
             print(f"Container '{name}' does not exist.")
+            raise
         except Exception as e:
             # Handle other potential errors
             print(f"Failed to delete container '{name}': {e}")
+            raise
 
     def clean(self) -> None:
         # Define the filter for containers with the specific label

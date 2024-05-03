@@ -1217,18 +1217,18 @@ optimize = ["orjson"]
 
 [[package]]
 name = "devicebay"
-version = "0.1.16"
+version = "0.1.17"
 description = "Devices for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "devicebay-0.1.16-py3-none-any.whl", hash = "sha256:63acbe11bcaf469cd0e738926dc866e5603ed0c0af4412377dd3e5714e5c7a53"},
-    {file = "devicebay-0.1.16.tar.gz", hash = "sha256:708294a95427d2e083ec49c230a550a485a64b5b9df7ac17f6f4ff3874757705"},
+    {file = "devicebay-0.1.17-py3-none-any.whl", hash = "sha256:87ac62bdf5f13f5ac1ca185501ff825255cfb7e99c98c889d0c36976f3a394dd"},
+    {file = "devicebay-0.1.17.tar.gz", hash = "sha256:de572d9d7b18a3d59b691da6a32b135565e7c58931e08b43c1a54dc80baa8ae9"},
 ]
 
 [package.dependencies]
 sqlalchemy = ">=2.0.29,<3.0.0"
-toolfuse = ">=0.1.19,<0.2.0"
+toolfuse = ">=0.1.20,<0.2.0"
 
 [[package]]
 name = "distlib"
@@ -3928,17 +3928,17 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.53"
+version = "0.1.54"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.53-py3-none-any.whl", hash = "sha256:4dcce43bda2824ec7ba54d860ae6c188378527e1b674d4d3b77be7afad16d073"},
-    {file = "taskara-0.1.53.tar.gz", hash = "sha256:3b62d401569e5501bc8f833a8cb1b996bafd231405e1801934d2ae2f70d85624"},
+    {file = "taskara-0.1.54-py3-none-any.whl", hash = "sha256:aa5a4cdd2b03aaff368e14691c6ae92f7d35346c6d7d132121d5c3ea38d38e0a"},
+    {file = "taskara-0.1.54.tar.gz", hash = "sha256:2aca83ea44ff2968d8d8d6b1f3b9e468004e2b0bc6ef9e5cd15eba11c7689005"},
 ]
 
 [package.dependencies]
-devicebay = ">=0.1.16,<0.2.0"
+devicebay = ">=0.1.17,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
 skillpacks = ">=0.1.12,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
@@ -4186,13 +4186,13 @@ typing-extensions = ">=4.6.3,<5.0.0"
 
 [[package]]
 name = "toolfuse"
-version = "0.1.19"
+version = "0.1.20"
 description = "Tools for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "toolfuse-0.1.19-py3-none-any.whl", hash = "sha256:cd5f19720b709c5e2ccd141c7596714dce2a1b99d271bea7f844f6479e827ab2"},
-    {file = "toolfuse-0.1.19.tar.gz", hash = "sha256:0a2c19c418cfd3f1359174f9b092bd8a9f6b4a933605603eb890c5f3431cb0b7"},
+    {file = "toolfuse-0.1.20-py3-none-any.whl", hash = "sha256:6300b94a5833fa18b8ce8b9e30d099ce855532d00271991aa26f77e5dc57e24b"},
+    {file = "toolfuse-0.1.20.tar.gz", hash = "sha256:15223ad14cab059aae4b87da406aa86d5bd3bb58e69ede9adb00e6a3b6cea695"},
 ]
 
 [package.dependencies]
@@ -4834,4 +4834,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "08f13ee61c9afba68bfd7726a1f6286c9a1ef323c3da1396bf76013025fc825b"
+content-hash = "a86f08dcc73de191a2e044dba58e4b4e9752186d30bc277a8ae319f79b5b7b38"
