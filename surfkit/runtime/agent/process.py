@@ -119,7 +119,8 @@ class ProcessAgentRuntime(AgentRuntime):
             print(stderr)
         else:
             # Print the output from stdout
-            print(stdout)
+            if stdout:
+                print(stdout)
 
         return AgentInstance(name, agent_type, self, port)
 

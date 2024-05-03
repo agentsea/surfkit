@@ -3764,13 +3764,13 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.12"
+version = "0.1.14"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.12-py3-none-any.whl", hash = "sha256:432641eb2c75b768d05b83804915eabf121a5bbc5e4a7dcd3fca41d7d61b330e"},
-    {file = "skillpacks-0.1.12.tar.gz", hash = "sha256:a47036e70b2442dba17dd800c50175e8ff97b3606e81006b01ad80014b2a7a00"},
+    {file = "skillpacks-0.1.14-py3-none-any.whl", hash = "sha256:275147fa35826f4ac8fab43ef112c23bdc3ec5e6089db23b6333a2fef8ca0405"},
+    {file = "skillpacks-0.1.14.tar.gz", hash = "sha256:ccb93499253eaa80091cbc255e43a512fe111e46c8db1b343284dcaf95a622ac"},
 ]
 
 [package.dependencies]
@@ -3928,19 +3928,19 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.54"
+version = "0.1.55"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.54-py3-none-any.whl", hash = "sha256:aa5a4cdd2b03aaff368e14691c6ae92f7d35346c6d7d132121d5c3ea38d38e0a"},
-    {file = "taskara-0.1.54.tar.gz", hash = "sha256:2aca83ea44ff2968d8d8d6b1f3b9e468004e2b0bc6ef9e5cd15eba11c7689005"},
+    {file = "taskara-0.1.55-py3-none-any.whl", hash = "sha256:bb78aee5d81ff2bad5f3b07632c04c2f116b696066ab93afec5c0766340b28a8"},
+    {file = "taskara-0.1.55.tar.gz", hash = "sha256:3ee70a75ecfc89acebe165b119c49eec57078e5769fa15b5fd45506b247f95ef"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.17,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
-skillpacks = ">=0.1.12,<0.2.0"
+skillpacks = ">=0.1.14,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 
@@ -4834,4 +4834,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a86f08dcc73de191a2e044dba58e4b4e9752186d30bc277a8ae319f79b5b7b38"
+content-hash = "1a6786e1cc7982231cfc5bceb080d798905a227a9dc0a05f03c0b142119da400"

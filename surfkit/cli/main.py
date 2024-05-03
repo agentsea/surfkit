@@ -159,7 +159,10 @@ def create_device(
 
 @create_group.command("agent")
 def create_agent(
-    runtime: str = typer.Option("docker", help="The runtime to use."),
+    runtime: str = typer.Option(
+        "process",
+        help="The runtime to use. Options are 'process', 'docker', and 'kube'",
+    ),
     file: str = typer.Option(
         "./agent.yaml", help="Path to the agent configuration file."
     ),
@@ -172,7 +175,7 @@ def create_agent(
         name = get_random_name(sep="-")
         if not name:
             raise ValueError("could not generate name")
-    typer.echo(f"Running agent '{file}' with runtime '{runtime}' and name {name}...")
+    typer.echo(f"Running agent '{file}' with runtime '{runtime}' and name '{name}'...")
 
     from surfkit.models import V1AgentType
     from surfkit.types import AgentType
@@ -503,7 +506,10 @@ def get_type(name: str):
 @delete_group.command("agent")
 def delete_agent(
     name: str = typer.Option(..., help="The name of the agent to retrieve."),
-    runtime: str = typer.Option("docker", help="The runtime of the agent to retrieve."),
+    runtime: str = typer.Option(
+        "docker",
+        help="The runtime of the agent to retrieve. Options are 'docker', 'kube', 'process'.",
+    ),
 ):
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
