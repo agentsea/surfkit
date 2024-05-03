@@ -260,6 +260,8 @@ build-backend = "poetry.core.masonry.api"
     with open(f"pyproject.toml", "w") as f:
         f.write(out)
 
+    print("wrote pyproject.toml")
+
 
 def generate_agentfile(
     name: str, description: str, image_repo: str, icon_url: str
@@ -295,6 +297,8 @@ resource_limits:
 """
     with open(f"agent.yaml", "w") as f:
         f.write(out)
+
+    print("wrote agent.yaml")
 
 
 def generate_gitignore() -> None:
@@ -473,6 +477,8 @@ cidata.iso
         with file_path.open("w") as file:
             file.write(out)
 
+    print("wrote .gitignore")
+
 
 def generate_readme(agent_name: str, description: str) -> None:
 
@@ -487,24 +493,46 @@ pip install surfkit
 
 ## Usage
 
-To create the agent
+Create an agent as a local process
 ```sh
-surfkit create agent -f ./agent.yaml -r process
+surfkit create agent -f ./agent.yaml --runtime process
 ```
 
-To list running agents
-
+Create an agent as a docker container
 ```sh
-surfkit list agents -r process
+surfkit create agent -f ./agent.yaml --runtime docker
 ```
 
-To use the agent to solve a task
+Create an agent as a kubernetes pod
+```sh
+surfkit create agent -f ./agent.yaml --runtime kube
+```
+
+List running agents
+```sh
+surfkit list agents --runtime process
+```
+
+Use the agent to solve a task
 ```sh
 surfkit solve --agent {{name}} --description "Search for french ducks" --device-type desktop -r process
 ```
+
+Get the agent logs
+```sh
+surfkit logs --agent {{name}} -r process
+```
+
+Delete the agent
+```sh
+surfkit delete --agent {{name}} -r process
+```
+
 """
     file_path = Path("README.md")
 
     if not file_path.exists():
         with file_path.open("w") as file:
             file.write(out)
+
+    print("wrote README.md")

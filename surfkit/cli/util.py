@@ -110,7 +110,7 @@ def build_docker_image(
         command.extend(["--tag", tag, "--file", dockerfile_path, "."])
 
         # Building (and optionally pushing) the Docker image
-        subprocess.run(
+        result = subprocess.run(
             command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         print(
@@ -119,7 +119,7 @@ def build_docker_image(
 
     except subprocess.CalledProcessError as e:
         print(
-            f"An error occurred while building {'and pushing ' if push else ''}the Docker image: {e}"
+            f"An error occurred while building {'and pushing ' if push else ''}the Docker image: {e.stderr.decode()}"
         )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
