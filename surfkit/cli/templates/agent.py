@@ -24,23 +24,25 @@ CMD ["uvicorn", "{pkg_from_name(agent_name)}.server:app", "--host=0.0.0.0", "--p
 
 
 def generate_server(agent_name: str) -> None:
-    out = f"""
+    out = """
 import os
+from typing import List, Final
+import logging
 
-from taskara.server.models import SolveTaskModel, TaskModel, TasksModel
-from taskara.task import Task
+from taskara import Task, V1Task, V1Tasks
 from surfkit.hub import Hub
-from surfkit.llm import LLMProvider
-from fastapi import FastAPI, BackgroundTasks
+from surfkit.models import V1SolveTask
+from surfkit.env import HUB_SERVER_ENV, HUB_API_KEY_ENV
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from tenacity import retry, stop_after_attempt, wait_fixed
+import uvicorn
 
-from .agent import Agent
+from .agent import Agent, router
 
-
-# Get the LLM provider from env
-llm_provider = LLMProvider.from_env()
+logger: Final = logging.getLogger(__name__)
+logger.setLevel(int(os.getenv("LOG_LEVEL", str(logging.DEBUG))))
 
 
 @asynccontextmanager
@@ -63,75 +65,76 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {{"message": "Agent in the shell"}}
+    return {"message": "Agent in the shell"}
 
 
 @app.get("/health")
 async def health():
-    return {{"status": "ok"}}
+    return {"status": "ok"}
 
 
 @app.post("/v1/tasks")
-async def solve_task(background_tasks: BackgroundTasks, task_model: SolveTaskModel):
-    print(f"solving task: \n{{task_model.model_dump()}}")
+async def solve_task(background_tasks: BackgroundTasks, task_model: V1SolveTask):
+    logger.info(f"solving task: {task_model.model_dump()}")
     try:
         # TODO: we need to find a way to do this earlier but get status back
-        llm_provider.check_model()
+        router.check_model()
     except Exception as e:
-        print(f"Cannot connect to LLM providers: {{e}} -- did you provide a valid key?")
-        return {{
-            "status": "failed",
-            "message": f"failed to conect to LLM providers: {{e}} -- did you provide a valid key?",
-        }}
+        logger.error(
+            f"Cannot connect to LLM providers: {e} -- did you provide a valid key?"
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"failed to conect to LLM providers: {e} -- did you provide a valid key?",
+        )
 
     background_tasks.add_task(_solve_task, task_model)
-    print("created background task...")
+    logger.info("created background task...")
 
 
-def _solve_task(task_model: SolveTaskModel):
-    task = Task.from_schema(task_model.task, owner_id="local")
+def _solve_task(task_model: V1SolveTask):
+    task = Task.from_v1(task_model.task, owner_id="local")
     if task.remote:
-        print("connecting to remote task...")
-        HUB_SERVER = os.environ.get("SURF_HUB_SERVER", "https://surf.agentlabs.xyz")
-        HUB_API_KEY = os.environ.get("HUB_API_KEY")
+        logger.info("connecting to remote task...")
+        HUB_SERVER = os.environ.get(HUB_SERVER_ENV, "https://surf.agentlabs.xyz")
+        HUB_API_KEY = os.environ.get(HUB_API_KEY_ENV)
         if not HUB_API_KEY:
-            raise Exception("$HUB_API_KEY not set")
+            raise Exception(f"${HUB_API_KEY_ENV} not set")
 
         hub = Hub(HUB_SERVER)
         user_info = hub.get_user_info(HUB_API_KEY)
-        print("got user info: ", user_info.__dict__)
+        logger.debug(f"got user info: {user_info.__dict__}")
 
         task = get_remote_task(
             id=task.id,
             owner_id=user_info.email,  # type: ignore
             server=task.remote,
         )
-        print("got remote task: ", task.__dict__)
+        logger.debug(f"got remote task: {task.__dict__}")
 
-    print("Saving remote tasks status to running...")
+    logger.info("Saving remote tasks status to running...")
     task.status = "in progress"
     task.save()
 
-    if task_model.device:
-        print(f"connecting to device {{task_model.device.name}}...")
+    if task_model.task.device:
+        logger.info(f"connecting to device {task_model.task.device.name}...")
         device = None
         for Device in Agent.supported_devices():
-            if Device.name() == task_model.device.name:
-                print("found device: ", task_model.device.model_dump())
-                print("model config: ", task_model.device.config)
-                config = Device.connect_config_type()(**task_model.device.config)
+            if Device.name() == task_model.task.device.name:
+                logger.debug(f"found device: {task_model.task.device.model_dump()}")
+                config = Device.connect_config_type()(**task_model.task.device.config)
                 device = Device.connect(config=config)
 
         if not device:
             raise ValueError(
-                f"Device {{task_model.device.name}} provided in solve task, but not supported by agent"
+                f"Device {task_model.task.device.name} provided in solve task, but not supported by agent"
             )
 
-        print("connected to device: ", device.__dict__)
+        logger.debug(f"connected to device: {device.__dict__}")
     else:
         raise ValueError("No device provided")
 
-    print("starting agent...")
+    logger.info("starting agent...")
     if task_model.agent:
         config = Agent.config_type()(**task_model.agent.config.model_dump())
         agent = Agent.from_config(config=config)
@@ -141,37 +144,37 @@ def _solve_task(task_model: SolveTaskModel):
     try:
         fin_task = agent.solve_task(task=task, device=device, max_steps=task.max_steps)
     except Exception as e:
-        print("error running agent: ", e)
+        logger.error(f"error running agent: {e}")
         task.status = "failed"
         task.error = str(e)
         task.save()
-        task.post_message("assistant", f"Failed to run task '{{task.description}}': {{e}}")
+        task.post_message("assistant", f"Failed to run task '{task.description}': {e}")
         raise e
     if fin_task:
         fin_task.save()
 
 
-@app.get("/v1/tasks", response_model=TasksModel)
+@app.get("/v1/tasks", response_model=V1Tasks)
 async def get_tasks():
     tasks = Task.find()
-    return TasksModel(tasks=[task.to_schema() for task in tasks])
+    return V1Tasks(tasks=[task.to_v1() for task in tasks])
 
 
-@app.get("/v1/tasks/{{id}}", response_model=TaskModel)
+@app.get("/v1/tasks/{id}", response_model=V1Task)
 async def get_task(id: str):
     tasks = Task.find(id=id)
     if not tasks:
-        raise Exception(f"Task {{id}} not found")
-    return tasks[0].to_schema()
+        raise Exception(f"Task {id} not found")
+    return tasks[0].to_v1()
 
-    
+
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(10))
 def get_remote_task(id: str, owner_id: str, server: str) -> Task:
-    HUB_API_KEY = os.environ.get("HUB_API_KEY")
+    HUB_API_KEY = os.environ.get(HUB_API_KEY_ENV)
     if not HUB_API_KEY:
-        raise Exception("$HUB_API_KEY not set")
+        raise Exception(f"${HUB_API_KEY_ENV} not set")
 
-    print("connecting to remote task: ", id, HUB_API_KEY)
+    logger.debug(f"connecting to remote task: {id} key: {HUB_API_KEY}")
     try:
         tasks = Task.find(
             id=id,
@@ -179,179 +182,25 @@ def get_remote_task(id: str, owner_id: str, server: str) -> Task:
             owner_id=owner_id,
         )
         if not tasks:
-            raise Exception(f"Task {{id}} not found")
-        print("got remote task: ", tasks[0].__dict__)
+            raise Exception(f"Task {id} not found")
+        logger.debug(f"got remote task: {tasks[0].__dict__}")
         return tasks[0]
     except Exception as e:
-        print("error getting remote task: ", e)
+        logger.error(f"error getting remote task: {e}")
         raise e
 
-        
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=9090, reload=True)
+    port = os.getenv("SURF_PORT", "9090")
+    uvicorn.run(
+        "surfpizza.server:app",
+        host="0.0.0.0",
+        port=int(port),
+        reload=True,
+        reload_excludes=[".data"],
+    )
 """
     with open(f"{pkg_from_name(agent_name)}/server.py", "w") as f:
-        f.write(out)
-
-
-def generate_main(agent_name: str) -> None:
-    out = f"""
-import argparse
-import logging
-import yaml
-
-from rich.console import Console
-from agentdesk.device import Desktop, ProvisionConfig
-from agentdesk.vm.gce import GCEProvider
-from agentdesk.vm.ec2 import EC2Provider
-from agentdesk.vm.qemu import QemuProvider
-from taskara import Task
-from taskara.server.models import SolveTaskModel
-from surfkit.types import AgentType
-from surfkit.models import AgentTypeModel
-from surfkit.runtime.agent.load import (
-    load_agent_runtime,
-    AgentRuntimeConfig,
-    DockerConnectConfig,
-    KubeConnectConfig,
-)
-from namesgenerator import get_random_name
-
-
-console = Console()
-
-DEFAULT_PROXY_PORT = 9123
-
-parser = argparse.ArgumentParser(description="Run the agent with optional debug mode.")
-parser.add_argument(
-    "--debug",
-    action="store_true",
-    help="Enable debug mode for more verbose output.",
-    default=False,
-)
-parser.add_argument(
-    "--task",
-    type=str,
-    help="Specify the task to run.",
-    required=True,
-)
-parser.add_argument(
-    "--max_steps",
-    type=int,
-    help="Max steps the agent can take",
-    default=10,
-)
-parser.add_argument(
-    "--site",
-    type=str,
-    help="Max steps the agent can take",
-    default=None,
-)
-parser.add_argument(
-    "--version",
-    type=str,
-    help="Agent version to use",
-    default=None,
-)
-parser.add_argument(
-    "--device-runtime",
-    type=str,
-    help="Device runtime to use",
-    default="gce",
-)
-parser.add_argument(
-    "--agent-runtime",
-    type=str,
-    help="Agent runtime to use",
-    default="kube",
-)
-parser.add_argument(
-    "--region",
-    type=str,
-    help="Region to use",
-    default="us-east-1",
-)
-parser.add_argument(
-    "--agent-type",
-    type=str,
-    help="Agent type filepath",
-    default="./agent.yaml",
-)
-parser.add_argument(
-    "--name",
-    type=str,
-    help="Agent name",
-    default=get_random_name("-"),
-)
-parser.add_argument(
-    "--namespace",
-    type=str,
-    help="Kubernetes namespace",
-    default="default",
-)
-args = parser.parse_args()
-
-if args.debug:
-    logging.basicConfig(level=logging.DEBUG)
-else:
-    logging.basicConfig(level=logging.INFO)
-
-console.print(
-    f"solving task '{{args.task}}' on site '{{args.site}}' with max steps {{args.max_steps}}",
-    style="green",
-)
-
-if args.device_runtime == "gce":
-    provider = GCEProvider()
-elif args.device_runtime == "ec2":
-    provider = EC2Provider(region=args.region)
-else:
-    provider = QemuProvider()
-
-parameters = {{"site": args.site}}
-task = Task(description=args.task, owner_id="local", parameters=parameters)
-
-with open(args.agent_type) as f:
-    agent_data = yaml.safe_load(f)
-    agent_schema = AgentTypeModel(**agent_data)
-agent_type = AgentType.from_schema(agent_schema)
-
-# TODO: dynamically supply and provision devices
-console.print("Creating device...", style="green")
-print("provider data: ", provider.to_data())
-config = ProvisionConfig(provider=provider.to_data())
-device: Desktop = Desktop.ensure("gpt4v-demo", config=config)
-
-# View the desktop, we'll run in the background so it doesn't block
-device.view(background=True)
-
-if args.agent_runtime == "docker":
-    print("using docker runtime...")
-    dconf = DockerConnectConfig()
-    conf = AgentRuntimeConfig(provider="docker", docker_config=dconf)
-elif args.agent_runtime == "kube":
-    print("using kube runtime...")
-    kconf = KubeConnectConfig(namespace=args.namespace)
-    conf = AgentRuntimeConfig(provider="kube", kube_config=kconf)
-else:
-    raise ValueError("Unknown agent runtime")
-
-runtime = load_agent_runtime(conf)
-
-print("device schema: ", device.to_schema())
-console.print("Running agent...", style="green")
-agent = runtime.run(agent_type, args.name, args.version, llm_providers_local=True)
-
-agent.proxy(DEFAULT_PROXY_PORT)
-console.print(f"Proxying agent to port {{DEFAULT_PROXY_PORT}}", style="green")
-
-task_model = SolveTaskModel(
-    task=task.to_schema(), device=device.to_schema(), max_steps=args.max_steps
-)
-agent.solve_task(task_model, follow_logs=True)
-
-"""
-    with open(f"{pkg_from_name(agent_name)}/__main__.py", "w") as f:
         f.write(out)
 
 
@@ -428,14 +277,14 @@ versions:
 runtimes:
   - type: "agent"
     preference:
-      - "venv"
+      - "process"
       - "docker"
       - "kube"
 llm_providers:
   preference:
     - "gpt-4-turbo"
     - "anthropic/claude-3-opus-20240229"
-public: True
+public: False
 icon: {icon_url}
 resource_requests:
   cpu: "1"

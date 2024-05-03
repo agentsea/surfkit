@@ -106,12 +106,12 @@ class {agent_name}(TaskAgent):
             ),
         )
         response = router.chat(thread, namespace="system")
-        console.print(f"\nsystem prompt response: {{response}}", style="blue")
+        console.print(f"system prompt response: {{response}}", style="blue")
         thread.add_msg(response.msg)
 
         # Loop to run actions
         for i in range(max_steps):
-            console.print(f"\n\n-------\n\nstep {{i + 1}}\n", style="green")
+            console.print(f"-------step {{i + 1}}", style="green")
 
             try:
                 thread, done = self.take_action(device, task, thread)
@@ -320,6 +320,6 @@ class {agent_name}(TaskAgent):
         return
 
 
-Agent = SurfPizza
+Agent = {agent_name}
 
 """

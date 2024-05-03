@@ -4,12 +4,12 @@ import subprocess
 from surfkit.cli.templates.agent import (
     generate_agent,
     generate_dockerfile,
-    generate_main,
     generate_pyproject,
     generate_readme,
     generate_server,
     generate_agentfile,
     generate_dir,
+    generate_gitignore,
 )
 
 from .util import (
@@ -55,7 +55,7 @@ def new_agent(
     generate_pyproject(name, description, git_user_ref)
     generate_agent(name, template)
     generate_server(name)
-    generate_main(name)
+    generate_gitignore()
     generate_agentfile(
         name, description=description, image_repo=img_repo, icon_url=icon_url
     )
