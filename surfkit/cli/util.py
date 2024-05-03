@@ -34,3 +34,92 @@ def pkg_from_name(name: str) -> str:
     """Return package name from module name"""
     name = name.replace("-", "_")
     return name.lower()
+
+
+def is_poetry_installed():
+    """Check if 'poetry' command is available on the system."""
+    try:
+        subprocess.run(
+            ["poetry", "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    except FileNotFoundError:
+        return False
+
+
+def run_poetry_install():
+    """Run 'poetry install' using the subprocess module."""
+    try:
+        print("Running 'poetry install'...")
+        subprocess.run(["poetry", "install"], check=True)
+        print("'poetry install' executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while running 'poetry install': {e}")
+        raise
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        raise
+
+
+def is_docker_installed():
+    """Check if 'docker' command is available on the system."""
+    try:
+        subprocess.run(
+            ["docker", "version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    except FileNotFoundError:
+        return False
+
+
+def build_docker_image(
+    dockerfile_path: str, tag: str, push: bool = True, builder: str = "default"
+):
+    """
+    Builds and pushes a Docker image using Docker buildx.
+
+    Args:
+    dockerfile_path (str): Path to the Dockerfile.
+    tag (str): Tag for the Docker image to use for the registry.
+    push (bool): Whether to push the image to the registry after building. Defaults to True.
+    builder (str): Name of the buildx builder instance (defaults to "default").
+    """
+    try:
+        # Setting up Docker buildx (ensure it uses the correct builder)
+        subprocess.run(
+            ["docker", "buildx", "use", builder],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # Prepare the command for building the image
+        command = ["docker", "buildx", "build"]
+        if push:
+            command.append("--push")
+        command.extend(["--tag", tag, "--file", dockerfile_path, "."])
+
+        # Building (and optionally pushing) the Docker image
+        subprocess.run(
+            command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        print(
+            f"Docker image tagged as {tag} has been successfully built{' and pushed' if push else ''}."
+        )
+
+    except subprocess.CalledProcessError as e:
+        print(
+            f"An error occurred while building {'and pushing ' if push else ''}the Docker image: {e}"
+        )
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")

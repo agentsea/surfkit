@@ -1,3 +1,5 @@
+from asyncio import all_tasks
+from math import exp
 from urllib.parse import urljoin
 from typing import Optional
 from importlib.metadata import PackageNotFoundError
@@ -161,7 +163,7 @@ def create_device(
 def create_agent(
     runtime: str = typer.Option(
         "process",
-        help="The runtime to use. Options are 'process', 'docker', and 'kube'",
+        help="The runtime to use. Options are 'process', 'docker', or 'kube'",
     ),
     file: str = typer.Option(
         "./agent.yaml", help="Path to the agent configuration file."
@@ -411,6 +413,59 @@ def list_types():
     print("")
 
 
+@list_group.command("tasks")
+def list_tasks(remote: bool = typer.Option(True, help="List tasks from remote")):
+    import os
+    from typing import List
+    from taskara import Task
+
+    from surfkit.config import GlobalConfig, HUB_API_URL
+    from surfkit.env import HUB_API_KEY_ENV
+
+    config = GlobalConfig.read()
+    if not config.api_key:
+        raise ValueError("No API key found. Please run `surfkit login` first.")
+
+    os.environ[HUB_API_KEY_ENV] = config.api_key
+
+    all_tasks: List[Task] = []
+
+    if remote:
+        try:
+            tasks = Task.find(remote=HUB_API_URL)
+            all_tasks.extend(tasks)
+        except:
+            pass
+
+    try:
+        tasks = Task.find()
+        all_tasks.extend(tasks)
+    except:
+        pass
+
+    table = []
+    for task in all_tasks:
+        table.append(
+            [
+                task.id,
+                task.description,
+                task.status,
+            ]
+        )
+
+    print(
+        tabulate(
+            table,
+            headers=[
+                "ID",
+                "Description",
+                "Status",
+            ],
+        )
+    )
+    print("")
+
+
 # 'get' sub-commands
 @get_group.command("agent")
 def get_agent(
@@ -489,7 +544,7 @@ def get_device(
 
 
 @get_group.command("type")
-def get_type(name: str):
+def get_type(name: str = typer.Option(..., help="The name of the type to retrieve.")):
     from surfkit.types import AgentType
 
     typer.echo(f"Getting type: {name}")
@@ -499,7 +554,49 @@ def get_type(name: str):
     if not types:
         raise ValueError(f"Agent type '{type}' not found")
     agent_type = types[0]
+
     rich.print_json(agent_type.to_v1().model_dump_json())
+
+
+@get_group.command("task")
+def get_task(
+    id: str = typer.Option(..., help="ID of the task"),
+    remote: str = typer.Option(
+        None, help="Use a remote taskara instance, defaults to local db"
+    ),
+):
+    import os
+    from typing import List
+    from taskara import Task
+
+    from surfkit.config import GlobalConfig, HUB_API_URL
+    from surfkit.env import HUB_API_KEY_ENV
+
+    config = GlobalConfig.read()
+    if not config.api_key:
+        raise ValueError("No API key found. Please run `surfkit login` first.")
+
+    os.environ[HUB_API_KEY_ENV] = config.api_key
+
+    all_tasks: List[Task] = []
+
+    if remote:
+        try:
+            tasks = Task.find(remote=HUB_API_URL, id=id)
+            all_tasks.extend(tasks)
+        except:
+            pass
+
+    try:
+        tasks = Task.find(id=id)
+        all_tasks.extend(tasks)
+    except:
+        pass
+
+    if not all_tasks:
+        raise ValueError(f"Task with ID '{id}' not found")
+    task = all_tasks[0]
+    rich.print_json(task.to_v1().model_dump_json())
 
 
 # 'delete' sub-commands
@@ -632,29 +729,52 @@ def login():
 
 
 @app.command(help="Publish an agent")
-def publish(path: str = "./agent.yaml"):
+def publish(
+    agent_file: str = typer.Option("./agent.yaml", help="Agent file to use"),
+    build: bool = typer.Option(True, help="Build the docker image"),
+    version: str = typer.Option("latest", help="Version to build"),
+):
+    from surfkit.types import AgentType
+
+    typ = AgentType.from_file(agent_file)
+
+    if build:
+        from .util import build_docker_image
+
+        typer.echo(
+            f"Building docker image for agent '{agent_file}' version '{version}'"
+        )
+
+        if not typ.versions:
+            raise ValueError(f"No versions found for agent {typ.name}")
+
+        ver = typ.versions.get(version)
+        if not ver:
+            raise ValueError(f"Version {version} not found in {typ.name}")
+
+        build_docker_image("./Dockerfile", ver, True)
+
     from surfkit.config import GlobalConfig, HUB_API_URL
 
     url = urljoin(HUB_API_URL, "v1/agenttypes")
     typer.echo(f"\nPublishing agent to {url}...\n")
-
-    from surfkit.models import V1AgentType
-
-    with open(path, "r") as f:
-        agent_type = V1AgentType.model_validate(yaml.safe_load(f))
 
     config = GlobalConfig.read()
     if not config.api_key:
         raise ValueError("No API key found. Please run `surfkit login` first.")
 
     headers = {"Authorization": f"Bearer {config.api_key}"}
-    resp = requests.post(url, json=agent_type.model_dump(), headers=headers)
+    resp = requests.post(url, json=typ.to_v1().model_dump(), headers=headers)
     resp.raise_for_status()
     typer.echo(f"Agent published!")
 
 
 @app.command(help="Create a new agent repo")
-def new():
+def new(
+    template: str = typer.Option(
+        "surf4v", help="Template to use. Options are 'surf4v' or 'surfskelly'"
+    )
+):
     from rich.prompt import Prompt
     from .new import new_agent
     from .util import get_git_global_user_config
@@ -687,7 +807,30 @@ def new():
         git_user_ref=git_user_ref,
         img_repo=image_repo,
         icon_url=icon_url,
+        template=template,
     )
+
+
+@app.command(help="Build the agent container")
+def build(
+    version: str = typer.Option("latest", help="Version to build"),
+    agent_file: str = typer.Option("./agent.yaml", help="Agent file to use"),
+    push: bool = typer.Option(True, help="Also push the image"),
+):
+    from surfkit.types import AgentType
+    from .util import build_docker_image
+
+    typer.echo(f"Building docker image for agent '{agent_file}' version '{version}'")
+
+    typ = AgentType.from_file(agent_file)
+    if not typ.versions:
+        raise ValueError(f"No versions found for agent {typ.name}")
+
+    ver = typ.versions.get(version)
+    if not ver:
+        raise ValueError(f"Version {version} not found in {typ.name}")
+
+    build_docker_image("./Dockerfile", ver, push)
 
 
 @app.command(help="Use an agent to solve a task")

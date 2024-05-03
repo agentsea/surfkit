@@ -104,7 +104,11 @@ class AgentRuntime(Generic[R, C], ABC):
 
     @abstractmethod
     def solve_task(
-        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
+        self,
+        agent_name: str,
+        task: V1SolveTask,
+        follow_logs: bool = False,
+        attach: bool = False,
     ) -> None:
         pass
 

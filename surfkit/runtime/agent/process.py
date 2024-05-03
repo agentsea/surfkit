@@ -5,6 +5,7 @@ import time
 import signal
 import json
 import logging
+import sys
 
 from taskara.server.models import V1Task
 from agentdesk.util import find_open_port
@@ -125,7 +126,11 @@ class ProcessAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self, port)
 
     def solve_task(
-        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
+        self,
+        agent_name: str,
+        task: V1SolveTask,
+        follow_logs: bool = False,
+        attach: bool = False,
     ) -> None:
         try:
             # Fetch the list of all processes to find the required agent
@@ -143,13 +148,9 @@ class ProcessAgentRuntime(AgentRuntime):
             line = process_list.strip().split("\n")[0]
             surf_port = line.split("SURF_PORT=")[1].split()[0]
 
-            # Prepare the URL for the POST request
             url = f"http://localhost:{surf_port}/v1/tasks"
 
-            # Convert the task model to JSON
             task_data = task.model_dump_json()
-
-            # Headers for the POST request
             headers = {"Content-Type": "application/json"}
 
             # Send the POST request
@@ -160,9 +161,10 @@ class ProcessAgentRuntime(AgentRuntime):
                 logger.info("Task successfully posted to the agent.")
                 if follow_logs:
                     # If required, follow the logs
-                    logs = self.logs(agent_name, follow=True)
-                    for log in logs:
-                        print(log)
+                    if attach:
+                        signal.signal(signal.SIGINT, self._signal_handler(agent_name))
+                    self._follow_logs(agent_name)
+
             else:
                 logger.error(
                     f"Failed to post task: {response.status_code} - {response.text}"
@@ -174,6 +176,36 @@ class ProcessAgentRuntime(AgentRuntime):
             logger.error("Error while sending the POST request:", str(e))
         except Exception as e:
             logger.error(f"An unexpected error occurred: {str(e)}")
+
+    def _signal_handler(self, agent_name: str):
+        def handle_signal(signum, frame):
+            print(f"Signal {signum} received, stopping process '{agent_name}'")
+            self.delete(agent_name)
+            sys.exit(1)
+
+        return handle_signal
+
+    def _follow_logs(self, agent_name: str):
+        log_path = f"./.data/logs/{agent_name.lower()}.log"
+        if not os.path.exists(log_path):
+            logger.error("No log file found.")
+            return
+
+        with open(log_path, "r") as log_file:
+            # Go to the end of the file
+            log_file.seek(0, 2)
+            try:
+                while True:
+                    line = log_file.readline()
+                    if not line:
+                        time.sleep(0.5)  # Wait briefly for new log entries
+                        continue
+                    print(line.strip())
+            except KeyboardInterrupt:
+                # Handle Ctrl+C gracefully if we are attached to the logs
+                print(f"Interrupt received, stopping logs for '{agent_name}'")
+                self.delete(agent_name)
+                raise
 
     def proxy(
         self,

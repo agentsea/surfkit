@@ -712,10 +712,13 @@ class KubernetesAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self)
 
     def solve_task(
-        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
+        self,
+        agent_name: str,
+        task: V1SolveTask,
+        follow_logs: bool = False,
+        attach: bool = False,
     ) -> None:
         try:
-            # Making the call to the specified path to initiate the task
             status_code, response_text = self.call(
                 name=agent_name,
                 path="/v1/tasks",
@@ -723,9 +726,11 @@ class KubernetesAgentRuntime(AgentRuntime):
                 port=9090,
                 data=task.model_dump(),
             )
-            print(
-                f"Task initiation response: Status Code {status_code}, Response Text {response_text}"
-            )
+            print(f"Task posted with response: {status_code}, {response_text}")
+
+            if follow_logs:
+                print(f"Following logs for '{agent_name}':")
+                self._handle_logs_with_attach(agent_name, attach)
 
         except ApiException as e:
             print(f"API exception occurred: {e}")
@@ -734,15 +739,30 @@ class KubernetesAgentRuntime(AgentRuntime):
             print(f"An error occurred while posting the task: {e}")
             raise
 
-        if follow_logs:
-            print(f"Starting to follow logs for: {agent_name}")
-            try:
-                log_lines = self.logs(name=agent_name, follow=True)
-                for line in log_lines:
-                    print(line.decode("utf-8"))  # type: ignore
-            except ApiException as e:
-                print(f"Failed to follow logs for pod '{agent_name}': {e}")
-                raise
-            except Exception as e:
-                print(f"An error occurred while fetching logs: {e}")
-                raise
+    def _handle_logs_with_attach(self, agent_name: str, attach: bool):
+        if attach:
+            # Setup the signal handler to catch interrupt signals
+            signal.signal(signal.SIGINT, self._signal_handler(agent_name))
+
+        try:
+            log_lines = self.logs(name=agent_name, follow=True)
+            for line in log_lines:
+                print(line.decode("utf-8"))  # type: ignore
+        except KeyboardInterrupt:
+            # This block will be executed if SIGINT is caught
+            print(f"Interrupt received, stopping logs and deleting pod '{agent_name}'")
+            self.delete(agent_name)
+        except ApiException as e:
+            print(f"Failed to follow logs for pod '{agent_name}': {e}")
+            raise
+        except Exception as e:
+            print(f"An error occurred while fetching logs: {e}")
+            raise
+
+    def _signal_handler(self, agent_name: str):
+        def handle_signal(signum, frame):
+            print(f"Signal {signum} received, stopping and deleting pod '{agent_name}'")
+            self.delete(agent_name)
+            sys.exit(1)
+
+        return handle_signal

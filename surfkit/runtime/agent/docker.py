@@ -1,5 +1,7 @@
 from typing import List, Optional, Type, Union, Iterator
 import os
+import signal
+import sys
 
 import docker
 from docker.errors import NotFound
@@ -105,7 +107,11 @@ class DockerAgentRuntime(AgentRuntime):
         return AgentInstance(name, agent_type, self)
 
     def solve_task(
-        self, agent_name: str, task: V1SolveTask, follow_logs: bool = False
+        self,
+        agent_name: str,
+        task: V1SolveTask,
+        follow_logs: bool = False,
+        attach: bool = False,
     ) -> None:
         try:
             container = self.client.containers.get(agent_name)
@@ -115,6 +121,11 @@ class DockerAgentRuntime(AgentRuntime):
                 json=task.model_dump(),
             )
             print(f"Task posted with response: {response.status_code}, {response.text}")
+
+            if follow_logs:
+                print(f"Following logs for '{agent_name}':")
+                self._handle_logs_with_attach(agent_name, attach)
+
         except NotFound:
             print(f"Container '{agent_name}' does not exist.")
             raise
@@ -122,13 +133,28 @@ class DockerAgentRuntime(AgentRuntime):
             print(f"An unexpected error occurred: {e}")
             raise
 
-        if follow_logs:
-            print(f"Following logs for '{agent_name}':")
-            try:
-                for line in self.logs(agent_name, follow=True):
-                    print(line)
-            except Exception as e:
-                print(f"Error while streaming logs: {e}")
+    def _handle_logs_with_attach(self, agent_name: str, attach: bool):
+        if attach:
+            # Setup the signal handler to catch interrupt signals
+            signal.signal(signal.SIGINT, self._signal_handler(agent_name))
+
+        try:
+            for line in self.logs(agent_name, follow=True):
+                print(line)
+        except KeyboardInterrupt:
+            # This block will be executed if SIGINT is caught
+            print(f"Interrupt received, stopping logs for '{agent_name}'")
+            self.delete(agent_name)
+        except Exception as e:
+            print(f"Error while streaming logs: {e}")
+
+    def _signal_handler(self, agent_name: str):
+        def handle_signal(signum, frame):
+            print(f"Signal {signum} received, stopping container '{agent_name}'")
+            self.delete(agent_name)
+            sys.exit(1)
+
+        return handle_signal
 
     def proxy(
         self,

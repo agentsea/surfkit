@@ -355,104 +355,19 @@ agent.solve_task(task_model, follow_logs=True)
         f.write(out)
 
 
-def generate_agent(agent_name: str) -> None:
-    out = f"""
-from typing import List, Type
-import logging
-from typing import Final
+def generate_agent(agent_name: str, template: str = "surf4v") -> None:
+    from .agents.surf4v import Surf4v
+    from .agents.surfskelly import SurfSkelly
 
-from devicebay import Device
-from agentdesk.device import Desktop
-from rich.console import Console
-from surfkit.llm import LLMProvider
-from pydantic import BaseModel
-from surfkit.agent import TaskAgent
-from taskara import Task
+    if template == "surf4v":
+        fourv = Surf4v()
+        out = fourv.template(agent_name)
+    elif template == "surfskelly":
+        skelly = SurfSkelly()
+        out = skelly.template(agent_name)
+    else:
+        raise ValueError(f"Unknown template: {template}")
 
-logger: Final = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-console = Console(force_terminal=True)
-
-llm_provider = LLMProvider.from_env()
-
-
-class {agent_name}Config(BaseModel):
-    pass
-
-
-class {agent_name}(TaskAgent):
-    \"""A desktop agent that uses GPT-4V augmented with OCR and Grounding Dino to solve tasks\"""
-
-    def solve_task(
-        self,
-        task: Task,
-        device: Device,
-        max_steps: int = 30,
-    ) -> Task:
-        \"""Solve a task
-
-        Args:
-            task (Task): Task to solve.
-            device (Desktop): Device to perform the task on.
-            max_steps (int, optional): Max steps to try and solve. Defaults to 30.
-
-        Returns:
-            Task: The task
-        \"""
-
-        task.post_message("assistant", f"Starting task '{{task.description}}'")
-        # > ENTER YOUR TASK LOGIC HERE <
-
-        
-    @classmethod
-    def supported_devices(cls) -> List[Type[Device]]:
-        \"""Devices this agent supports
-
-        Returns:
-            List[Type[Device]]: A list of supported devices
-        \"""
-        return [Desktop]
-
-    @classmethod
-    def config_type(cls) -> Type[{agent_name}Config]:
-        \"""Type of config
-
-        Returns:
-            Type[DinoConfig]: Config type
-        \"""
-        return {agent_name}Config
-
-    @classmethod
-    def from_config(cls, config: {agent_name}Config) -> "{agent_name}":
-        \"""Create an agent from a config
-
-        Args:
-            config (DinoConfig): Agent config
-
-        Returns:
-            {agent_name}: The agent
-        \"""
-        return {agent_name}()
-
-    @classmethod
-    def default(cls) -> "{agent_name}":
-        \"""Create a default agent
-
-        Returns:
-            {agent_name}: The agent
-        \"""
-        return {agent_name}()
-
-    @classmethod
-    def init(cls) -> None:
-        \"""Initialize the agent class\"""
-        # <INITIALIZE AGENT HERE>
-        return
-
-
-Agent = {agent_name}
-"""
     with open(f"{pkg_from_name(agent_name)}/agent.py", "w") as f:
         f.write(out)
 
@@ -477,9 +392,8 @@ python = "^3.10"
 sqlalchemy = "^2.0.27"
 pydantic = "^2.6.3"
 requests = "^2.31.0"
-surfkit = "^0.1.92"
-tenacity = "^8.2.3"
 fastapi = {{version = "^0.109", extras = ["all"]}}
+surfkit = "^0.1.123"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -488,6 +402,7 @@ black = "^24.2.0"
 pytest = "^8.0.2"
 ipykernel = "^6.29.3"
 pytest-env = "^1.1.3"
+
 
 [build-system]
 requires = ["poetry-core"]
