@@ -1,5 +1,3 @@
-from asyncio import all_tasks
-from math import exp
 from urllib.parse import urljoin
 from typing import Optional
 from importlib.metadata import PackageNotFoundError
@@ -13,7 +11,6 @@ from namesgenerator import get_random_name
 import requests
 from tabulate import tabulate
 
-from surfkit.models import V1SolveTask
 
 art = """
  _______                ___  __  __  __  __   
@@ -108,13 +105,21 @@ def view_default(ctx: typer.Context):
 @create_group.command("device")
 def create_device(
     name: Optional[str] = typer.Option(
-        None, help="The name of the desktop to create. Defaults to a generated name."
+        None,
+        "--name",
+        "-n",
+        help="The name of the desktop to create. Defaults to a generated name.",
     ),
     type: Optional[str] = typer.Option(
-        "desktop", help="The type of device to create. Options are 'desktop'"
+        "desktop",
+        "--type",
+        "-t",
+        help="The type of device to create. Options are 'desktop'",
     ),
     provider: str = typer.Option(
         "qemu",
+        "--provider",
+        "-p",
         help="The provider type for the desktop. Options are 'ec2', 'gce', and 'qemu'",
     ),
     image: Optional[str] = typer.Option(
@@ -163,6 +168,8 @@ def create_device(
 def create_agent(
     runtime: str = typer.Option(
         "process",
+        "--runtime",
+        "-r",
         help="The runtime to use. Options are 'process', 'docker', or 'kube'",
     ),
     file: str = typer.Option(
@@ -237,7 +244,14 @@ def create_agent(
 
 
 @list_group.command("agents")
-def list_agents(runtime: str = "all"):
+def list_agents(
+    runtime: str = typer.Option(
+        "all",
+        "--runtime",
+        "-r",
+        help="The runtime to list agents for. Options are 'docker', 'kube', or 'all' (default)",
+    )
+):
     agents_list = []
 
     if runtime == "docker" or runtime == "all":
@@ -321,7 +335,7 @@ def list_agents(runtime: str = "all"):
 @list_group.command("devices")
 def list_devices(
     provider: Optional[str] = typer.Option(
-        None, help="The provider type for the desktop."
+        None, "--provider", "-p", help="The provider type for the desktop."
     ),
 ):
     from agentdesk.vm import DesktopVM
@@ -414,7 +428,9 @@ def list_types():
 
 
 @list_group.command("tasks")
-def list_tasks(remote: bool = typer.Option(True, help="List tasks from remote")):
+def list_tasks(
+    remote: bool = typer.Option(True, "--remote", "-r", help="List tasks from remote")
+):
     import os
     from typing import List
     from taskara import Task
@@ -469,8 +485,12 @@ def list_tasks(remote: bool = typer.Option(True, help="List tasks from remote"))
 # 'get' sub-commands
 @get_group.command("agent")
 def get_agent(
-    name: str = typer.Option(..., help="The name of the agent to retrieve."),
-    runtime: str = typer.Option("docker", help="The runtime of the agent to retrieve."),
+    name: str = typer.Option(
+        ..., "--name", "-n", help="The name of the agent to retrieve."
+    ),
+    runtime: str = typer.Option(
+        "docker", "--runtime", "-r", help="The runtime of the agent to retrieve."
+    ),
 ):
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
@@ -509,10 +529,13 @@ def get_agent(
 @get_group.command("device")
 def get_device(
     name: str = typer.Option(
+        ...,
+        "--name",
+        "-n",
         help="The name of the desktop to retrieve.",
     ),
     provider: Optional[str] = typer.Option(
-        None, help="The provider type for the desktop."
+        None, "--provider", "-p", help="The provider type for the desktop."
     ),
 ):
     from agentdesk.vm import DesktopVM
@@ -544,7 +567,11 @@ def get_device(
 
 
 @get_group.command("type")
-def get_type(name: str = typer.Option(..., help="The name of the type to retrieve.")):
+def get_type(
+    name: str = typer.Option(
+        ..., "--name", "-n", help="The name of the type to retrieve."
+    )
+):
     from surfkit.types import AgentType
 
     typer.echo(f"Getting type: {name}")
@@ -562,7 +589,10 @@ def get_type(name: str = typer.Option(..., help="The name of the type to retriev
 def get_task(
     id: str = typer.Option(..., help="ID of the task"),
     remote: str = typer.Option(
-        None, help="Use a remote taskara instance, defaults to local db"
+        None,
+        "--remote",
+        "-r",
+        help="Use a remote taskara instance, defaults to local db",
     ),
 ):
     import os
@@ -602,9 +632,13 @@ def get_task(
 # 'delete' sub-commands
 @delete_group.command("agent")
 def delete_agent(
-    name: str = typer.Option(..., help="The name of the agent to retrieve."),
+    name: str = typer.Option(
+        ..., "--name", "-n", help="The name of the agent to retrieve."
+    ),
     runtime: str = typer.Option(
         "docker",
+        "--runtime",
+        "-r",
         help="The runtime of the agent to retrieve. Options are 'docker', 'kube', 'process'.",
     ),
 ):
@@ -645,10 +679,13 @@ def delete_agent(
 @delete_group.command("device")
 def delete_device(
     name: str = typer.Option(
+        ...,
+        "--name",
+        "-n",
         help="The name of the desktop to retrieve.",
     ),
     provider: Optional[str] = typer.Option(
-        None, help="The provider type for the desktop."
+        None, "--provider", "-p", help="The provider type for the desktop."
     ),
 ):
     from agentdesk.vm import DesktopVM
@@ -681,7 +718,9 @@ def delete_device(
 
 
 @delete_group.command("type")
-def delete_type(name: str):
+def delete_type(
+    name: str = typer.Option(..., "--name", "-n", help="The name of the type."),
+):
     from surfkit.types import AgentType
     from surfkit.config import HUB_API_URL
 
@@ -698,8 +737,12 @@ def delete_type(name: str):
 
 @view_group.command("device")
 def view_device(
-    name: str = typer.Option(..., help="The name of the device to view."),
-    background: bool = typer.Option(False, help="Run the viewer in background mode"),
+    name: str = typer.Option(
+        ..., "--name", "-n", help="The name of the device to view."
+    ),
+    background: bool = typer.Option(
+        False, "--background", "-b", help="Run the viewer in background mode"
+    ),
 ):
     from agentdesk.vm import DesktopVM
 
@@ -730,9 +773,11 @@ def login():
 
 @app.command(help="Publish an agent")
 def publish(
-    agent_file: str = typer.Option("./agent.yaml", help="Agent file to use"),
-    build: bool = typer.Option(True, help="Build the docker image"),
-    version: str = typer.Option("latest", help="Version to build"),
+    agent_file: str = typer.Option(
+        "./agent.yaml", "--agent-file", "-f", help="Agent file to use"
+    ),
+    build: bool = typer.Option(True, "--build", "-b", help="Build the docker image"),
+    version: str = typer.Option("latest", "--version", "-v", help="Version to build"),
 ):
     from surfkit.types import AgentType
 
@@ -772,7 +817,10 @@ def publish(
 @app.command(help="Create a new agent repo")
 def new(
     template: str = typer.Option(
-        "surf4v", help="Template to use. Options are 'surf4v' or 'surfskelly'"
+        "surf4v",
+        "--template",
+        "-t",
+        help="Template to use. Options are 'surf4v' or 'surfskelly'",
     )
 ):
     from rich.prompt import Prompt
@@ -813,9 +861,11 @@ def new(
 
 @app.command(help="Build the agent container")
 def build(
-    version: str = typer.Option("latest", help="Version to build"),
-    agent_file: str = typer.Option("./agent.yaml", help="Agent file to use"),
-    push: bool = typer.Option(True, help="Also push the image"),
+    version: str = typer.Option("latest", "--version", "-v", help="Version to build"),
+    agent_file: str = typer.Option(
+        "./agent.yaml", "--agent-file", "-f", help="Agent file to use"
+    ),
+    push: bool = typer.Option(True, "--push", "-p", help="Also push the image"),
 ):
     from surfkit.types import AgentType
     from .util import build_docker_image
@@ -835,12 +885,18 @@ def build(
 
 @app.command(help="Use an agent to solve a task")
 def solve(
-    description: str = typer.Option(..., help="Description of the task."),
-    agent: Optional[str] = typer.Option(None, help="Name of the agent to use."),
+    description: str = typer.Option(
+        ..., "--description", "-d", help="Description of the task."
+    ),
+    agent: Optional[str] = typer.Option(
+        None, "--agent", "-a", help="Name of the agent to use."
+    ),
     agent_runtime: str = typer.Option(
         "docker", help="Runtime environment for the agent."
     ),
-    agent_type: Optional[str] = typer.Option(None, help="Type of agent to use."),
+    agent_type: Optional[str] = typer.Option(
+        None, "--agent-type", "-t", help="Type of agent to use."
+    ),
     agent_file: Optional[str] = typer.Option(None, help="Path to agent config file."),
     agent_version: Optional[str] = typer.Option(None, help="Version of agent to use."),
     device: Optional[str] = typer.Option(
@@ -856,13 +912,18 @@ def solve(
     starting_url: Optional[str] = typer.Option(
         None, help="Starting URL if applicable."
     ),
-    kill: bool = typer.Option(False, help="Whether to kill the agent when done"),
-    view: bool = typer.Option(True, help="Whether to view the device"),
-    follow: bool = typer.Option(True, help="Whether to follow the agent logs"),
+    kill: bool = typer.Option(
+        False, "--kill", "-k", help="Whether to kill the agent when done"
+    ),
+    view: bool = typer.Option(True, "--view", "-v", help="Whether to view the device"),
+    follow: bool = typer.Option(
+        True, "--follow", "-f", help="Whether to follow the agent logs"
+    ),
 ):
     from taskara import Task
     from agentdesk import Desktop
     from surfkit.types import AgentType
+    from surfkit.models import V1SolveTask
 
     if agent_runtime == "docker":
         from surfkit.runtime.agent.docker import (
@@ -968,9 +1029,9 @@ def solve(
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
     solve_v1 = V1SolveTask(task=task.to_v1())
-    runt.solve_task(agent, solve_v1, follow_logs=follow)
+    runt.solve_task(agent, solve_v1, follow_logs=follow, attach=True)
 
-    if kill:
+    if kill and not follow:
         typer.echo(f"Killing agent {agent}...")
         runt.delete(agent)
 
@@ -978,13 +1039,20 @@ def solve(
 @app.command("logs")
 def get_logs(
     name: str = typer.Option(
-        ..., help="The name of the agent whose logs are to be retrieved."
+        ...,
+        "--name",
+        "-n",
+        help="The name of the agent whose logs are to be retrieved.",
     ),
-    runtime: str = typer.Option("docker", help="The runtime of the agent."),
-    follow: bool = typer.Option(False, help="Whether to continuously follow the logs."),
+    runtime: str = typer.Option(
+        "docker", "--runtime", "-r", help="The runtime of the agent."
+    ),
+    follow: bool = typer.Option(
+        False, "--follow", "-f", help="Whether to continuously follow the logs."
+    ),
 ):
     """
-    Retrieve and display the logs of a specific agent.
+    Retrieve agent logs
     """
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
