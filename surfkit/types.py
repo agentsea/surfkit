@@ -38,7 +38,7 @@ class AgentType(WithDB):
         description: str,
         kind: str,
         cmd: str,
-        image: str,
+        img_repo: str,
         versions: Dict[str, str],
         runtimes: List[V1Runtime] = [],
         owner_id: Optional[str] = None,
@@ -58,7 +58,7 @@ class AgentType(WithDB):
         self.description = description
         self.kind = kind
         self.cmd = cmd
-        self.image = image
+        self.img_repo = img_repo
         self.versions = versions
         self.runtimes = runtimes
         self.owner_id = owner_id
@@ -93,7 +93,7 @@ class AgentType(WithDB):
             description=self.description,
             kind=self.kind,
             cmd=self.cmd,
-            image=self.image,
+            img_repo=self.img_repo,
             versions=self.versions,
             env_opts=self.env_opts,
             runtimes=self.runtimes,
@@ -119,7 +119,7 @@ class AgentType(WithDB):
         obj.owner_id = v1.owner_id
         obj.description = v1.description
         obj.cmd = v1.cmd
-        obj.image = v1.image
+        obj.img_repo = v1.img_repo
         obj.env_opts = v1.env_opts
         obj.runtimes = v1.runtimes
         obj.created = v1.created
@@ -155,7 +155,7 @@ class AgentType(WithDB):
             description=self.description,
             kind=self.kind,
             cmd=self.cmd,
-            image=self.image,
+            img_repo=self.img_repo,
             versions=versions,
             env_opts=json.dumps([opt.model_dump() for opt in self.env_opts]),
             runtimes=json.dumps([runtime.model_dump() for runtime in self.runtimes]),
@@ -197,7 +197,7 @@ class AgentType(WithDB):
         obj.kind = record.kind
         obj.description = record.description
         obj.cmd = record.cmd
-        obj.image = record.image
+        obj.img_repo = record.img_repo
         obj.versions = versions
         obj.env_opts = [V1EnvVarOpt(**opt) for opt in json.loads(str(record.env_opts))]
         obj.runtimes = [
@@ -327,8 +327,8 @@ class AgentType(WithDB):
             self.cmd = model.cmd
             updated = True
 
-        if self.image != model.image:
-            self.image = model.image
+        if self.image != model.img_repo:
+            self.image = model.img_repo
             updated = True
 
         if self.versions != model.versions:

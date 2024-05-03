@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from ..util import pkg_from_name
+
 
 def generate_dockerfile(agent_name: str) -> None:
     out = f"""
@@ -15,7 +17,7 @@ RUN poetry install
 EXPOSE 9090
 
 # Run the application
-CMD ["uvicorn", "{agent_name.lower()}.server:app", "--host=0.0.0.0", "--port=9090", "--log-level", "debug"]
+CMD ["uvicorn", "{pkg_from_name(agent_name)}.server:app", "--host=0.0.0.0", "--port=9090", "--log-level", "debug"]
 """
     with open(f"Dockerfile", "w") as f:
         f.write(out)
@@ -188,7 +190,7 @@ def get_remote_task(id: str, owner_id: str, server: str) -> Task:
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9090, reload=True)
 """
-    with open(f"{agent_name.lower()}/server.py", "w") as f:
+    with open(f"{pkg_from_name(agent_name)}/server.py", "w") as f:
         f.write(out)
 
 
@@ -349,7 +351,7 @@ task_model = SolveTaskModel(
 agent.solve_task(task_model, follow_logs=True)
 
 """
-    with open(f"{agent_name.lower()}/__main__.py", "w") as f:
+    with open(f"{pkg_from_name(agent_name)}/__main__.py", "w") as f:
         f.write(out)
 
 
@@ -451,12 +453,12 @@ class {agent_name}(TaskAgent):
 
 Agent = {agent_name}
 """
-    with open(f"{agent_name.lower()}/agent.py", "w") as f:
+    with open(f"{pkg_from_name(agent_name)}/agent.py", "w") as f:
         f.write(out)
 
 
 def generate_dir(agent_name: str) -> None:
-    os.mkdir(agent_name.lower())
+    os.mkdir(pkg_from_name(agent_name))
 
 
 def generate_pyproject(agent_name: str, description, git_user_ref: str) -> None:
@@ -468,7 +470,7 @@ description = "AI agent for {description}"
 authors = ["{git_user_ref}"]
 license = "MIT"
 readme = "README.md"
-packages = [{{include = "{agent_name}"}}]
+packages = [{{include = "{pkg_from_name(agent_name)}"}}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -500,12 +502,12 @@ def generate_agentfile(
 ) -> None:
 
     out = f"""
-api_version: v1alpha
+api_version: v1
 kind: TaskAgent
 name: "{name}"
 description: "{description}"
-cmd: "poetry run python -m {name.lower()}.server"
-image: "{image_repo}:latest"
+cmd: "poetry run python -m {pkg_from_name(name)}.server"
+img_repo: "{image_repo}"
 versions:
   latest: "{image_repo}:latest"
 runtimes:

@@ -88,7 +88,7 @@ class V1AgentType(BaseModel):
     cmd: str
     owner_id: Optional[str] = None
     repo: Optional[str] = None
-    image: Optional[str] = None
+    img_repo: Optional[str] = None
     versions: Optional[Dict[str, str]] = None
     env_opts: List[V1EnvVarOpt] = []
     runtimes: List[V1Runtime] = []

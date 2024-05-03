@@ -28,3 +28,9 @@ def get_git_global_user_config():
     except subprocess.CalledProcessError as e:
         print("Error getting git global user config: ", e)
         raise
+
+
+def pkg_from_name(name: str) -> str:
+    """Return package name from module name"""
+    name = name.replace("-", "_")
+    return name.lower()

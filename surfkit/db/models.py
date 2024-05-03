@@ -16,7 +16,7 @@ class AgentTypeRecord(Base):
     description = Column(String)
     kind = Column(String)
     cmd = Column(String)
-    image = Column(String)
+    img_repo = Column(String)
     versions = Column(String, nullable=True)
     repo = Column(String, nullable=True)
     env_opts = Column(String)
