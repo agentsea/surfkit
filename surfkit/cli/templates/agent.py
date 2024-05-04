@@ -499,19 +499,9 @@ pip install surfkit
 
 ## Usage
 
-Create an agent as a local process
+Create an agent
 ```sh
-surfkit create agent -f ./agent.yaml --runtime process
-```
-
-Create an agent as a docker container
-```sh
-surfkit create agent -f ./agent.yaml --runtime docker
-```
-
-Create an agent as a kubernetes pod
-```sh
-surfkit create agent -f ./agent.yaml --runtime kube
+surfkit create agent -f ./agent.yaml --runtime {{ process | docker | kube }} --name foo
 ```
 
 List running agents
@@ -521,17 +511,17 @@ surfkit list agents --runtime process
 
 Use the agent to solve a task
 ```sh
-surfkit solve --agent {{name}} --description "Search for french ducks" --device-type desktop -r process
+surfkit solve --agent foo --description "Search for french ducks" --device-type desktop -r process
 ```
 
 Get the agent logs
 ```sh
-surfkit logs --agent {{name}} -r process
+surfkit logs --agent foo -r process
 ```
 
 Delete the agent
 ```sh
-surfkit delete --agent {{name}} -r process
+surfkit delete --agent foo -r process
 ```
 
 """

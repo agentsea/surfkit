@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 
 def get_git_global_user_config():
@@ -110,7 +111,7 @@ def build_docker_image(
 
         # Building (and optionally pushing) the Docker image
         result = subprocess.run(
-            command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            command, check=True, stdout=sys.stdout, stderr=subprocess.STDOUT
         )
         print(
             f"Docker image tagged as {tag} has been successfully built{' and pushed' if push else ''}."
