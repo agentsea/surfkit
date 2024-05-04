@@ -19,7 +19,7 @@ RUN poetry install
 EXPOSE 9090
 
 # Run the application
-CMD ["uvicorn", "{pkg_from_name(agent_name)}.server:app", "--host=0.0.0.0", "--port=9090", "--log-level", "debug"]
+CMD ["poetry", "run", "uvicorn", "{pkg_from_name(agent_name)}.server:app", "--host=0.0.0.0", "--port=9090", "--log-level", "debug"]
 """
     with open(f"Dockerfile", "w") as f:
         f.write(out)

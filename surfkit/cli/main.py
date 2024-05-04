@@ -186,7 +186,14 @@ def create_agent(
         name = get_random_name(sep="-")
         if not name:
             raise ValueError("could not generate name")
-    typer.echo(f"Running agent '{file}' with runtime '{runtime}' and name '{name}'...")
+    if type:
+        typer.echo(
+            f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
+        )
+    else:
+        typer.echo(
+            f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
+        )
 
     from surfkit.models import V1AgentType
     from surfkit.types import AgentType
@@ -799,7 +806,7 @@ def publish(
         if not ver:
             raise ValueError(f"Version {version} not found in {typ.name}")
 
-        build_docker_image("./Dockerfile", ver, True)
+        build_docker_image(dockerfile_path="./Dockerfile", tag=ver, push=True)
 
     from surfkit.config import GlobalConfig, HUB_API_URL
 

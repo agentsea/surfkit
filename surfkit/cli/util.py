@@ -84,7 +84,11 @@ def is_docker_installed():
 
 
 def build_docker_image(
-    dockerfile_path: str, tag: str, push: bool = True, builder: str = "default"
+    dockerfile_path: str,
+    tag: str,
+    push: bool = True,
+    builder: str = "default",
+    platforms: str = "linux/amd64,linux/arm64",
 ):
     try:
         # Ensure using the correct Docker context
@@ -95,7 +99,15 @@ def build_docker_image(
             stderr=subprocess.PIPE,
         )
 
-        # Setting up Docker buildx (ensure it uses the correct builder)
+        # Create or use an existing buildx builder that supports multi-arch
+        subprocess.run(
+            ["docker", "buildx", "create", "--name", "mybuilder", "--use"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # Ensure the builder is used
         subprocess.run(
             ["docker", "buildx", "use", builder],
             check=True,
@@ -107,19 +119,21 @@ def build_docker_image(
         command = ["docker", "buildx", "build"]
         if push:
             command.append("--push")
-        command.extend(["--tag", tag, "--file", dockerfile_path, "."])
+        command.extend(
+            ["--platform", platforms, "--tag", tag, "--file", dockerfile_path, "."]
+        )
 
         # Building (and optionally pushing) the Docker image
         result = subprocess.run(
             command, check=True, stdout=sys.stdout, stderr=subprocess.STDOUT
         )
         print(
-            f"Docker image tagged as {tag} has been successfully built{' and pushed' if push else ''}."
+            f"Docker image tagged as {tag} has been successfully built{' and pushed' if push else ''} for platforms {platforms}."
         )
 
     except subprocess.CalledProcessError as e:
         print(
-            f"An error occurred while building {'and pushing ' if push else ''}the Docker image: {e.stderr.decode()}"
+            f"An error occurred while building {'and pushing ' if push else ''}the Docker image for platforms {platforms}: {e.stderr.decode()}"
         )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
