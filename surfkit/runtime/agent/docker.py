@@ -86,7 +86,9 @@ class DockerAgentRuntime(AgentRuntime):
                 )
             env_vars.update(found)
 
-        img = agent_type.image
+        if not agent_type.versions:
+            raise ValueError("No versions specified in agent type")
+        _, img = next(iter(agent_type.versions.items()))
         if version:
             if not agent_type.versions:
                 raise ValueError("version supplied but no versions in type")

@@ -664,9 +664,9 @@ class KubernetesAgentRuntime(AgentRuntime):
         owner_id: Optional[str] = None,
     ) -> AgentInstance:
         print("creating agent with type: ", agent_type.__dict__)
-        if not agent_type.image:
-            raise ValueError(f"Image not specified for agent type: {agent_type.name}")
-        img = agent_type.image
+        if not agent_type.versions:
+            raise ValueError("No versions specified in agent type")
+        _, img = next(iter(agent_type.versions.items()))
         if version:
             if not agent_type.versions:
                 raise ValueError("version supplied but no versions in type")

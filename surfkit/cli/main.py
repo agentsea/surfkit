@@ -173,12 +173,14 @@ def create_agent(
         help="The runtime to use. Options are 'process', 'docker', or 'kube'",
     ),
     file: str = typer.Option(
-        "./agent.yaml", help="Path to the agent configuration file."
+        "./agent.yaml", "--file", "-f", help="Path to the agent configuration file."
     ),
     name: Optional[str] = typer.Option(
-        None, help="Name of the agent. Defaults to a generated name."
+        None, "--name", "-n", help="Name of the agent. Defaults to a generated name."
     ),
-    type: Optional[str] = typer.Option(None, help="Type of the agent if predefined."),
+    type: Optional[str] = typer.Option(
+        None, "--type", "-t", help="Type of the agent if predefined."
+    ),
 ):
     if not name:
         name = get_random_name(sep="-")
