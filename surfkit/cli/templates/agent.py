@@ -67,12 +67,12 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Agent in the shell"}
+    return {{"message": "Agent in the shell"}}
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {{"status": "ok"}}
 
 
 @app.post("/v1/tasks")
