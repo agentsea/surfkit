@@ -87,7 +87,7 @@ def build_docker_image(
     dockerfile_path: str,
     tag: str,
     push: bool = True,
-    builder: str = "default",
+    builder: str = "surfbuilder",
     platforms: str = "linux/amd64,linux/arm64",
 ):
     try:
@@ -100,20 +100,19 @@ def build_docker_image(
         )
 
         # Create or use an existing buildx builder that supports multi-arch
-        subprocess.run(
-            ["docker", "buildx", "create", "--name", "mybuilder", "--use"],
-            check=True,
+        result = subprocess.run(
+            ["docker", "buildx", "create", "--name", builder, "--use", "--append"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-
-        # Ensure the builder is used
-        subprocess.run(
-            ["docker", "buildx", "use", builder],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        if result.returncode != 0:
+            # If creation failed because it already exists, just use it
+            subprocess.run(
+                ["docker", "buildx", "use", builder],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
 
         # Prepare the command for building the image
         command = ["docker", "buildx", "build"]
