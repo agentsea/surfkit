@@ -132,7 +132,7 @@ def build_docker_image(
 
     except subprocess.CalledProcessError as e:
         print(
-            f"An error occurred while building {'and pushing ' if push else ''}the Docker image for platforms {platforms}: {e.stderr.decode()}"
+            f"An error occurred while building {'and pushing ' if push else ''}the Docker image for platforms {platforms}: {e.stderr.decode() if e.stderr else None}"
         )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
