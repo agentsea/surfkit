@@ -15,7 +15,7 @@ import os
 
 from devicebay import Device
 from agentdesk.device import Desktop
-from rich.console import Console
+from toolfuse.util import AgentUtils
 from pydantic import BaseModel
 from surfkit.agent import TaskAgent
 from taskara import Task
@@ -28,6 +28,7 @@ from tenacity import (
     before_sleep_log,
 )
 from rich.json import JSON
+from rich.console import Console
 
 logging.basicConfig(level=logging.INFO)
 logger: Final = logging.getLogger(__name__)
@@ -73,6 +74,9 @@ class {agent_name}(TaskAgent):
         # Check that the device we received is one we support
         if not isinstance(device, Desktop):
             raise ValueError("Only desktop devices supported")
+
+        # Add standard agent utils to the device
+        device.merge(AgentUtils())
 
         # Open a site if that is in the parameters
         site = task._parameters.get("site") if task._parameters else None
