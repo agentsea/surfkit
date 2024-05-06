@@ -123,6 +123,23 @@ class ProcessAgentRuntime(AgentRuntime):
             if stdout:
                 print(stdout)
 
+        # Health check logic
+        max_retries = 20
+        retry_delay = 1
+        health_url = f"http://localhost:{port}/health"
+
+        for _ in range(max_retries):
+            try:
+                response = requests.get(health_url)
+                if response.status_code == 200:
+                    logger.info("Agent is up and running.")
+                    break
+            except requests.ConnectionError:
+                logger.warning("Agent not yet available, retrying...")
+            time.sleep(retry_delay)
+        else:
+            raise RuntimeError("Failed to start agent, it did not pass health checks.")
+
         return AgentInstance(name, agent_type, self, port)
 
     def solve_task(
