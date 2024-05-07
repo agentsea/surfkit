@@ -93,6 +93,9 @@ class ProcessAgentRuntime(AgentRuntime):
                 )
             metadata["env_vars"].update(found)
 
+        command = f"SURF_PORT={port} nohup {agent_type.cmd} SURFER={name} SURF_PORT={port}> ./.data/logs/{name.lower()}.log 2>&1 &"
+        metadata["command"] = command
+
         # Create metadata directory if it does not exist
         os.makedirs(f".data/proc", exist_ok=True)
         # Write metadata to a file
@@ -100,7 +103,7 @@ class ProcessAgentRuntime(AgentRuntime):
             json.dump(metadata, f, indent=4)
 
         os.makedirs(f".data/logs", exist_ok=True)
-        command = f"nohup {agent_type.cmd} SURFER={name} SURF_PORT={port}> ./.data/logs/{name.lower()}.log 2>&1 &"
+        print(f"running agent on port {port}")
 
         environment = os.environ.copy()
         process = subprocess.Popen(
@@ -140,7 +143,9 @@ class ProcessAgentRuntime(AgentRuntime):
         else:
             raise RuntimeError("Failed to start agent, it did not pass health checks.")
 
-        return AgentInstance(name, agent_type, self, port)
+        return AgentInstance(
+            name, agent_type, self, port, metadata={"command": command}
+        )
 
     def solve_task(
         self,
@@ -291,13 +296,14 @@ class ProcessAgentRuntime(AgentRuntime):
                 shell=True,
                 text=True,
             )
+            logger.debug(f"Found process list: {process_list}")
             if process_list.strip():
                 # Process found, extract PID and kill it
                 pid = process_list.strip().split()[0]
-                os.kill(int(pid), signal.SIGTERM)
+                os.killpg(os.getpgid(int(pid)), signal.SIGTERM)
                 logger.info(f"Process {name} with PID {pid} has been terminated.")
             else:
-                logger.info(f"No running process found with the name {name}.")
+                raise SystemError(f"No running process found with the name {name}.")
 
             # Delete the metadata file whether or not the process was found
             metadata_file = f".data/proc/{name}.json"

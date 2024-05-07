@@ -108,6 +108,7 @@ class V1AgentInstance(BaseModel):
     type: V1AgentType
     runtime: str
     port: int = 9090
+    metadata: Dict[str, str] = {}
 
 
 class V1Find(BaseModel):

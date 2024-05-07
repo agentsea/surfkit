@@ -1,4 +1,4 @@
-from typing import List, TypeVar, Type, Generic, Union, Iterator, Optional
+from typing import List, TypeVar, Type, Generic, Union, Iterator, Optional, Dict
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
@@ -15,12 +15,18 @@ class AgentInstance:
     """A running agent instance"""
 
     def __init__(
-        self, name: str, type: AgentType, runtime: "AgentRuntime", port: int = 9090
+        self,
+        name: str,
+        type: AgentType,
+        runtime: "AgentRuntime",
+        port: int = 9090,
+        metadata: Dict[str, str] = {},
     ) -> None:
         self._runtime = runtime
         self._type = type
         self._name = name
         self._port = port
+        self._metadata = metadata
 
     @property
     def type(self) -> AgentType:
@@ -37,6 +43,10 @@ class AgentInstance:
     @property
     def port(self) -> int:
         return self._port
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        return self._metadata
 
     def proxy(
         self,
@@ -71,6 +81,7 @@ class AgentInstance:
             type=self._type.to_v1(),
             runtime=self._runtime.name(),
             port=self._port,
+            metadata=self._metadata,
         )
 
 
