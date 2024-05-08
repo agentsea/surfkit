@@ -259,18 +259,12 @@ def list_agents(
         None,
         "--runtime",
         "-r",
-        help="The runtime to list agents for. Options are 'docker', 'kube', or 'all' (default)",
-    ),
-    source: bool = typer.Option(
-        False,
-        "--source",
-        "-s",
-        help="Whether to list agents from the source",
+        help="List agent directly from the runtime. Options are 'docker', 'kube', or 'all' (default)",
     ),
 ):
     agents_list = []
 
-    if source:
+    if runtime:
         if runtime == "docker" or runtime == "all":
             from surfkit.runtime.agent.docker import (
                 DockerAgentRuntime,
@@ -523,13 +517,10 @@ def get_agent(
         ..., "--name", "-n", help="The name of the agent to retrieve."
     ),
     runtime: Optional[str] = typer.Option(
-        None, "--runtime", "-r", help="The runtime of the agent to retrieve."
-    ),
-    source: bool = typer.Option(
-        False, "--source", "-s", help="Get agent from the source runtime"
+        None, "--runtime", "-r", help="Get agent directly from the runtime"
     ),
 ):
-    if source:
+    if runtime:
         if runtime == "docker":
             from surfkit.runtime.agent.docker import (
                 DockerAgentRuntime,
@@ -681,45 +672,55 @@ def delete_agent(
     name: str = typer.Option(
         ..., "--name", "-n", help="The name of the agent to retrieve."
     ),
-    runtime: str = typer.Option(
-        "docker",
+    runtime: Optional[str] = typer.Option(
+        None,
         "--runtime",
         "-r",
-        help="The runtime of the agent to retrieve. Options are 'docker', 'kube', 'process'.",
+        help="Delete the agent directly from the runtime. Options are 'docker', 'kube', 'process'.",
     ),
 ):
-    if runtime == "docker":
-        from surfkit.runtime.agent.docker import (
-            DockerAgentRuntime,
-            DockerConnectConfig,
-        )
+    if runtime:
+        if runtime == "docker":
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
-        dconf = DockerConnectConfig()
-        runt = DockerAgentRuntime.connect(cfg=dconf)
+            dconf = DockerConnectConfig()
+            runt = DockerAgentRuntime.connect(cfg=dconf)
 
-    elif runtime == "kube":
-        from surfkit.runtime.agent.kube import (
-            KubeAgentRuntime,
-            KubeConnectConfig,
-        )
+        elif runtime == "kube":
+            from surfkit.runtime.agent.kube import (
+                KubeAgentRuntime,
+                KubeConnectConfig,
+            )
 
-        kconf = KubeConnectConfig()
-        runt = KubeAgentRuntime.connect(cfg=kconf)
+            kconf = KubeConnectConfig()
+            runt = KubeAgentRuntime.connect(cfg=kconf)
 
-    elif runtime == "process":
-        from surfkit.runtime.agent.process import (
-            ProcessAgentRuntime,
-            ProcessConnectConfig,
-        )
+        elif runtime == "process":
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
-        pconf = ProcessConnectConfig()
-        runt = ProcessAgentRuntime.connect(cfg=pconf)
+            pconf = ProcessConnectConfig()
+            runt = ProcessAgentRuntime.connect(cfg=pconf)
+
+        else:
+            raise ValueError(f"Unknown runtime '{runtime}'")
+
+        runt.delete(name)
+        typer.echo("Agent deleted")
 
     else:
-        raise ValueError(f"Unknown runtime '{runtime}'")
+        from surfkit.runtime.agent.base import AgentInstance
 
-    runt.delete(name)
-    typer.echo("Agent deleted")
+        agents = AgentInstance.find(name=name)
+        if not agents:
+            raise ValueError(f"Agent '{name}' not found")
+        agent = agents[0]
+        agent.delete()
 
 
 @delete_group.command("device")
@@ -937,8 +938,8 @@ def solve(
     agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Name of the agent to use."
     ),
-    agent_runtime: str = typer.Option(
-        "docker", help="Runtime environment for the agent."
+    agent_runtime: Optional[str] = typer.Option(
+        None, help="Runtime environment for the agent."
     ),
     agent_type: Optional[str] = typer.Option(
         None, "--agent-type", "-t", help="Type of agent to use."
@@ -970,6 +971,12 @@ def solve(
     from agentdesk import Desktop
     from surfkit.types import AgentType
     from surfkit.server.models import V1SolveTask
+
+    if not agent_runtime:
+        if agent_file:
+            agent_runtime = "process"
+        if agent_type:
+            agent_runtime = "docker"
 
     if agent_runtime == "docker":
         from surfkit.runtime.agent.docker import (
@@ -1091,8 +1098,8 @@ def get_logs(
         "-n",
         help="The name of the agent whose logs are to be retrieved.",
     ),
-    runtime: str = typer.Option(
-        "docker", "--runtime", "-r", help="The runtime of the agent."
+    runtime: Optional[str] = typer.Option(
+        None, "--runtime", "-r", help="The runtime of the agent."
     ),
     follow: bool = typer.Option(
         False, "--follow", "-f", help="Whether to continuously follow the logs."
@@ -1101,53 +1108,65 @@ def get_logs(
     """
     Retrieve agent logs
     """
-    if runtime == "docker":
-        from surfkit.runtime.agent.docker import (
-            DockerAgentRuntime,
-            DockerConnectConfig,
-        )
+    if runtime:
+        if runtime == "docker":
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
-        config = DockerConnectConfig()
-        runtime_instance = DockerAgentRuntime.connect(cfg=config)
+            config = DockerConnectConfig()
+            runtime_instance = DockerAgentRuntime.connect(cfg=config)
 
-    elif runtime == "kube":
-        from surfkit.runtime.agent.kube import (
-            KubeAgentRuntime,
-            KubeConnectConfig,
-        )
+        elif runtime == "kube":
+            from surfkit.runtime.agent.kube import (
+                KubeAgentRuntime,
+                KubeConnectConfig,
+            )
 
-        config = KubeConnectConfig()
-        runtime_instance = KubeAgentRuntime.connect(cfg=config)
+            config = KubeConnectConfig()
+            runtime_instance = KubeAgentRuntime.connect(cfg=config)
 
-    elif runtime == "process":
-        from surfkit.runtime.agent.process import (
-            ProcessAgentRuntime,
-            ProcessConnectConfig,
-        )
+        elif runtime == "process":
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
-        config = ProcessConnectConfig()
-        runtime_instance = ProcessAgentRuntime.connect(cfg=config)
+            config = ProcessConnectConfig()
+            runtime_instance = ProcessAgentRuntime.connect(cfg=config)
+
+        else:
+            typer.echo(f"Unsupported runtime: {runtime}")
+            raise typer.Exit(1)
+
+        # Fetch logs using the AgentRuntime instance
+        try:
+            logs = runtime_instance.logs(name, follow)
+            if isinstance(logs, str):
+                typer.echo(logs)
+            else:
+                # Handle log streaming
+                try:
+                    for log_entry in logs:
+                        typer.echo(log_entry)
+                        if not follow:
+                            break
+                except KeyboardInterrupt:
+                    typer.echo("Stopped following logs.")
+        except Exception as e:
+            typer.echo(f"Failed to retrieve logs: {str(e)}")
 
     else:
-        typer.echo(f"Unsupported runtime: {runtime}")
-        raise typer.Exit(1)
+        from surfkit.runtime.agent.base import AgentInstance
 
-    # Fetch logs using the AgentRuntime instance
-    try:
-        logs = runtime_instance.logs(name, follow)
-        if isinstance(logs, str):
-            typer.echo(logs)
-        else:
-            # Handle log streaming
-            try:
-                for log_entry in logs:
-                    typer.echo(log_entry)
-                    if not follow:
-                        break
-            except KeyboardInterrupt:
-                typer.echo("Stopped following logs.")
-    except Exception as e:
-        typer.echo(f"Failed to retrieve logs: {str(e)}")
+        instances = AgentInstance.find(name=name)
+        if not instances:
+            typer.echo(f"Agent '{name}' not found")
+            raise typer.Exit(1)
+        instance = instances[0]
+
+        instance.logs(follow=follow)
 
 
 if __name__ == "__main__":
