@@ -182,10 +182,6 @@ def create_agent(
         None, "--type", "-t", help="Type of the agent if predefined."
     ),
 ):
-    if not name:
-        name = get_random_name(sep="-")
-        if not name:
-            raise ValueError("could not generate name")
     if type:
         typer.echo(
             f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
@@ -195,13 +191,13 @@ def create_agent(
             f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
         )
 
-    from surfkit.models import V1AgentType
+    from surfkit.server.models import V1AgentType
     from surfkit.types import AgentType
 
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
             DockerAgentRuntime,
-            ConnectConfig as DockerConnectConfig,
+            DockerConnectConfig,
         )
 
         conf = DockerConnectConfig()
@@ -209,17 +205,17 @@ def create_agent(
 
     elif runtime == "kube":
         from surfkit.runtime.agent.kube import (
-            KubernetesAgentRuntime,
-            ConnectConfig as KubeConnectConfig,
+            KubeAgentRuntime,
+            KubeConnectConfig,
         )
 
         conf = KubeConnectConfig()
-        runt = KubernetesAgentRuntime.connect(cfg=conf)
+        runt = KubeAgentRuntime.connect(cfg=conf)
 
     elif runtime == "process":
         from surfkit.runtime.agent.process import (
             ProcessAgentRuntime,
-            ConnectConfig as ProcessConnectConfig,
+            ProcessConnectConfig,
         )
 
         conf = ProcessConnectConfig()
@@ -245,6 +241,11 @@ def create_agent(
 
         agent_type = AgentType.from_v1(agent_type_model)
 
+    if not name:
+        from surfkit.runtime.agent.util import instance_name
+
+        name = instance_name(agent_type)
+
     runt.run(agent_type, name)
     typer.echo(f"Successfully created agent '{name}'")
 
@@ -254,73 +255,96 @@ def create_agent(
 
 @list_group.command("agents")
 def list_agents(
-    runtime: str = typer.Option(
-        "all",
+    runtime: Optional[str] = typer.Option(
+        None,
         "--runtime",
         "-r",
         help="The runtime to list agents for. Options are 'docker', 'kube', or 'all' (default)",
-    )
+    ),
+    source: bool = typer.Option(
+        False,
+        "--source",
+        "-s",
+        help="Whether to list agents from the source",
+    ),
 ):
     agents_list = []
 
-    if runtime == "docker" or runtime == "all":
-        from surfkit.runtime.agent.docker import (
-            DockerAgentRuntime,
-            ConnectConfig as DockerConnectConfig,
-        )
+    if source:
+        if runtime == "docker" or runtime == "all":
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
-        try:
-            dconf = DockerConnectConfig()
-            runt = DockerAgentRuntime.connect(cfg=dconf)
-            agents = runt.list()
-            for agent in agents:
-                agents_list.append([agent.name, agent.type, "docker", agent.port])
-        except Exception as e:
-            if runtime != "all":
-                raise
-            print(f"Failed to list agents for Docker runtime: {e}")
+            try:
+                dconf = DockerConnectConfig()
+                runt = DockerAgentRuntime.connect(cfg=dconf)
+                agents = runt.list()
+                for agent in agents:
+                    agents_list.append([agent.name, agent.type, "docker", agent.port])
+            except Exception as e:
+                if runtime != "all":
+                    raise
+                print(f"Failed to list agents for Docker runtime: {e}")
 
-    if runtime == "kube" or runtime == "all":
-        from surfkit.runtime.agent.kube import (
-            KubernetesAgentRuntime,
-            ConnectConfig as KubeConnectConfig,
-        )
+        if runtime == "kube" or runtime == "all":
+            from surfkit.runtime.agent.kube import (
+                KubeAgentRuntime,
+                KubeConnectConfig,
+            )
 
-        try:
-            kconf = KubeConnectConfig()
-            runt = KubernetesAgentRuntime.connect(cfg=kconf)
-            agents = runt.list()
-            for agent in agents:
-                agents_list.append([agent.name, agent.type, "kube", agent.port])
-        except Exception as e:
-            if runtime != "all":
-                raise
-            print(f"Failed to list agents for Kubernetes runtime: {e}")
+            try:
+                kconf = KubeConnectConfig()
+                runt = KubeAgentRuntime.connect(cfg=kconf)
+                agents = runt.list()
+                for agent in agents:
+                    agents_list.append([agent.name, agent.type, "kube", agent.port])
+            except Exception as e:
+                if runtime != "all":
+                    raise
+                print(f"Failed to list agents for Kubernetes runtime: {e}")
 
-    if runtime == "process" or runtime == "all":
-        from surfkit.runtime.agent.process import (
-            ProcessAgentRuntime,
-            ConnectConfig as ProcessConnectConfig,
-        )
+        if runtime == "process" or runtime == "all":
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
-        try:
-            pconf = ProcessConnectConfig()
-            runt = ProcessAgentRuntime.connect(cfg=pconf)
-            agents = runt.list()
-            for agent in agents:
-                agents_list.append(
-                    [
-                        agent.name,
-                        agent.type.kind,
-                        agent.type.name,
-                        "process",
-                        agent.port,
-                    ]
-                )
-        except Exception as e:
-            if runtime != "all":
-                raise
-            print(f"Failed to list agents for Process runtime: {e}")
+            try:
+                pconf = ProcessConnectConfig()
+                runt = ProcessAgentRuntime.connect(cfg=pconf)
+                agents = runt.list()
+                for agent in agents:
+                    agents_list.append(
+                        [
+                            agent.name,
+                            agent.type.kind,
+                            agent.type.name,
+                            "process",
+                            agent.port,
+                        ]
+                    )
+            except Exception as e:
+                if runtime != "all":
+                    raise
+                print(f"Failed to list agents for Process runtime: {e}")
+
+    else:
+        from surfkit.runtime.agent.base import AgentInstance
+
+        agents = AgentInstance.find()
+        for agent in agents:
+            agents_list.append(
+                [
+                    agent.name,
+                    agent.type.kind,
+                    agent.type.name,
+                    agent.runtime.name(),
+                    agent.status,
+                    agent.port,
+                ]
+            )
 
     # Print the collected data from all or a single runtime
     if agents_list:
@@ -332,6 +356,7 @@ def list_agents(
                     "Kind",
                     "Type",
                     "Runtime",
+                    "Status",
                     "Port",
                 ],
             )
@@ -497,41 +522,53 @@ def get_agent(
     name: str = typer.Option(
         ..., "--name", "-n", help="The name of the agent to retrieve."
     ),
-    runtime: str = typer.Option(
-        "docker", "--runtime", "-r", help="The runtime of the agent to retrieve."
+    runtime: Optional[str] = typer.Option(
+        None, "--runtime", "-r", help="The runtime of the agent to retrieve."
+    ),
+    source: bool = typer.Option(
+        False, "--source", "-s", help="Get agent from the source runtime"
     ),
 ):
-    if runtime == "docker":
-        from surfkit.runtime.agent.docker import (
-            DockerAgentRuntime,
-            ConnectConfig as DockerConnectConfig,
-        )
+    if source:
+        if runtime == "docker":
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
-        dconf = DockerConnectConfig()
-        runt = DockerAgentRuntime.connect(cfg=dconf)
+            dconf = DockerConnectConfig()
+            runt = DockerAgentRuntime.connect(cfg=dconf)
 
-    elif runtime == "kube":
-        from surfkit.runtime.agent.kube import (
-            KubernetesAgentRuntime,
-            ConnectConfig as KubeConnectConfig,
-        )
+        elif runtime == "kube":
+            from surfkit.runtime.agent.kube import (
+                KubeAgentRuntime,
+                KubeConnectConfig,
+            )
 
-        kconf = KubeConnectConfig()
-        runt = KubernetesAgentRuntime.connect(cfg=kconf)
+            kconf = KubeConnectConfig()
+            runt = KubeAgentRuntime.connect(cfg=kconf)
 
-    elif runtime == "process":
-        from surfkit.runtime.agent.process import (
-            ProcessAgentRuntime,
-            ConnectConfig as ProcessConnectConfig,
-        )
+        elif runtime == "process":
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
-        pconf = ProcessConnectConfig()
-        runt = ProcessAgentRuntime.connect(cfg=pconf)
+            pconf = ProcessConnectConfig()
+            runt = ProcessAgentRuntime.connect(cfg=pconf)
 
+        else:
+            raise ValueError(f"Unknown runtime '{runtime}'")
+
+        instance = runt.get(name)
     else:
-        raise ValueError(f"Unknown runtime '{runtime}'")
+        from surfkit.runtime.agent.base import AgentInstance
 
-    instance = runt.get(name)
+        instances = AgentInstance.find(name=name)
+        if not instances:
+            raise ValueError(f"Agent instance '{name}' not found")
+        instance = instances[0]
+
     rich.print_json(instance.to_v1().model_dump_json())
 
 
@@ -654,7 +691,7 @@ def delete_agent(
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
             DockerAgentRuntime,
-            ConnectConfig as DockerConnectConfig,
+            DockerConnectConfig,
         )
 
         dconf = DockerConnectConfig()
@@ -662,17 +699,17 @@ def delete_agent(
 
     elif runtime == "kube":
         from surfkit.runtime.agent.kube import (
-            KubernetesAgentRuntime,
-            ConnectConfig as KubeConnectConfig,
+            KubeAgentRuntime,
+            KubeConnectConfig,
         )
 
         kconf = KubeConnectConfig()
-        runt = KubernetesAgentRuntime.connect(cfg=kconf)
+        runt = KubeAgentRuntime.connect(cfg=kconf)
 
     elif runtime == "process":
         from surfkit.runtime.agent.process import (
             ProcessAgentRuntime,
-            ConnectConfig as ProcessConnectConfig,
+            ProcessConnectConfig,
         )
 
         pconf = ProcessConnectConfig()
@@ -932,12 +969,12 @@ def solve(
     from taskara import Task
     from agentdesk import Desktop
     from surfkit.types import AgentType
-    from surfkit.models import V1SolveTask
+    from surfkit.server.models import V1SolveTask
 
     if agent_runtime == "docker":
         from surfkit.runtime.agent.docker import (
             DockerAgentRuntime,
-            ConnectConfig as DockerConnectConfig,
+            DockerConnectConfig,
         )
 
         dconf = DockerConnectConfig()
@@ -945,17 +982,17 @@ def solve(
 
     elif agent_runtime == "kube":
         from surfkit.runtime.agent.kube import (
-            KubernetesAgentRuntime,
-            ConnectConfig as KubeConnectConfig,
+            KubeAgentRuntime,
+            KubeConnectConfig,
         )
 
         kconf = KubeConnectConfig()
-        runt = KubernetesAgentRuntime.connect(cfg=kconf)
+        runt = KubeAgentRuntime.connect(cfg=kconf)
 
     elif agent_runtime == "process":
         from surfkit.runtime.agent.process import (
             ProcessAgentRuntime,
-            ConnectConfig as ProcessConnectConfig,
+            ProcessConnectConfig,
         )
 
         pconf = ProcessConnectConfig()
@@ -1018,9 +1055,10 @@ def solve(
     if agent_file:
         typ = AgentType.from_file(agent_file)
         if not agent:
-            agent = get_random_name("-")
-            if not agent:
-                raise ValueError("could not generate agent name")
+            from surfkit.runtime.agent.util import instance_name
+
+            agent = instance_name(typ)
+
         typer.echo(f"creating agent {agent} from file {agent_file}...")
         runt.run(agent_type=typ, name=agent, version=agent_version)
 
@@ -1066,7 +1104,7 @@ def get_logs(
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
             DockerAgentRuntime,
-            ConnectConfig as DockerConnectConfig,
+            DockerConnectConfig,
         )
 
         config = DockerConnectConfig()
@@ -1074,17 +1112,17 @@ def get_logs(
 
     elif runtime == "kube":
         from surfkit.runtime.agent.kube import (
-            KubernetesAgentRuntime,
-            ConnectConfig as KubeConnectConfig,
+            KubeAgentRuntime,
+            KubeConnectConfig,
         )
 
         config = KubeConnectConfig()
-        runtime_instance = KubernetesAgentRuntime.connect(cfg=config)
+        runtime_instance = KubeAgentRuntime.connect(cfg=config)
 
     elif runtime == "process":
         from surfkit.runtime.agent.process import (
             ProcessAgentRuntime,
-            ConnectConfig as ProcessConnectConfig,
+            ProcessConnectConfig,
         )
 
         config = ProcessConnectConfig()

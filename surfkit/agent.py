@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, TypeVar, Type, Generic
+from typing import List, TypeVar, Type, Generic, Optional
 
 from pydantic import BaseModel
 
@@ -21,14 +21,14 @@ class TaskAgent(Generic[C, T], ABC):
     def solve_task(
         self,
         task: Task,
-        device: Device,
+        device: Optional[Device] = None,
         max_steps: int = 30,
     ) -> Task:
         """Solve a task on a device
 
         Args:
             task (Task): The task
-            device (Device): Device to perform the task on.
+            device (Device, optional): Device to perform the task on. Default to None.
             max_steps (int, optional): Max steps allowed. Defaults to 30.
 
         Returns:

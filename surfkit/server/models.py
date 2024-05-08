@@ -79,6 +79,11 @@ class V1Meter(BaseModel):
     description: Optional[str] = None
 
 
+class V1RuntimeConnect(BaseModel):
+    name: str
+    connect_config: BaseModel
+
+
 class V1AgentType(BaseModel):
     version: Optional[str] = None
     kind: Optional[str] = None
@@ -101,14 +106,22 @@ class V1AgentType(BaseModel):
     llm_providers: Optional[V1LLMProviders] = None
     devices: List[V1DeviceConfig] = []
     meters: List[V1Meter] = []
+    tags: List[str] = []
+    labels: Dict[str, str] = {}
 
 
 class V1AgentInstance(BaseModel):
     name: str
     type: V1AgentType
-    runtime: str
+    runtime: V1RuntimeConnect
+    version: Optional[str] = None
     port: int = 9090
-    metadata: Dict[str, str] = {}
+    labels: Dict[str, str] = {}
+    tags: List[str] = []
+    status: str
+    owner_id: Optional[str] = None
+    created: float
+    updated: float
 
 
 class V1Find(BaseModel):
@@ -129,6 +142,8 @@ class V1CreateAgentType(BaseModel):
     versions: Dict[str, str] = {}
     public: bool = False
     icon: Optional[str] = None
+    tags: List[str] = []
+    labels: Dict[str, str] = {}
 
 
 class V1Work:
@@ -144,3 +159,12 @@ class V1UserProfile(BaseModel):
     created: Optional[int] = None
     updated: Optional[int] = None
     token: Optional[str] = None
+
+
+class V1Meta(BaseModel):
+    id: str
+    tags: List[str] = []
+    labels: Dict[str, str] = {}
+    owner_id: Optional[str] = None
+    created: float
+    updated: float

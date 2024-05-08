@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Type, Union, Iterator
+from typing import List, Optional, Tuple, Type, Union, Iterator, Dict
 import os
 import json
 import urllib.error
@@ -29,7 +29,7 @@ from mllm import Router
 
 from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
-from surfkit.models import (
+from surfkit.server.models import (
     V1ResourceLimits,
     V1ResourceRequests,
     V1AgentType,
@@ -47,18 +47,21 @@ class LocalOpts(BaseModel):
     path: Optional[str] = os.getenv("KUBECONFIG", os.path.expanduser("~/.kube/config"))
 
 
-class ConnectConfig(BaseModel):
+class KubeConnectConfig(BaseModel):
     provider: str = "local"
     namespace: str = "default"
     gke_opts: Optional[GKEOpts] = None
     local_opts: Optional[LocalOpts] = None
 
 
-class KubernetesAgentRuntime(AgentRuntime):
+class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
     """A container runtime that uses Kubernetes to manage Pods directly"""
 
-    def __init__(self, cfg: ConnectConfig) -> None:
+    def __init__(self, cfg: Optional[KubeConnectConfig] = None) -> None:
         # Load the Kubernetes configuration, typically from ~/.kube/config
+        if not cfg:
+            cfg = KubeConnectConfig()
+        self.cfg = cfg
         if cfg.provider == "gke":
             opts = cfg.gke_opts
             if not opts:
@@ -222,11 +225,14 @@ class KubernetesAgentRuntime(AgentRuntime):
         self.wait_for_http_200(name)
 
     @classmethod
-    def connect_config_type(cls) -> Type[ConnectConfig]:
-        return ConnectConfig
+    def connect_config_type(cls) -> Type[KubeConnectConfig]:
+        return KubeConnectConfig
+
+    def connect_config(self) -> KubeConnectConfig:
+        return self.cfg
 
     @classmethod
-    def connect(cls, cfg: ConnectConfig) -> "KubernetesAgentRuntime":
+    def connect(cls, cfg: KubeConnectConfig) -> "KubeAgentRuntime":
         return cls(cfg)
 
     @retry(stop=stop_after_attempt(15))
@@ -546,12 +552,13 @@ class KubernetesAgentRuntime(AgentRuntime):
         self,
         name: str,
         local_port: Optional[int] = None,
-        pod_port: int = 9090,
+        agent_port: int = 9090,
         background: bool = True,
+        owner_id: Optional[str] = None,
     ):
         if local_port is None:
             local_port = find_open_port(8001, 9000)
-        cmd = f"kubectl port-forward pod/{name} {local_port}:{pod_port} -n {self.namespace}"
+        cmd = f"kubectl port-forward pod/{name} {local_port}:{agent_port} -n {self.namespace}"
         if background:
             proc = subprocess.Popen(
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -563,7 +570,12 @@ class KubernetesAgentRuntime(AgentRuntime):
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Port forwarding failed: {e}")
 
-    def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
+    def logs(
+        self,
+        name: str,
+        follow: bool = False,
+        owner_id: Optional[str] = None,
+    ) -> Union[str, Iterator[str]]:
         """
         Fetches the logs from the specified pod. Can return all logs as a single string,
         or stream the logs as a generator of strings.
@@ -571,6 +583,7 @@ class KubernetesAgentRuntime(AgentRuntime):
         Parameters:
             name (str): The name of the pod.
             follow (bool): Whether to continuously follow the logs.
+            owner_id (Optional[str]): The owner ID of the pod. If provided, it will be included in the log lines.
 
         Returns:
             Union[str, Iterator[str]]: All logs as a single string, or a generator that yields log lines.
@@ -587,45 +600,80 @@ class KubernetesAgentRuntime(AgentRuntime):
             print(f"Failed to get logs for pod '{name}': {e}")
             raise
 
-    def list(self) -> List[AgentInstance]:
+    def list(
+        self,
+        owner_id: Optional[str] = None,
+        source: bool = False,
+    ) -> List[AgentInstance]:
         instances = []
-        try:
-            pods = self.core_api.list_namespaced_pod(
-                namespace=self.namespace, label_selector="provisioner=surfkit"
-            )
-            for pod in pods.items:
-                agent_type_model = pod.metadata.annotations.get("agent_model")
+
+        if source:
+            try:
+                pods = self.core_api.list_namespaced_pod(
+                    namespace=self.namespace, label_selector="provisioner=surfkit"
+                )
+                for pod in pods.items:
+                    agent_type_model = pod.metadata.annotations.get("agent_model")
+                    if not agent_type_model:
+                        continue  # Skip if no agent model annotation
+
+                    agent_type = AgentType.from_v1(
+                        V1AgentType.model_validate_json(agent_type_model)
+                    )
+                    name = pod.metadata.name
+
+                    instances.append(
+                        AgentInstance(name, agent_type, self, status="running", port=9090)
+                    )
+            except ApiException as e:
+                print(f"Failed to list pods: {e}")
+                raise
+
+        else:
+            instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
+            instance = instances[0]
+
+        return instances
+
+    def get(
+        self,
+        name: str,
+        owner_id: Optional[str] = None,
+        source: bool = False,
+    ) -> AgentInstance:
+        if source:
+            try:
+                pod = self.core_api.read_namespaced_pod(
+                    name=name, namespace=self.namespace
+                )
+                agent_type_model = pod.metadata.annotations.get("agent_model")  # type: ignore
                 if not agent_type_model:
-                    continue  # Skip if no agent model annotation
+                    raise ValueError("Agent model annotation missing in pod metadata")
 
                 agent_type = AgentType.from_v1(
                     V1AgentType.model_validate_json(agent_type_model)
                 )
-                name = pod.metadata.name
 
-                instances.append(AgentInstance(name, agent_type, self, 9090))
-        except ApiException as e:
-            print(f"Failed to list pods: {e}")
-            raise
-        return instances
+                return AgentInstance(
+                    name, agent_type, self, status="running", port=9090
+                )
+            except ApiException as e:
+                print(f"Failed to get pod '{name}': {e}")
+                raise
 
-    def get(self, name: str) -> AgentInstance:
-        try:
-            pod = self.core_api.read_namespaced_pod(name=name, namespace=self.namespace)
-            agent_type_model = pod.metadata.annotations.get("agent_model")  # type: ignore
-            if not agent_type_model:
-                raise ValueError("Agent model annotation missing in pod metadata")
-
-            agent_type = AgentType.from_v1(
-                V1AgentType.model_validate_json(agent_type_model)
+        else:
+            instances = AgentInstance.find(
+                name=name, owner_id=owner_id, runtime_name=self.name()
             )
+            if not instances:
+                raise ValueError(f"No agent instance found with name '{name}'")
+            return instances[0]
 
-            return AgentInstance(name, agent_type, self, 9090)
-        except ApiException as e:
-            print(f"Failed to get pod '{name}': {e}")
-            raise
-
-    def delete(self, name: str) -> None:
+    def delete(
+        self,
+        name: str,
+        owner_id: Optional[str] = None,
+    ) -> None:
         try:
             # Delete the pod
             self.core_api.delete_namespaced_pod(
@@ -639,7 +687,10 @@ class KubernetesAgentRuntime(AgentRuntime):
             print(f"Failed to delete pod '{name}': {e}")
             raise
 
-    def clean(self) -> None:
+    def clean(
+        self,
+        owner_id: Optional[str] = None,
+    ) -> None:
         pods = self.core_api.list_namespaced_pod(
             namespace="default", label_selector="provisioner=surfkit"
         )
@@ -662,15 +713,15 @@ class KubernetesAgentRuntime(AgentRuntime):
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
         owner_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        labels: Optional[Dict[str, str]] = None,
     ) -> AgentInstance:
         print("creating agent with type: ", agent_type.__dict__)
         if not agent_type.versions:
             raise ValueError("No versions specified in agent type")
-        _, img = next(iter(agent_type.versions.items()))
-        if version:
-            if not agent_type.versions:
-                raise ValueError("version supplied but no versions in type")
-            img = agent_type.versions.get(version)
+        if not version:
+            version = list(agent_type.versions.keys())[0]
+        img = agent_type.versions.get(version)
         if not img:
             raise ValueError("img not found")
         if llm_providers_local:
@@ -709,18 +760,29 @@ class KubernetesAgentRuntime(AgentRuntime):
             owner_id=owner_id,
         )
 
-        return AgentInstance(name, agent_type, self)
+        return AgentInstance(
+            name=name,
+            type=agent_type,
+            runtime=self,
+            status="running",
+            port=9090,
+            version=version,
+            owner_id=owner_id,
+            tags=tags if tags else [],
+            labels=labels if labels else {},
+        )
 
     def solve_task(
         self,
-        agent_name: str,
+        name: str,
         task: V1SolveTask,
         follow_logs: bool = False,
         attach: bool = False,
+        owner_id: Optional[str] = None,
     ) -> None:
         try:
             status_code, response_text = self.call(
-                name=agent_name,
+                name=name,
                 path="/v1/tasks",
                 method="POST",
                 port=9090,
@@ -729,8 +791,8 @@ class KubernetesAgentRuntime(AgentRuntime):
             print(f"Task posted with response: {status_code}, {response_text}")
 
             if follow_logs:
-                print(f"Following logs for '{agent_name}':")
-                self._handle_logs_with_attach(agent_name, attach)
+                print(f"Following logs for '{name}':")
+                self._handle_logs_with_attach(name, attach)
 
         except ApiException as e:
             print(f"API exception occurred: {e}")

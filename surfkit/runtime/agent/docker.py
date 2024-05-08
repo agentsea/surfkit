@@ -1,29 +1,32 @@
-from typing import List, Optional, Type, Union, Iterator
+from typing import List, Optional, Type, Union, Iterator, Dict
 import os
 import signal
 import sys
 
 import docker
 from docker.errors import NotFound
-from taskara import V1Task
 from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel
 from mllm import Router
 
-from surfkit.models import V1AgentType, V1SolveTask
+from surfkit.server.models import V1AgentType, V1SolveTask
 
 from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
 
 
-class ConnectConfig(BaseModel):
+class DockerConnectConfig(BaseModel):
     timeout: Optional[int] = None
 
 
-class DockerAgentRuntime(AgentRuntime):
+class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]):
 
-    def __init__(self, cfg: ConnectConfig) -> None:
+    def __init__(self, cfg: Optional[DockerConnectConfig] = None) -> None:
+        if not cfg:
+            cfg = DockerConnectConfig()
+
+        self._cfg = cfg
         if cfg.timeout:
             self.client = docker.from_env(timeout=cfg.timeout)
         else:
@@ -34,11 +37,14 @@ class DockerAgentRuntime(AgentRuntime):
         return "docker"
 
     @classmethod
-    def connect_config_type(cls) -> Type[ConnectConfig]:
-        return ConnectConfig
+    def connect_config_type(cls) -> Type[DockerConnectConfig]:
+        return DockerConnectConfig
+
+    def connect_config(self) -> DockerConnectConfig:
+        return self._cfg
 
     @classmethod
-    def connect(cls, cfg: ConnectConfig) -> "DockerAgentRuntime":
+    def connect(cls, cfg: DockerConnectConfig) -> "DockerAgentRuntime":
         return cls(cfg)
 
     def run(
@@ -49,6 +55,8 @@ class DockerAgentRuntime(AgentRuntime):
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
         owner_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        labels: Optional[Dict[str, str]] = None,
     ) -> AgentInstance:
         labels = {
             "provisioner": "surfkit",
@@ -88,11 +96,10 @@ class DockerAgentRuntime(AgentRuntime):
 
         if not agent_type.versions:
             raise ValueError("No versions specified in agent type")
-        _, img = next(iter(agent_type.versions.items()))
-        if version:
-            if not agent_type.versions:
-                raise ValueError("version supplied but no versions in type")
-            img = agent_type.versions.get(version)
+
+        if not version:
+            version = list(agent_type.versions.keys())[0]
+        img = agent_type.versions.get(version)
         if not img:
             raise ValueError("img not found")
         container = self.client.containers.run(
@@ -106,18 +113,27 @@ class DockerAgentRuntime(AgentRuntime):
         if container and type(container) != bytes:
             print(f"ran container '{container.id}'")  # type: ignore
 
-        return AgentInstance(name, agent_type, self)
+        return AgentInstance(
+            name=name,
+            type=agent_type,
+            runtime=self,
+            version=version,
+            status="running",
+            port=9090,
+            owner_id=owner_id,
+        )
 
     def solve_task(
         self,
-        agent_name: str,
+        name: str,
         task: V1SolveTask,
         follow_logs: bool = False,
         attach: bool = False,
+        owner_id: Optional[str] = None,
     ) -> None:
         try:
-            container = self.client.containers.get(agent_name)
-            print(f"Container '{agent_name}' found.")
+            container = self.client.containers.get(name)
+            print(f"Container '{name}' found.")
             response = requests.post(
                 f"http://localhost:{container.attrs['NetworkSettings']['Ports']['9090/tcp'][0]['HostPort']}/v1/tasks",  # type: ignore
                 json=task.model_dump(),
@@ -125,11 +141,11 @@ class DockerAgentRuntime(AgentRuntime):
             print(f"Task posted with response: {response.status_code}, {response.text}")
 
             if follow_logs:
-                print(f"Following logs for '{agent_name}':")
-                self._handle_logs_with_attach(agent_name, attach)
+                print(f"Following logs for '{name}':")
+                self._handle_logs_with_attach(name, attach)
 
         except NotFound:
-            print(f"Container '{agent_name}' does not exist.")
+            print(f"Container '{name}' does not exist.")
             raise
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
@@ -162,61 +178,95 @@ class DockerAgentRuntime(AgentRuntime):
         self,
         name: str,
         local_port: Optional[int] = None,
-        pod_port: int = 9090,
+        agent_port: int = 9090,
         background: bool = True,
+        owner_id: Optional[str] = None,
     ) -> None:
         print("no proxy needed")
         return
 
-    def list(self) -> List[AgentInstance]:
-        label_filter = {"label": "provisioner=surfkit"}
-        containers = self.client.containers.list(filters=label_filter)
+    def list(
+        self, owner_id: Optional[str] = None, source: bool = False
+    ) -> List[AgentInstance]:
+
         instances = []
+        if source:
+            label_filter = {"label": "provisioner=surfkit"}
+            containers = self.client.containers.list(filters=label_filter)
 
-        for container in containers:
-            agent_type_model = container.labels.get("agent_type_model")  # type: ignore
-            if not agent_type_model:
-                continue  # Skip containers where the agent type model is not found
+            for container in containers:
+                agent_type_model = container.labels.get("agent_type_model")  # type: ignore
+                if not agent_type_model:
+                    continue  # Skip containers where the agent type model is not found
 
-            agentv1 = V1AgentType.model_validate_json(agent_type_model)
-            agent_type = AgentType.from_v1(agentv1)
-            agent_name = container.name  # type: ignore
+                agentv1 = V1AgentType.model_validate_json(agent_type_model)
+                agent_type = AgentType.from_v1(agentv1)
+                agent_name = container.name  # type: ignore
 
-            # Extract port information
-            ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
-            exposed_port = 9090  # Default application port inside container
-            host_port = ports.get(f"{exposed_port}/tcp")
-            if not host_port:
-                raise ValueError("No host port found for exposed container port")
-            port = int(host_port[0]["HostPort"])
-            instance = AgentInstance(agent_name, agent_type, self, port)
-            instances.append(instance)
+                # Extract port information
+                ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
+                exposed_port = 9090  # Default application port inside container
+                host_port = ports.get(f"{exposed_port}/tcp")
+                if not host_port:
+                    raise ValueError("No host port found for exposed container port")
+                port = int(host_port[0]["HostPort"])
+                instance = AgentInstance(
+                    name=agent_name,
+                    type=agent_type,
+                    runtime=self,
+                    port=port,
+                    status="running",
+                    owner_id=owner_id,
+                )
+                instances.append(instance)
+        else:
+            return AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
 
         return instances
 
-    def get(self, name: str) -> AgentInstance:
-        try:
-            container = self.client.containers.get(name)
-            agent_type_model = container.labels.get("agent_type_model")  # type: ignore
-            if not agent_type_model:
-                raise ValueError("Expected agent type model in labels")
+    def get(
+        self, name: str, owner_id: Optional[str] = None, source: bool = False
+    ) -> AgentInstance:
+        if source:
+            try:
+                container = self.client.containers.get(name)
+                agent_type_model = container.labels.get("agent_type_model")  # type: ignore
+                if not agent_type_model:
+                    raise ValueError("Expected agent type model in labels")
 
-            agentv1 = V1AgentType.model_validate_json(agent_type_model)
-            agent_type = AgentType.from_v1(agentv1)
+                agentv1 = V1AgentType.model_validate_json(agent_type_model)
+                agent_type = AgentType.from_v1(agentv1)
 
-            # Extract port information
-            ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
-            exposed_port = 9090  # Default application port inside container
-            host_port = ports.get(f"{exposed_port}/tcp")
-            if not host_port:
-                raise ValueError("Expected agent port in container network settings")
-            port = int(host_port[0]["HostPort"])
+                # Extract port information
+                ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
+                exposed_port = 9090  # Default application port inside container
+                host_port = ports.get(f"{exposed_port}/tcp")
+                if not host_port:
+                    raise ValueError(
+                        "Expected agent port in container network settings"
+                    )
+                port = int(host_port[0]["HostPort"])
 
-            return AgentInstance(name, agent_type, self, port)
-        except NotFound:
-            raise ValueError(f"Container '{name}' not found")
+                return AgentInstance(
+                    name=name,
+                    type=agent_type,
+                    runtime=self,
+                    status="running",
+                    port=port,
+                    owner_id=owner_id,
+                )
+            except NotFound:
+                raise ValueError(f"Container '{name}' not found")
 
-    def delete(self, name: str) -> None:
+        else:
+            instances = AgentInstance.find(
+                name=name, owner_id=owner_id, runtime_name=self.name()
+            )
+            if not instances:
+                raise ValueError(f"Agent instance '{name}' not found")
+            return instances[0]
+
+    def delete(self, name: str, owner_id: Optional[str] = None) -> None:
         try:
             # Attempt to get the container by name
             container = self.client.containers.get(name)
@@ -233,7 +283,7 @@ class DockerAgentRuntime(AgentRuntime):
             print(f"Failed to delete container '{name}': {e}")
             raise
 
-    def clean(self) -> None:
+    def clean(self, owner_id: Optional[str] = None) -> None:
         # Define the filter for containers with the specific label
         label_filter = {"label": ["provisioner=surfkit"]}
 
@@ -256,7 +306,9 @@ class DockerAgentRuntime(AgentRuntime):
 
         return None
 
-    def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
+    def logs(
+        self, name: str, follow: bool = False, owner_id: Optional[str] = None
+    ) -> Union[str, Iterator[str]]:
         """
         Fetches the logs from the specified container. Can return all logs as a single string,
         or stream the logs as a generator of strings.

@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union, Iterator
+from typing import List, Optional, Type, Union, Iterator, Dict
 import os
 import subprocess
 import time
@@ -7,14 +7,13 @@ import json
 import logging
 import sys
 
-from taskara.server.models import V1Task
 from agentdesk.util import find_open_port
 import requests
 from pydantic import BaseModel
 from mllm import Router
 
 from .base import AgentRuntime, AgentInstance
-from surfkit.models import V1AgentType, V1SolveTask
+from surfkit.server.models import V1AgentType, V1SolveTask
 from surfkit.types import AgentType
 from surfkit.util import find_open_port
 
@@ -22,22 +21,25 @@ from surfkit.util import find_open_port
 logger = logging.getLogger(__name__)
 
 
-class ConnectConfig(BaseModel):
+class ProcessConnectConfig(BaseModel):
     pass
 
 
-class ProcessAgentRuntime(AgentRuntime):
+class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConfig]):
 
     @classmethod
     def name(cls) -> str:
         return "process"
 
     @classmethod
-    def connect_config_type(cls) -> Type[ConnectConfig]:
-        return ConnectConfig
+    def connect_config_type(cls) -> Type[ProcessConnectConfig]:
+        return ProcessConnectConfig
+
+    def connect_config(self) -> ProcessConnectConfig:
+        return ProcessConnectConfig()
 
     @classmethod
-    def connect(cls, cfg: ConnectConfig) -> "ProcessAgentRuntime":
+    def connect(cls, cfg: ProcessConnectConfig) -> "ProcessAgentRuntime":
         return cls()
 
     def run(
@@ -48,6 +50,8 @@ class ProcessAgentRuntime(AgentRuntime):
         env_vars: Optional[dict] = None,
         llm_providers_local: bool = False,
         owner_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        labels: Optional[Dict[str, str]] = None,
     ) -> AgentInstance:
 
         port = find_open_port(9090, 9990)
@@ -144,26 +148,33 @@ class ProcessAgentRuntime(AgentRuntime):
             raise RuntimeError("Failed to start agent, it did not pass health checks.")
 
         return AgentInstance(
-            name, agent_type, self, port, metadata={"command": command}
+            name=name,
+            type=agent_type,
+            runtime=self,
+            status="running",
+            port=port,
+            labels={"command": command},
+            owner_id=owner_id,
         )
 
     def solve_task(
         self,
-        agent_name: str,
+        name: str,
         task: V1SolveTask,
         follow_logs: bool = False,
         attach: bool = False,
+        owner_id: Optional[str] = None,
     ) -> None:
         try:
             # Fetch the list of all processes to find the required agent
             process_list = subprocess.check_output(
-                f"ps ax -o pid,command | grep -v grep | grep SURFER={agent_name}",
+                f"ps ax -o pid,command | grep -v grep | grep SURFER={name}",
                 shell=True,
                 text=True,
             )
 
             if process_list.strip() == "":
-                logger.info(f"No running process found with the name {agent_name}.")
+                logger.info(f"No running process found with the name {name}.")
                 return
 
             # Extract the port from the process command
@@ -184,8 +195,8 @@ class ProcessAgentRuntime(AgentRuntime):
                 if follow_logs:
                     # If required, follow the logs
                     if attach:
-                        signal.signal(signal.SIGINT, self._signal_handler(agent_name))
-                    self._follow_logs(agent_name)
+                        signal.signal(signal.SIGINT, self._signal_handler(name))
+                    self._follow_logs(name)
 
             else:
                 logger.error(
@@ -233,63 +244,92 @@ class ProcessAgentRuntime(AgentRuntime):
         self,
         name: str,
         local_port: Optional[int] = None,
-        pod_port: int = 9090,
+        agent_port: int = 9090,
         background: bool = True,
+        owner_id: Optional[str] = None,
     ) -> None:
         logger.info("no proxy needed")
         return
 
-    def get(self, name: str) -> AgentInstance:
-        try:
-            # Read the metadata file
-            with open(f".data/proc/{name}.json", "r") as f:
-                metadata = json.load(f)
+    def get(
+        self, name: str, owner_id: Optional[str] = None, source: bool = False
+    ) -> AgentInstance:
+        if source:
+            try:
+                # Read the metadata file
+                with open(f".data/proc/{name}.json", "r") as f:
+                    metadata = json.load(f)
 
-            agent_type = V1AgentType.model_validate(metadata["agent_type"])
-            return AgentInstance(
-                metadata["name"], AgentType.from_v1(agent_type), self, metadata["port"]
+                agent_type = V1AgentType.model_validate(metadata["agent_type"])
+                return AgentInstance(
+                    metadata["name"],
+                    AgentType.from_v1(agent_type),
+                    self,
+                    metadata["port"],
+                )
+            except FileNotFoundError:
+                raise ValueError(f"No metadata found for agent {name}")
+
+        else:
+            instances = AgentInstance.find(
+                name=name, owner_id=owner_id, runtime_name=self.name()
             )
-        except FileNotFoundError:
-            raise ValueError(f"No metadata found for agent {name}")
+            if len(instances) == 0:
+                raise ValueError(f"No running agent found with the name {name}")
+            return instances[0]
 
-    def list(self) -> List[AgentInstance]:
+    def list(
+        self,
+        owner_id: Optional[str] = None,
+        source: bool = False,
+    ) -> List[AgentInstance]:
         instances = []
-        metadata_dir = ".data/proc"
-        all_processes = subprocess.check_output(
-            "ps ax -o pid,command", shell=True, text=True
-        )
+        if source:
+            metadata_dir = ".data/proc"
+            all_processes = subprocess.check_output(
+                "ps ax -o pid,command", shell=True, text=True
+            )
 
-        for filename in os.listdir(metadata_dir):
-            if filename.endswith(".json"):
-                try:
-                    with open(os.path.join(metadata_dir, filename), "r") as file:
-                        metadata = json.load(file)
+            for filename in os.listdir(metadata_dir):
+                if filename.endswith(".json"):
+                    try:
+                        with open(os.path.join(metadata_dir, filename), "r") as file:
+                            metadata = json.load(file)
 
-                    # Check if process is still running
-                    process_info = f"SURFER={metadata['name']} "
-                    if process_info in all_processes:
-                        agent_type = V1AgentType.model_validate(metadata["agent_type"])
-                        standard_agent_type = AgentType.from_v1(agent_type)
-                        instance = AgentInstance(
-                            name=metadata["name"],
-                            type=standard_agent_type,
-                            runtime=self,
-                            port=metadata["port"],
-                        )
-                        instances.append(instance)
-                    else:
-                        # Process is not running, delete the metadata file
-                        os.remove(os.path.join(metadata_dir, filename))
-                        logger.info(
-                            f"Deleted metadata for non-existing process {metadata['name']}."
-                        )
+                        # Check if process is still running
+                        process_info = f"SURFER={metadata['name']} "
+                        if process_info in all_processes:
+                            agent_type = V1AgentType.model_validate(
+                                metadata["agent_type"]
+                            )
+                            standard_agent_type = AgentType.from_v1(agent_type)
+                            instance = AgentInstance(
+                                name=metadata["name"],
+                                type=standard_agent_type,
+                                runtime=self,
+                                status="running",
+                                port=metadata["port"],
+                            )
+                            instances.append(instance)
+                        else:
+                            # Process is not running, delete the metadata file
+                            os.remove(os.path.join(metadata_dir, filename))
+                            logger.info(
+                                f"Deleted metadata for non-existing process {metadata['name']}."
+                            )
 
-                except Exception as e:
-                    logger.error(f"Error processing {filename}: {str(e)}")
+                    except Exception as e:
+                        logger.error(f"Error processing {filename}: {str(e)}")
+        else:
+            return AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
 
         return instances
 
-    def delete(self, name: str) -> None:
+    def delete(
+        self,
+        name: str,
+        owner_id: Optional[str] = None,
+    ) -> None:
         try:
             process_list = subprocess.check_output(
                 f"ps ax -o pid,command | grep -v grep | grep SURFER={name}",
@@ -321,7 +361,10 @@ class ProcessAgentRuntime(AgentRuntime):
             logger.error(f"An unexpected error occurred: {str(e)}")
             raise
 
-    def clean(self) -> None:
+    def clean(
+        self,
+        owner_id: Optional[str] = None,
+    ) -> None:
         try:
             # Fetch the list of all processes that were started with the 'SURFER' environment variable
             process_list = subprocess.check_output(
@@ -349,7 +392,12 @@ class ProcessAgentRuntime(AgentRuntime):
         except Exception as e:
             logger.error(f"An unexpected error occurred during cleanup: {str(e)}")
 
-    def logs(self, name: str, follow: bool = False) -> Union[str, Iterator[str]]:
+    def logs(
+        self,
+        name: str,
+        follow: bool = False,
+        owner_id: Optional[str] = None,
+    ) -> Union[str, Iterator[str]]:
         log_path = f"./.data/logs/{name.lower()}.log"
         if not os.path.exists(log_path):
             return "No logs available for this agent."

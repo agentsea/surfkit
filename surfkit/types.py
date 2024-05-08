@@ -11,7 +11,7 @@ import requests
 
 from .db.models import AgentTypeRecord
 from .db.conn import WithDB
-from .models import (
+from .server.models import (
     V1EnvVarOpt,
     V1AgentType,
     V1AgentTypes,
@@ -52,6 +52,8 @@ class AgentType(WithDB):
         repo: Optional[str] = None,
         meters: List[V1Meter] = [],
         remote: Optional[str] = None,
+        tags: List[str] = [],
+        labels: Dict[str, str] = {},
     ):
         self.id = str(uuid.uuid4())
         self.name = name
@@ -73,6 +75,8 @@ class AgentType(WithDB):
         self.devices = devices
         self.repo = repo
         self.meters = meters
+        self.tags = tags
+        self.labels = labels
         self.remote = remote
         self.save()
 
@@ -108,6 +112,8 @@ class AgentType(WithDB):
             owner_id=self.owner_id,
             repo=self.repo,
             meters=self.meters,
+            tags=self.tags,
+            labels=self.labels,
         )
 
     @classmethod
@@ -134,6 +140,8 @@ class AgentType(WithDB):
         obj.repo = v1.repo
         obj.meters = v1.meters
         obj.owner_id = owner_id
+        obj.tags = v1.tags
+        obj.labels = v1.labels
         return obj
 
     def to_record(self) -> AgentTypeRecord:
@@ -170,6 +178,8 @@ class AgentType(WithDB):
             devices=devices,
             meters=meters,
             repo=self.repo,
+            tags=json.dumps(self.tags),
+            labels=json.dumps(self.labels),
         )
 
     @classmethod
@@ -222,6 +232,8 @@ class AgentType(WithDB):
         obj.devices = devices
         obj.meters = meters
         obj.repo = record.repo
+        obj.tags = json.loads(str(record.tags))
+        obj.labels = json.loads(str(record.labels))
         return obj
 
     def save(self) -> None:
@@ -373,6 +385,14 @@ class AgentType(WithDB):
 
         if self.repo != model.repo:
             self.repo = model.repo
+            updated = True
+
+        if self.tags != model.tags:
+            self.tags = model.tags
+            updated = True
+
+        if self.labels != model.labels:
+            self.labels = model.labels
             updated = True
 
         # If anything was updated, set the updated timestamp and save changes

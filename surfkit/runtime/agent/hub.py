@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from taskara import V1Task
 
 from surfkit.types import AgentType
-from surfkit.models import V1AgentInstance, V1SolveTask
+from surfkit.server.models import V1AgentInstance, V1SolveTask
 from .base import AgentRuntime, AgentInstance
 
 

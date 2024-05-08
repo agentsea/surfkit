@@ -6,7 +6,7 @@ class Surf4v(AgentTemplate):
     def template(self, agent_name: str) -> str:
 
         return f"""
-from typing import List, Type, Tuple
+from typing import List, Type, Tuple, Optional
 import logging
 from typing import Final
 import traceback
@@ -49,14 +49,14 @@ class {agent_name}(TaskAgent):
     def solve_task(
         self,
         task: Task,
-        device: Device,
+        device: Optional[Device] = None,
         max_steps: int = 30,
     ) -> Task:
         \"""Solve a task
 
         Args:
             task (Task): Task to solve.
-            device (Device): Device to perform the task on.
+            device (Device): Device to perform the task on. Defaults to None.
             max_steps (int, optional): Max steps to try and solve. Defaults to 30.
 
         Returns:

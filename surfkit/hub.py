@@ -1,7 +1,7 @@
 import os
 import requests
 
-from .models import V1UserProfile
+from .server.models import V1UserProfile
 
 
 class Hub:
