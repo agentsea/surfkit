@@ -956,15 +956,15 @@ def solve(
         None, help="The provider type for the device."
     ),
     max_steps: int = typer.Option(30, help="Maximum steps for the task."),
-    starting_url: Optional[str] = typer.Option(
-        None, help="Starting URL if applicable."
-    ),
     kill: bool = typer.Option(
         False, "--kill", "-k", help="Whether to kill the agent when done"
     ),
     view: bool = typer.Option(True, "--view", "-v", help="Whether to view the device"),
     follow: bool = typer.Option(
         True, "--follow", "-f", help="Whether to follow the agent logs"
+    ),
+    starting_url: Optional[str] = typer.Option(
+        None, help="Starting URL if applicable."
     ),
 ):
     from taskara import Task

@@ -1,4 +1,3 @@
-from pdb import run
 from typing import List, TypeVar, Type, Generic, Union, Iterator, Optional, Dict
 from abc import ABC, abstractmethod
 import time
@@ -97,10 +96,9 @@ class AgentInstance(WithDB):
     def proxy(
         self,
         local_port: Optional[int] = None,
-        pod_port: int = 9090,
         background: bool = True,
     ) -> None:
-        return self._runtime.proxy(self._name, local_port, pod_port, background)
+        return self._runtime.proxy(self._name, local_port, self.port, background)
 
     def solve_task(self, task: V1SolveTask, follow_logs: bool = False) -> None:
         return self._runtime.solve_task(self._name, task, follow_logs)
@@ -333,6 +331,11 @@ class AgentRuntime(Generic[R, C], ABC):
         Returns:
             AgentInstance: An agent instance
         """
+        pass
+
+    @abstractmethod
+    def requires_proxy(self) -> bool:
+        """Whether this runtime requires a proxy to be used"""
         pass
 
     @abstractmethod

@@ -5,13 +5,11 @@ import {
   XCircleIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import { AuthContext } from "../server/AuthContext";
 import { motion } from "framer-motion";
-import { updateTask, postTaskMessage } from "../api/Tasks";
+import { updateTask } from "../api/Tasks";
 import RoleThreads from "./RoleThreads";
 
-export default function Task({ data }) {
-  const { token } = useContext(AuthContext);
+export default function Task({ data, addr }) {
   const endOfMessagesRef = useRef(null);
   const prevMessagesLength = useRef(data.thread?.messages.length || 0);
   const [message, setMessage] = useState(null);
@@ -24,17 +22,17 @@ export default function Task({ data }) {
 
   const handleCancelTask = () => {
     console.log("cancelling task...");
-    updateTask(data.id, { status: "cancelling" }, token);
+    updateTask(addr, data.id, { status: "cancelling" });
   };
 
   const handleFailTask = () => {
     console.log("failing task...");
-    updateTask(data.id, { status: "failed" }, token);
+    updateTask(addr, data.id, { status: "failed" });
   };
 
   const handleCompleteTask = (stat) => {
     console.log("completing task...");
-    updateTask(data.id, { status: "completed" }, token);
+    updateTask(addr, data.id, { status: "completed" });
   };
 
   const handleKeyDown = async (event) => {
@@ -49,7 +47,7 @@ export default function Task({ data }) {
       };
       console.log("data: ");
       console.log(data);
-      postTaskMessage(data.id, msgData, token);
+      // postTaskMessage(data.id, msgData, token);
       setMessage("");
     }
   };

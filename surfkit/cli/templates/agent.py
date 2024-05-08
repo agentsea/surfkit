@@ -19,7 +19,7 @@ RUN poetry install
 EXPOSE 9090
 
 # Run the application
-CMD ["poetry", "run", "uvicorn", "{pkg_from_name(agent_name)}.server:app", "--host=0.0.0.0", "--port=9090", "--log-level", "debug"]
+CMD ["poetry", "run", "python", "-m", "{pkg_from_name(agent_name)}.server"]
 """
     with open(f"Dockerfile", "w") as f:
         f.write(out)
@@ -31,7 +31,8 @@ import os
 from typing import List, Final
 import logging
 
-from taskara import Task, V1Task, V1Tasks
+from taskara import Task
+from taskara.server.models import V1TaskUpdate, V1Tasks, V1Task
 from surfkit.hub import Hub
 from surfkit.models import V1SolveTask
 from surfkit.env import HUB_SERVER_ENV, HUB_API_KEY_ENV
@@ -168,6 +169,18 @@ async def get_task(id: str):
     if not tasks:
         raise Exception(f"Task {{id}} not found")
     return tasks[0].to_v1()
+
+
+@app.put("/v1/tasks/{{id}}", response_model=V1Task)
+async def put_task(id: str, data: V1TaskUpdate):
+    tasks = Task.find(id=id)
+    if not tasks:
+        raise Exception(f"Task {{id}} not found")
+    task = tasks[0]
+    if data.status:
+        task.status = data.status
+    task.save()
+    return task.to_v1()
 
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(10))

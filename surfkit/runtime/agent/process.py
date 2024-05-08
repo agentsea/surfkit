@@ -240,6 +240,10 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 self.delete(agent_name)
                 raise
 
+    def requires_proxy(self) -> bool:
+        """Whether this runtime requires a proxy to be used"""
+        return False
+
     def proxy(
         self,
         name: str,

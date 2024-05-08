@@ -548,6 +548,11 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         self.cleanup_subprocesses()
         sys.exit(signum)  # Exit with the signal number
 
+
+    def requires_proxy(self) -> bool:
+        """Whether this runtime requires a proxy to be used"""
+        return True
+
     def proxy(
         self,
         name: str,
@@ -623,7 +628,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     name = pod.metadata.name
 
                     instances.append(
-                        AgentInstance(name, agent_type, self, status="running", port=9090)
+                        AgentInstance(
+                            name, agent_type, self, status="running", port=9090
+                        )
                     )
             except ApiException as e:
                 print(f"Failed to list pods: {e}")

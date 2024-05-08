@@ -65,16 +65,18 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             "agent_type_model": agent_type.to_v1().model_dump_json(),
         }
 
-        port = find_open_port(8001, 9000)
+        port = find_open_port(9090, 1090)
+        if not port:
+            raise ValueError("Could not find open port")
         print("running container")
 
+        if not env_vars:
+            env_vars = {}
         if llm_providers_local:
             if not agent_type.llm_providers:
                 raise ValueError(
                     "no llm providers in agent type, yet llm_providers_local is True"
                 )
-            if not env_vars:
-                env_vars = {}
             found = {}
             for provider_name in agent_type.llm_providers.preference:
                 api_key_env = Router.provider_api_keys.get(provider_name)
@@ -99,6 +101,9 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
 
         if not version:
             version = list(agent_type.versions.keys())[0]
+
+        env_vars["SURF_PORT"] = str(port)
+
         img = agent_type.versions.get(version)
         if not img:
             raise ValueError("img not found")
@@ -119,7 +124,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             runtime=self,
             version=version,
             status="running",
-            port=9090,
+            port=port,
             owner_id=owner_id,
         )
 
@@ -131,25 +136,21 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         attach: bool = False,
         owner_id: Optional[str] = None,
     ) -> None:
-        try:
-            container = self.client.containers.get(name)
-            print(f"Container '{name}' found.")
-            response = requests.post(
-                f"http://localhost:{container.attrs['NetworkSettings']['Ports']['9090/tcp'][0]['HostPort']}/v1/tasks",  # type: ignore
-                json=task.model_dump(),
-            )
-            print(f"Task posted with response: {response.status_code}, {response.text}")
+        instances = AgentInstance.find(name=name, owner_id=owner_id)
+        if not instances:
+            raise ValueError(f"No instances found for name '{name}'")
+        instance = instances[0]
 
-            if follow_logs:
-                print(f"Following logs for '{name}':")
-                self._handle_logs_with_attach(name, attach)
+        print(f"Container '{name}' found.")
+        response = requests.post(
+            f"http://localhost:{instance.port}/v1/tasks",
+            json=task.model_dump(),
+        )
+        print(f"Task posted with response: {response.status_code}, {response.text}")
 
-        except NotFound:
-            print(f"Container '{name}' does not exist.")
-            raise
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            raise
+        if follow_logs:
+            print(f"Following logs for '{name}':")
+            self._handle_logs_with_attach(name, attach)
 
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
         if attach:
@@ -174,6 +175,10 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
 
         return handle_signal
 
+    def requires_proxy(self) -> bool:
+        """Whether this runtime requires a proxy to be used"""
+        return False
+
     def proxy(
         self,
         name: str,
@@ -195,21 +200,25 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             containers = self.client.containers.list(filters=label_filter)
 
             for container in containers:
-                agent_type_model = container.labels.get("agent_type_model")  # type: ignore
+                agent_type_model = container.labels.get("agent_type_model")
                 if not agent_type_model:
                     continue  # Skip containers where the agent type model is not found
 
                 agentv1 = V1AgentType.model_validate_json(agent_type_model)
                 agent_type = AgentType.from_v1(agentv1)
-                agent_name = container.name  # type: ignore
+                agent_name = container.name
 
-                # Extract port information
-                ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
-                exposed_port = 9090  # Default application port inside container
-                host_port = ports.get(f"{exposed_port}/tcp")
-                if not host_port:
-                    raise ValueError("No host port found for exposed container port")
-                port = int(host_port[0]["HostPort"])
+                # Extract the SURF_PORT environment variable
+                env_vars = container.attrs.get("Config", {}).get("Env", [])
+                port = next(
+                    (
+                        int(var.split("=")[1])
+                        for var in env_vars
+                        if var.startswith("SURF_PORT=")
+                    ),
+                    9090,
+                )
+
                 instance = AgentInstance(
                     name=agent_name,
                     type=agent_type,
@@ -230,22 +239,23 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         if source:
             try:
                 container = self.client.containers.get(name)
-                agent_type_model = container.labels.get("agent_type_model")  # type: ignore
+                agent_type_model = container.labels.get("agent_type_model")
                 if not agent_type_model:
                     raise ValueError("Expected agent type model in labels")
 
                 agentv1 = V1AgentType.model_validate_json(agent_type_model)
                 agent_type = AgentType.from_v1(agentv1)
 
-                # Extract port information
-                ports = container.attrs["NetworkSettings"]["Ports"]  # type: ignore
-                exposed_port = 9090  # Default application port inside container
-                host_port = ports.get(f"{exposed_port}/tcp")
-                if not host_port:
-                    raise ValueError(
-                        "Expected agent port in container network settings"
-                    )
-                port = int(host_port[0]["HostPort"])
+                # Extract the SURF_PORT environment variable
+                env_vars = container.attrs.get("Config", {}).get("Env", [])
+                port = next(
+                    (
+                        int(var.split("=")[1])
+                        for var in env_vars
+                        if var.startswith("SURF_PORT=")
+                    ),
+                    9090,
+                )
 
                 return AgentInstance(
                     name=name,
