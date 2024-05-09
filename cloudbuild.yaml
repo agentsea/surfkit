@@ -15,7 +15,7 @@ steps:
       - "build"
       - "--platform=linux/amd64,linux/arm64"
       - "-t"
-      - "us-central1-docker.pkg.dev/agentsea-dev/guisuirfer/surfkit-ui:$COMMIT_SHA"
+      - "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:$COMMIT_SHA"
       - "-f"
       - "./ui/surfkit/Dockerfile"
       - "--push"
