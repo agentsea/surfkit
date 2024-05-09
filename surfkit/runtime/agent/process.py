@@ -214,6 +214,9 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         def handle_signal(signum, frame):
             print(f"Signal {signum} received, stopping process '{agent_name}'")
             self.delete(agent_name)
+            instances = AgentInstance.find(name=agent_name)
+            if instances:
+                instances[0].delete()
             sys.exit(1)
 
         return handle_signal

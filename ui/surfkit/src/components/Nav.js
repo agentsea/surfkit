@@ -4,6 +4,7 @@ import {
   Collapse,
   Typography,
   IconButton,
+  Avatar,
 } from "@material-tailwind/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -17,7 +18,7 @@ function NavList() {
         className="p-1 font-medium"
       >
         <a
-          href="https://github.com/agentsea/agent-desk"
+          href="https://github.com/agentsea/surfkit"
           className="flex items-center hover:text-blue-500 transition-colors"
         >
           Github
@@ -30,7 +31,7 @@ function NavList() {
         className="p-1 font-medium"
       >
         <a
-          href="https://github.com/agentsea/agent-desk"
+          href="https://github.com/agentsea/surfkit"
           className="flex items-center hover:text-blue-500 transition-colors"
         >
           Docs
@@ -57,14 +58,20 @@ export function Nav() {
   return (
     <Navbar className="mx-auto max-w-screen-xl px-6 py-3 w-full min-w-screen-xl">
       <div className="flex items-center justify-between text-blue-gray-900">
-        <Typography
+        <img
+          className="h-10 w-10 rounded-full object-contain object-center rounded-full border border-blue-gray-200 p-1 shadow-xl"
+          src="https://storage.googleapis.com/guisurfer-assets/surf_logo_cropped.png"
+          alt="logo"
+        />
+
+        {/* <Typography
           as="a"
           href="#"
           variant="h6"
           className="mr-4 cursor-pointer py-1.5"
         >
           SurfKit
-        </Typography>
+        </Typography> */}
         <div className="hidden lg:block">
           <NavList />
         </div>

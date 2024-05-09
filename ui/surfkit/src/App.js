@@ -5,9 +5,11 @@ import AppRoutes from "./server/Routes";
 
 function App() {
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <div className="bg-gray-100 min-h-screen">
+      <Router>
+        <AppRoutes />
+      </Router>
+    </div>
   );
 }
 

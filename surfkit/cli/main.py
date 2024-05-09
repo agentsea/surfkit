@@ -1008,39 +1008,41 @@ def solve(
         instances = AgentInstance.find(name=agent)
         if not instances:
             raise ValueError(f"Expected instances of '{agent}'")
+        typer.echo(f"Found agent instance '{agent}'")
         instance = instances[0]
         runt = instance.runtime
 
-    if agent_runtime == "docker":
-        from surfkit.runtime.agent.docker import (
-            DockerAgentRuntime,
-            DockerConnectConfig,
-        )
-
-        dconf = DockerConnectConfig()
-        runt = DockerAgentRuntime.connect(cfg=dconf)
-
-    elif agent_runtime == "kube":
-        from surfkit.runtime.agent.kube import (
-            KubeAgentRuntime,
-            KubeConnectConfig,
-        )
-
-        kconf = KubeConnectConfig()
-        runt = KubeAgentRuntime.connect(cfg=kconf)
-
-    elif agent_runtime == "process":
-        from surfkit.runtime.agent.process import (
-            ProcessAgentRuntime,
-            ProcessConnectConfig,
-        )
-
-        pconf = ProcessConnectConfig()
-        runt = ProcessAgentRuntime.connect(cfg=pconf)
-
     else:
-        if agent_file or agent_type:
-            raise ValueError(f"Unknown runtime '{agent_runtime}'")
+        if agent_runtime == "docker":
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
+
+            dconf = DockerConnectConfig()
+            runt = DockerAgentRuntime.connect(cfg=dconf)
+
+        elif agent_runtime == "kube":
+            from surfkit.runtime.agent.kube import (
+                KubeAgentRuntime,
+                KubeConnectConfig,
+            )
+
+            kconf = KubeConnectConfig()
+            runt = KubeAgentRuntime.connect(cfg=kconf)
+
+        elif agent_runtime == "process":
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
+
+            pconf = ProcessConnectConfig()
+            runt = ProcessAgentRuntime.connect(cfg=pconf)
+
+        else:
+            if agent_file or agent_type:
+                raise ValueError(f"Unknown runtime '{agent_runtime}'")
 
     if not runt:
         raise ValueError(f"Unknown runtime '{agent_runtime}'")
@@ -1075,9 +1077,7 @@ def solve(
         if not vms:
             raise ValueError(f"Device '{device}' not found")
         vm = vms[0]
-        print("getting device from vm...")
         _device = Desktop.from_vm(vm)
-        print("got device from vm...", _device)
         v1device = _device.to_v1()
         typer.echo(f"found device '{device}'...")
 
@@ -1093,7 +1093,8 @@ def solve(
             if not agent:
                 raise ValueError("could not generate agent name")
         typer.echo(f"creating agent {agent}...")
-        runt.run(agent_type=typ, name=agent, version=agent_version)
+        instance = runt.run(agent_type=typ, name=agent, version=agent_version)
+        agent = instance.name
 
     if agent_file:
         typ = AgentType.from_file(agent_file)
@@ -1110,7 +1111,8 @@ def solve(
             typ.save()
 
         typer.echo(f"creating agent {agent} from file {agent_file}...")
-        runt.run(agent_type=typ, name=agent, version=agent_version)
+        instance = runt.run(agent_type=typ, name=agent, version=agent_version)
+        agent = instance.name
 
     if not agent:
         raise ValueError("Either agent or agent_type needs to be provided")
@@ -1140,7 +1142,7 @@ def solve(
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
     solve_v1 = V1SolveTask(task=task.to_v1())
-    runt.solve_task(agent, solve_v1, follow_logs=follow, attach=True)
+    runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
 
     if kill and not follow:
         typer.echo(f"Killing agent {agent}...")
