@@ -3,6 +3,10 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from taskara import V1Task
 
+import warnings
+import traceback
+import sys
+
 
 class V1Action(BaseModel):
     """An action"""
@@ -59,7 +63,7 @@ class V1LLMProviders(BaseModel):
 
 class V1Agent(BaseModel):
     name: str
-    config: BaseModel
+    config: Dict[str, Any]
 
 
 class V1SolveTask(BaseModel):

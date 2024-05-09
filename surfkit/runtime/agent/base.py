@@ -103,12 +103,16 @@ class AgentInstance(WithDB):
     def solve_task(self, task: V1SolveTask, follow_logs: bool = False) -> None:
         return self._runtime.solve_task(self._name, task, follow_logs)
 
-    def delete(self) -> None:
+    def delete(self, force: bool = False) -> None:
         """
         Deletes the agent instance from the runtime and the database.
         """
         # First, delete the agent instance from the runtime.
-        self._runtime.delete(self._name)
+        try:
+            self._runtime.delete(self._name)
+        except Exception as e:
+            if not force:
+                raise e
 
         # After the runtime deletion, proceed to delete the record from the database.
         for db in self.get_db():
@@ -167,7 +171,7 @@ class AgentInstance(WithDB):
     def to_record(self) -> AgentInstanceRecord:
         """Convert to DB model"""
         runtime_cfg = self._runtime.connect_config().model_dump_json()
-        print("runtime cfg: ", runtime_cfg)
+
         return AgentInstanceRecord(
             id=self._id,
             name=self._name,
@@ -199,6 +203,7 @@ class AgentInstance(WithDB):
         runtime = runtype.connect(runcfg)
 
         obj = cls.__new__(cls)
+        obj._id = str(record.id)
         obj._name = str(record.name)
         obj._type = types[0]
         obj._runtime = runtime

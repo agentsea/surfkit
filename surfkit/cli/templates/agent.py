@@ -34,7 +34,7 @@ import logging
 from taskara import Task
 from taskara.server.models import V1TaskUpdate, V1Tasks, V1Task
 from surfkit.hub import Hub
-from surfkit.models import V1SolveTask
+from surfkit.server.models import V1SolveTask
 from surfkit.env import HUB_SERVER_ENV, HUB_API_KEY_ENV
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware

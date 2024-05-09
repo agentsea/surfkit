@@ -97,7 +97,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 )
             metadata["env_vars"].update(found)
 
-        command = f"SURF_PORT={port} nohup {agent_type.cmd} SURFER={name} SURF_PORT={port}> ./.data/logs/{name.lower()}.log 2>&1 &"
+        command = f"SURF_PORT={port} nohup {agent_type.cmd} SURFER={name} SURF_PORT={port} > ./.data/logs/{name.lower()}.log 2>&1 &"
         metadata["command"] = command
 
         # Create metadata directory if it does not exist

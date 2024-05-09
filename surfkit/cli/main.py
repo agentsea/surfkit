@@ -1,3 +1,4 @@
+from pdb import run
 from urllib.parse import urljoin
 from typing import Optional
 from importlib.metadata import PackageNotFoundError
@@ -169,7 +170,7 @@ def create_device(
 @create_group.command("agent")
 def create_agent(
     runtime: str = typer.Option(
-        "process",
+        None,
         "--runtime",
         "-r",
         help="The runtime to use. Options are 'process', 'docker', or 'kube'",
@@ -184,17 +185,15 @@ def create_agent(
         None, "--type", "-t", help="Type of the agent if predefined."
     ),
 ):
-    if type:
-        typer.echo(
-            f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
-        )
-    else:
-        typer.echo(
-            f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
-        )
 
     from surfkit.server.models import V1AgentType
     from surfkit.types import AgentType
+
+    if not runtime:
+        if file:
+            runtime = "process"
+        else:
+            runtime = "docker"
 
     if runtime == "docker":
         from surfkit.runtime.agent.docker import (
@@ -237,16 +236,32 @@ def create_agent(
         try:
             with open(file, "r") as f:
                 data = yaml.safe_load(f)
-                agent_type_model = V1AgentType(**data)
+                agent_type_v1 = V1AgentType(**data)
         except Exception as e:
             raise ValueError(f"Failed to parse find or parse agent.yaml: {e}")
 
-        agent_type = AgentType.from_v1(agent_type_model)
+        agent_type = AgentType.from_v1(agent_type_v1)
+
+        types = AgentType.find(name=agent_type.name)
+        if types:
+            typ = types[0]
+            typ.update(agent_type_v1)
+        else:
+            agent_type.save()
 
     if not name:
         from surfkit.runtime.agent.util import instance_name
 
         name = instance_name(agent_type)
+
+    if type:
+        typer.echo(
+            f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
+        )
+    else:
+        typer.echo(
+            f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
+        )
 
     runt.run(agent_type, name)
     typer.echo(f"Successfully created agent '{name}'")
@@ -680,6 +695,12 @@ def delete_agent(
         "-r",
         help="Delete the agent directly from the runtime. Options are 'docker', 'kube', 'process'.",
     ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Force delete the agent.",
+    ),
 ):
     if runtime:
         if runtime == "docker":
@@ -722,7 +743,7 @@ def delete_agent(
         if not agents:
             raise ValueError(f"Agent '{name}' not found")
         agent = agents[0]
-        agent.delete()
+        agent.delete(force=force)
 
 
 @delete_group.command("device")
@@ -977,8 +998,18 @@ def solve(
     if not agent_runtime:
         if agent_file:
             agent_runtime = "process"
-        if agent_type:
+        elif agent_type:
             agent_runtime = "docker"
+        else:
+            agent_runtime = "docker"
+
+    runt = None
+    if agent:
+        instances = AgentInstance.find(name=agent)
+        if not instances:
+            raise ValueError(f"Expected instances of '{agent}'")
+        instance = instances[0]
+        runt = instance.runtime
 
     if agent_runtime == "docker":
         from surfkit.runtime.agent.docker import (
@@ -1008,6 +1039,10 @@ def solve(
         runt = ProcessAgentRuntime.connect(cfg=pconf)
 
     else:
+        if agent_file or agent_type:
+            raise ValueError(f"Unknown runtime '{agent_runtime}'")
+
+    if not runt:
         raise ValueError(f"Unknown runtime '{agent_runtime}'")
 
     v1device = None
@@ -1040,7 +1075,9 @@ def solve(
         if not vms:
             raise ValueError(f"Device '{device}' not found")
         vm = vms[0]
+        print("getting device from vm...")
         _device = Desktop.from_vm(vm)
+        print("got device from vm...", _device)
         v1device = _device.to_v1()
         typer.echo(f"found device '{device}'...")
 
@@ -1064,6 +1101,13 @@ def solve(
             from surfkit.runtime.agent.util import instance_name
 
             agent = instance_name(typ)
+
+        types = AgentType.find(name=typ.name)
+        if types:
+            typ = types[0]
+            typ.update(typ.to_v1())
+        else:
+            typ.save()
 
         typer.echo(f"creating agent {agent} from file {agent_file}...")
         runt.run(agent_type=typ, name=agent, version=agent_version)
@@ -1178,8 +1222,18 @@ def get_logs(
             typer.echo(f"Agent '{name}' not found")
             raise typer.Exit(1)
         instance = instances[0]
-
-        instance.logs(follow=follow)
+        logs = instance.logs(follow=follow)
+        if isinstance(logs, str):
+            typer.echo(logs)
+        else:
+            # Handle log streaming
+            try:
+                for log_entry in logs:
+                    typer.echo(log_entry)
+                    if not follow:
+                        break
+            except KeyboardInterrupt:
+                typer.echo("Stopped following logs.")
 
 
 if __name__ == "__main__":

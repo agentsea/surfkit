@@ -21,7 +21,7 @@ from agentdesk.proxy import ensure_ssh_proxy, cleanup_proxy
 from surfkit.runtime.agent.base import AgentInstance
 
 
-UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisuirfer/surfkit-ui:634820941cbbba4b3cd51149b25d0a4c8d1a35f4"
+UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisuirfer/surfkit-ui:2a6671b1579b031151700662aab2352179a67dfb"
 
 
 def view(desk: DesktopVM, agent: AgentInstance, background: bool = False) -> None:

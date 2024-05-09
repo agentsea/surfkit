@@ -339,8 +339,8 @@ class AgentType(WithDB):
             self.cmd = model.cmd
             updated = True
 
-        if self.image != model.img_repo:
-            self.image = model.img_repo
+        if self.img_repo != model.img_repo:
+            self.img_repo = model.img_repo
             updated = True
 
         if self.versions != model.versions:
