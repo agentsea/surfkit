@@ -54,7 +54,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         labels: Optional[Dict[str, str]] = None,
     ) -> AgentInstance:
 
-        port = find_open_port(9090, 9990)
+        port = find_open_port(9090, 10090)
         if not port:
             raise ValueError("Could not find open port")
         logger.debug("running process")
@@ -251,7 +251,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         agent_port: int = 9090,
         background: bool = True,
         owner_id: Optional[str] = None,
-    ) -> None:
+    ) -> Optional[int]:
         logger.info("no proxy needed")
         return
 

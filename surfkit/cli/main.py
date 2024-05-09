@@ -11,6 +11,8 @@ from namesgenerator import get_random_name
 import requests
 from tabulate import tabulate
 
+from surfkit.runtime.agent.base import AgentInstance
+
 
 art = """
  _______                ___  __  __  __  __   
@@ -1031,6 +1033,7 @@ def solve(
         else:
             raise ValueError(f"unknown device type {device_type}")
 
+    vm = None
     if device:
         typer.echo(f"finding device '{device}'...")
         vms = Desktop.find(name=device)
@@ -1040,10 +1043,6 @@ def solve(
         _device = Desktop.from_vm(vm)
         v1device = _device.to_v1()
         typer.echo(f"found device '{device}'...")
-
-    if _device and view:
-        typer.echo("viewing device...")
-        _device.view(True)
 
     if agent_type:
         from surfkit.config import HUB_API_URL
@@ -1071,6 +1070,20 @@ def solve(
 
     if not agent:
         raise ValueError("Either agent or agent_type needs to be provided")
+
+    if _device and view:
+        typer.echo("viewing device...")
+        from surfkit.cli.view import view as _view
+
+        instances = AgentInstance.find(name=agent)
+        if not instances:
+            raise ValueError(f"agent '{agent}' not found")
+        instance = instances[0]
+
+        if not vm:
+            raise ValueError("vm not found for ui")
+
+        _view(vm, instance, True)
 
     task = Task(
         description=description,

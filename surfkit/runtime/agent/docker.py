@@ -65,7 +65,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             "agent_type_model": agent_type.to_v1().model_dump_json(),
         }
 
-        port = find_open_port(9090, 1090)
+        port = find_open_port(9090, 10090)
         if not port:
             raise ValueError("Could not find open port")
         print("running container")
@@ -186,7 +186,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         agent_port: int = 9090,
         background: bool = True,
         owner_id: Optional[str] = None,
-    ) -> None:
+    ) -> Optional[int]:
         print("no proxy needed")
         return
 

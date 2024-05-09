@@ -97,7 +97,7 @@ class AgentInstance(WithDB):
         self,
         local_port: Optional[int] = None,
         background: bool = True,
-    ) -> None:
+    ) -> Optional[int]:
         return self._runtime.proxy(self._name, local_port, self.port, background)
 
     def solve_task(self, task: V1SolveTask, follow_logs: bool = False) -> None:
@@ -346,7 +346,7 @@ class AgentRuntime(Generic[R, C], ABC):
         agent_port: int = 9090,
         background: bool = True,
         owner_id: Optional[str] = None,
-    ) -> None:
+    ) -> Optional[int]:
         """Proxy a port to the agent
 
         Args:
@@ -355,6 +355,9 @@ class AgentRuntime(Generic[R, C], ABC):
             agent_port (int, optional): The agents port. Defaults to 9090.
             background (bool, optional): Whether to run the proxy in the background. Defaults to True.
             owner_id (Optional[str], optional): An optional owner ID. Defaults to None.
+
+        Returns:
+                Optional[int]: The pid of the proxy
         """
         pass
 

@@ -548,7 +548,6 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         self.cleanup_subprocesses()
         sys.exit(signum)  # Exit with the signal number
 
-
     def requires_proxy(self) -> bool:
         """Whether this runtime requires a proxy to be used"""
         return True
@@ -560,18 +559,23 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         agent_port: int = 9090,
         background: bool = True,
         owner_id: Optional[str] = None,
-    ):
+    ) -> Optional[int]:
         if local_port is None:
-            local_port = find_open_port(8001, 9000)
+            local_port = find_open_port(9090, 10090)
+
         cmd = f"kubectl port-forward pod/{name} {local_port}:{agent_port} -n {self.namespace}"
+
         if background:
             proc = subprocess.Popen(
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             self._register_cleanup(proc)
+            return proc.pid  # Return the PID of the subprocess
+
         else:
             try:
                 subprocess.run(cmd, shell=True, check=True)
+                return None  # No PID to return when not in background mode
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Port forwarding failed: {e}")
 

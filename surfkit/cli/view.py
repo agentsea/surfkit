@@ -2,7 +2,7 @@
 import urllib.parse
 import time
 import os
-from typing import Tuple, Optional
+from typing import Optional
 import atexit
 import random
 import webbrowser
@@ -21,7 +21,7 @@ from agentdesk.proxy import ensure_ssh_proxy, cleanup_proxy
 from surfkit.runtime.agent.base import AgentInstance
 
 
-UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/agentdesk/ui:634820941cbbba4b3cd51149b25d0a4c8d1a35f4"
+UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisuirfer/surfkit-ui:634820941cbbba4b3cd51149b25d0a4c8d1a35f4"
 
 
 def view(desk: DesktopVM, agent: AgentInstance, background: bool = False) -> None:
@@ -50,13 +50,14 @@ def view(desk: DesktopVM, agent: AgentInstance, background: bool = False) -> Non
         atexit.register(cleanup_proxy, proxy_pid)
 
     agent_port = agent.port
+    agent_proxy_pid = None
     if agent.runtime.requires_proxy():
-        agent_port = find_open_port(9090, 1090)
+        agent_port = find_open_port(9090, 10090)
         print(f"proxying agent to port {agent_port}...")
         if not agent_port:
             raise ValueError("Could not find an open port for the agent proxy")
 
-        agent.proxy(agent_port)
+        agent_proxy_pid = agent.proxy(agent_port)
 
     check_command_availability("docker")
 
@@ -99,7 +100,7 @@ def view(desk: DesktopVM, agent: AgentInstance, background: bool = False) -> Non
         return
 
     def onexit():
-        nonlocal proxy_pid
+        nonlocal proxy_pid, agent_proxy_pid
         print("Cleaning up resources...")
 
         # Check if the UI container still exists and stop/remove it if so
@@ -123,6 +124,16 @@ def view(desk: DesktopVM, agent: AgentInstance, background: bool = False) -> Non
                 print(f"Error stopping SSH proxy: {e}")
             finally:
                 proxy_pid = None  # Ensure we don't try to stop it again
+
+        # Stop the agent proxy if required and not already stopped
+        if agent.runtime.requires_proxy() and agent_proxy_pid:
+            try:
+                print("stopping agent proxy...")
+                cleanup_proxy(agent_proxy_pid)
+            except Exception as e:
+                print(f"Error stopping agent proxy: {e}")
+            finally:
+                agent_proxy_pid = None
 
     atexit.register(onexit)
     try:

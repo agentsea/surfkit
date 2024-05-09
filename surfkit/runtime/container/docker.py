@@ -50,7 +50,7 @@ class DockerRuntime(ContainerRuntime):
             "provisioner": "surfkit",
         }
 
-        port = find_open_port(8001, 9000)
+        port = find_open_port(9090, 10090)
         print("running container")
         container = self.client.containers.run(
             image,
