@@ -32,13 +32,13 @@ pip install surfkit
 
 ### Building Agents
 
-**Initialize a new project:**
+Initialize a new project
 
 ```sh
 surfkit new [NAME]
 ```
 
-**Build a docker container for the agent:**
+Build a docker container for the agent
 
 ```sh
 surfkit build
