@@ -8,7 +8,7 @@
   <h1 align="center">Surfkit</h1>
 
   <p align="center">
-    A toolkit to build GUI surfer AI agents
+    A toolkit for building AI agents that use devices
     <br />
     <a href="https://github.com/agentsea/surfkit"><strong>Explore the docs »</strong></a>
     <br />
@@ -30,124 +30,128 @@ pip install surfkit
 
 ## Usage
 
-Template a repo with a new agent
+### Building Agents
+
+**Initialize a new project:**
 
 ```sh
 surfkit new [NAME]
 ```
 
-Run the agent locally
-
-```sh
-surfkit create agent --name foo
-```
-
-Run the agent on Kubernetes
-
-```sh
-surfkit create agent --provider kube
-```
-
-List running agents
-
-```sh
-surfkit list agents
-```
-
-Build a docker container for the agent
+**Build a docker container for the agent:**
 
 ```sh
 surfkit build
 ```
 
-Get details about the agent
+### Running Agents
+
+**Create an agent:**
+
+```sh
+surfkit create agent --name foo --runtime kube
+```
+
+**List running agents:**
+
+```sh
+surfkit list agents
+```
+
+**Get details about a specific agent:**
 
 ```sh
 surfkit get agent --name foo
 ```
 
-Get logs for the agent
+**Fetch logs for a specific agent:**
 
 ```sh
 surfkit logs --name foo
 ```
 
-Delete an agent
+**Delete an agent:**
 
 ```sh
 surfkit delete agent --name foo
 ```
 
-Create a device
+### Managing Devices
+
+**Create a device:**
 
 ```sh
 surfkit create device --type desktop --provicer gce --name bar
 ```
 
-List devices
+**List devices:**
 
 ```sh
 surfkit list devices
 ```
 
-View a device
+**View device details:**
 
 ```sh
 surfkit view --name bar
 ```
 
-Delete a device
+**Delete a device:**
 
 ```sh
 surfkit delete device --name bar
 ```
 
-Solve a task
+### Solving Tasks
+
+**Solve a task with an existing setup:**
 
 ```sh
 surfkit solve --description "search for common french ducks" --agent foo --device bar
 ```
 
-Solve a task creating the agent adhoc
+**Solve a task creating the agent ad hoc:**
 
 ```sh
 surfkit solve --description "search for alpaca sweaters" --device bar --agent-file ./agent.yaml
 ```
 
-Solve a task killing the agent when the command ends
+**Solve a task and kill the agent post-execution:**
 
 ```sh
 surfkit solve --description "search for the meaning of life" --device bar --agent-file ./agent.yaml --kill
 ```
 
-Login to the hub
+**List tasks:**
+
+```sh
+surfkit list tasks
+```
+
+### Publishing Agents
+
+**Login to the hub:**
 
 ```sh
 surfkit login
 ```
 
-Publish the agent
+**Publish the agent:**
 
 ```sh
 surfkit publish
 ```
 
-List published agent types
+**List published agent types:**
 
 ```sh
 surfkit list types
 ```
 
-Run a published agent
+**Run a published agent:**
 
 ```sh
 surfkit create agent --type SurfPizza --runtime kube
-```
-
-List tasks
-
-```sh
-surfkit list tasks
 ```
 
 ## Developing
@@ -159,13 +163,11 @@ function sk() {
     local project_dir="/path/to/surfkit/repo"
     local venv_dir="$project_dir/.venv"
 
-    # Save relevant environment variables
     local ssh_auth_sock="$SSH_AUTH_SOCK"
     local ssh_agent_pid="$SSH_AGENT_PID"
 
     source "$venv_dir/bin/activate"
 
-    # Restore the environment variables
     export SSH_AUTH_SOCK="$ssh_auth_sock"
     export SSH_AGENT_PID="$ssh_agent_pid"
 
