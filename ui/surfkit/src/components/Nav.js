@@ -59,7 +59,7 @@ export function Nav() {
     <Navbar className="mx-auto max-w-screen-xl px-6 py-3 w-full min-w-screen-xl">
       <div className="flex items-center justify-between text-blue-gray-900">
         <img
-          className="h-10 w-10 rounded-full object-contain object-center rounded-full border border-blue-gray-200 p-1 shadow-xl"
+          className="h-10 w-10 rounded-full object-contain object-center rounded-full border border-blue-gray-100 p-1 shadow-xl"
           src="https://storage.googleapis.com/guisurfer-assets/surf_logo_cropped.png"
           alt="logo"
         />

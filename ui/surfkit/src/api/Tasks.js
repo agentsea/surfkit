@@ -24,6 +24,9 @@ export async function getTasks(addr) {
 }
 
 export async function updateTask(addr, id, bodyData) {
+  console.log("updating task with id: ", id);
+  console.log("bodyData: ", bodyData);
+  console.log("addr: ", addr);
   const url = new URL(`/v1/tasks/${id}`, addr);
   console.log("updating tasks with URL: ", url);
 

@@ -2428,13 +2428,13 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.20"
+version = "0.1.21"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.20-py3-none-any.whl", hash = "sha256:d010ee6d01e420d106628b4ea40b9860effbc36672a81eaa17d36441726bc996"},
-    {file = "mllm-0.1.20.tar.gz", hash = "sha256:61b2c2e38ce5b0ae43c489f4ad91de96d172f1a8be9619a137f69cbabd21581a"},
+    {file = "mllm-0.1.21-py3-none-any.whl", hash = "sha256:514621238eddd46bab7fc56969d8d0103e4ac6c549b0e29d6b189ce8be6a5ee0"},
+    {file = "mllm-0.1.21.tar.gz", hash = "sha256:cd5a05357268c8ee5de226bb5f76bbc4dba7b591bdc1c5dcef39b8f41d8f05f9"},
 ]
 
 [package.dependencies]
@@ -3782,17 +3782,17 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.17"
+version = "0.1.18"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.17-py3-none-any.whl", hash = "sha256:251408726cd67fe4c378ee9a6eba569c90d0428764724871124c62a7781e6ff0"},
-    {file = "skillpacks-0.1.17.tar.gz", hash = "sha256:46dbbcf75c7cccb44933a8239aef394f1cb5e980b6b44751741b92717870b2e2"},
+    {file = "skillpacks-0.1.18-py3-none-any.whl", hash = "sha256:4a2a04b5f75bf26073b9e437c87a8b167af0c0500813a0c81ee6107628f500c9"},
+    {file = "skillpacks-0.1.18.tar.gz", hash = "sha256:35c5d2ab36ed8aa7f573df6e6c132435f41d636ada5cf229d899b4622878f7c8"},
 ]
 
 [package.dependencies]
-mllm = ">=0.1.20,<0.2.0"
+mllm = ">=0.1.21,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
@@ -4853,4 +4853,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "30fa9eff50903a00754e632d56aa377d835a9a398a90132d263a1c81f132d37b"
+content-hash = "13527116f8646e56b2b27a5bc905b894376ea24c1d62653dd255ad98ec837674"
