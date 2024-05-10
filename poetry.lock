@@ -2428,13 +2428,13 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.21"
+version = "0.1.25"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.21-py3-none-any.whl", hash = "sha256:514621238eddd46bab7fc56969d8d0103e4ac6c549b0e29d6b189ce8be6a5ee0"},
-    {file = "mllm-0.1.21.tar.gz", hash = "sha256:cd5a05357268c8ee5de226bb5f76bbc4dba7b591bdc1c5dcef39b8f41d8f05f9"},
+    {file = "mllm-0.1.25-py3-none-any.whl", hash = "sha256:b81487f7fb687be9097ea14cd02b9307bdcc3aec494a722a2fa21644892391d8"},
+    {file = "mllm-0.1.25.tar.gz", hash = "sha256:9487780685329d05a277bef50118e5e530b493e32e71912653f042c5f10e0e57"},
 ]
 
 [package.dependencies]
@@ -3437,6 +3437,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -3782,17 +3783,17 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.18"
+version = "0.1.21"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.18-py3-none-any.whl", hash = "sha256:4a2a04b5f75bf26073b9e437c87a8b167af0c0500813a0c81ee6107628f500c9"},
-    {file = "skillpacks-0.1.18.tar.gz", hash = "sha256:35c5d2ab36ed8aa7f573df6e6c132435f41d636ada5cf229d899b4622878f7c8"},
+    {file = "skillpacks-0.1.21-py3-none-any.whl", hash = "sha256:c308f21dfba91c4553fe816145cb85e36929210712b5fda2a01bea6b855b8cf5"},
+    {file = "skillpacks-0.1.21.tar.gz", hash = "sha256:ffaaeb8d73bcaf88cf31e1d4424a265e40376938f55ba4a3be1fb53ac1756a3c"},
 ]
 
 [package.dependencies]
-mllm = ">=0.1.21,<0.2.0"
+mllm = ">=0.1.25,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
@@ -3946,19 +3947,19 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.59"
+version = "0.1.61"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.59-py3-none-any.whl", hash = "sha256:11478f677459f6b7108a00f273fc47e0d21c8bad08265be6fd2d3183890562ff"},
-    {file = "taskara-0.1.59.tar.gz", hash = "sha256:ce70aa6f1adffa97ed9bf3d80d64740ded98b1be33b8f6756fdb7b8bf40952f8"},
+    {file = "taskara-0.1.61-py3-none-any.whl", hash = "sha256:c43b7cd13732a8b2e8c0d43683fbd1dd7719ca8c6f9f11d83706dd6bdf1b4b8c"},
+    {file = "taskara-0.1.61.tar.gz", hash = "sha256:f38c7e8ebcec06604cdd6cfc086f8a11258c4cc17d3df91f84d97be2d3b14079"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.21,<0.2.0"
 pydantic = ">=2.6.4,<3.0.0"
-skillpacks = ">=0.1.17,<0.2.0"
+skillpacks = ">=0.1.21,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 
@@ -4853,4 +4854,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "13527116f8646e56b2b27a5bc905b894376ea24c1d62653dd255ad98ec837674"
+content-hash = "f465f8c492e83f60577328b4e16a3802233855c3ea9ed8bc53909135e9c3b206"
