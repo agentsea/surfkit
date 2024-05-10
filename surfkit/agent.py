@@ -48,6 +48,14 @@ class TaskAgent(Generic[C, T], ABC):
 
     @classmethod
     def is_supported(cls, device: Device) -> bool:
+        """Is the given device supported by this agent
+
+        Args:
+            device (Device): The device to check
+
+        Returns:
+            bool: Whether its supported
+        """
         return type(device) in cls.supported_devices()
 
     @classmethod

@@ -46,10 +46,16 @@ surfkit build
 
 ### Running Agents
 
-Create an agent
+Create an agent locally
 
 ```sh
-surfkit create agent --name foo --runtime kube
+surfkit create agent --name foo
+```
+
+Create an agent on kubernetes
+
+```sh
+surfkit create agent --runtime kube
 ```
 
 List running agents
@@ -90,7 +96,7 @@ List devices
 surfkit list devices
 ```
 
-View device details
+View device in UI
 
 ```sh
 surfkit view --name bar
@@ -113,13 +119,15 @@ surfkit solve --description "search for common french ducks" --agent foo --devic
 Solve a task creating the agent ad hoc
 
 ```sh
-surfkit solve --description "search for alpaca sweaters" --device bar --agent-file ./agent.yaml
+surfkit solve --description "search for alpaca sweaters" \
+--device bar --agent-file ./agent.yaml
 ```
 
 Solve a task and kill the agent post-execution
 
 ```sh
-surfkit solve --description "search for the meaning of life" --device bar --agent-file ./agent.yaml --kill
+surfkit solve --description "search for the meaning of life" \
+--device bar --agent-file ./agent.yaml --kill
 ```
 
 List tasks
