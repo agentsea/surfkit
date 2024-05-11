@@ -4,6 +4,7 @@ import Layout from "../components/Layout";
 import { useLocation } from "react-router-dom";
 import Task from "../components/Task";
 import { getTasks } from "../api/Tasks";
+import { Typography } from "@material-tailwind/react";
 
 export default function DesktopPage() {
   const location = useLocation();
@@ -39,12 +40,18 @@ export default function DesktopPage() {
 
   const ref = useRef();
 
-  // const agentdAddr = "http://localhost:8000";
-
   return (
     <Layout>
       <div className="flex flex-row mt-16 gap-6">
-        {agentTasks && <Task data={agentTasks[0]} />}
+        <div className="min-w-[400px]">
+          {agentTasks ? (
+            <Task data={agentTasks[0]} addr={agentAddr} />
+          ) : (
+            <div className="border border-black flex flex-row p-12">
+              <Typography variant="h5">No tasks</Typography>
+            </div>
+          )}
+        </div>
         <div className="border border-black flex w-fit h-fit shadow-2xl">
           <VncScreen
             url={vncAddr}
