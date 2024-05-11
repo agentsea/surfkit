@@ -15,39 +15,37 @@ export default function DesktopPage() {
   const [agentTasks, setAgentTasks] = useState(null);
 
   useEffect(() => {
+    let abortController = new AbortController();
     const handleStart = async () => {
-      var tasks = await getTasks(agentAddr);
+      const tasks = await getTasks(agentAddr, abortController.signal);
       if (!tasks) {
         return;
       }
       setAgentTasks(tasks);
-      console.log("got agent tasks: ", tasks);
     };
     handleStart();
-    // Then set the interval
-    const intervalId = setInterval(async () => {
-      var tasks_ = await getTasks(agentAddr);
-      if (!tasks_) {
-        return;
-      }
-      setAgentTasks(tasks_);
-      console.log("got agent tasks: ", tasks_);
+
+    const intervalId = setInterval(() => {
+      abortController.abort(); // Cancel the previous request
+      abortController = new AbortController(); // Create a new controller for the new request
+      handleStart();
     }, 2000);
 
-    // Clear the interval when the component is unmounted
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      abortController.abort(); // Ensure fetch is also cancelled when the component unmounts
+    };
   }, [agentAddr]);
-
   const ref = useRef();
 
   return (
     <Layout>
       <div className="flex flex-row mt-16 gap-6">
-        <div className="min-w-[400px]">
+        <div className="min-w-[400px] h-screen">
           {agentTasks ? (
             <Task data={agentTasks[0]} addr={agentAddr} />
           ) : (
-            <div className="border border-black flex flex-row p-12">
+            <div className="border border-black flex flex-row p-12 items-center justify-center rounded-xl bg-white">
               <Typography variant="h5">No tasks</Typography>
             </div>
           )}

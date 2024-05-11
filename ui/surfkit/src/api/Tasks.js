@@ -1,7 +1,5 @@
-export async function getTasks(addr) {
+export async function getTasks(addr, signal) {
   const url = new URL(`/v1/tasks`, addr);
-  console.log("listing agent tasks with URL: ", url);
-
   try {
     const resp = await fetch(url, {
       method: "GET",
@@ -10,16 +8,15 @@ export async function getTasks(addr) {
         "Content-Type": "application/json",
       },
       redirect: "follow",
+      signal,
     });
     if (!resp.ok) {
       throw new Error("HTTP status " + resp.status);
     }
-    console.log("Listed tasks successfully");
     const data = await resp.json();
-    console.log("Got list tasks response: ", data);
     return data.tasks;
   } catch (error) {
-    console.error("Failed to solve task", error);
+    console.error("Failed to list tasks", error);
   }
 }
 

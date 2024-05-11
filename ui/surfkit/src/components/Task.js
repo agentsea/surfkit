@@ -1,5 +1,5 @@
 import { Typography, Button, Chip } from "@material-tailwind/react";
-import { useRef, useEffect, useContext, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import {
   ClipboardIcon,
   XCircleIcon,
@@ -148,7 +148,7 @@ export default function Task({ data, addr }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="flex flex-col gap-4 border w-full border-black-400 rounded-md p-2"
+      className="flex flex-col gap-4 border w-full border-black-400 bg-white shadow-lg rounded-md p-2 h-[720px]"
     >
       <div className="flex flex-row">
         <ClipboardIcon className="w-4 h-4 mt-1 mr-1"></ClipboardIcon>
@@ -223,7 +223,7 @@ export default function Task({ data, addr }) {
             value={data.status}
           />
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col h-full">
           <RoleThreads threads={threads} />
         </div>
       </div>

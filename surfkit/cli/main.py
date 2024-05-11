@@ -962,13 +962,17 @@ def solve(
         None, "--agent", "-a", help="Name of the agent to use."
     ),
     agent_runtime: Optional[str] = typer.Option(
-        None, help="Runtime environment for the agent."
+        None, "--agent-runtime", "-r", help="Runtime environment for the agent."
     ),
     agent_type: Optional[str] = typer.Option(
         None, "--agent-type", "-t", help="Type of agent to use."
     ),
-    agent_file: Optional[str] = typer.Option(None, help="Path to agent config file."),
-    agent_version: Optional[str] = typer.Option(None, help="Version of agent to use."),
+    agent_file: Optional[str] = typer.Option(
+        None, "--agent-file", "-f", help="Path to agent config file."
+    ),
+    agent_version: Optional[str] = typer.Option(
+        None, help="Version of agent to use."
+    ),
     device: Optional[str] = typer.Option(
         None, help="Name of device to use if applicable."
     ),
@@ -976,16 +980,14 @@ def solve(
         None, help="Name of the type of device if using one."
     ),
     device_provider: Optional[str] = typer.Option(
-        None, help="The provider type for the device."
+        None, "--device-provider", "-p", help="The provider type for the device."
     ),
     max_steps: int = typer.Option(30, help="Maximum steps for the task."),
     kill: bool = typer.Option(
         False, "--kill", "-k", help="Whether to kill the agent when done"
     ),
     view: bool = typer.Option(True, "--view", "-v", help="Whether to view the device"),
-    follow: bool = typer.Option(
-        True, "--follow", "-f", help="Whether to follow the agent logs"
-    ),
+    follow: bool = typer.Option(True, help="Whether to follow the agent logs"),
     starting_url: Optional[str] = typer.Option(
         None, help="Starting URL if applicable."
     ),

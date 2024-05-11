@@ -30,7 +30,7 @@ const RoleThread = ({ data }) => {
   }, [messages.length]);
 
   return (
-    <div className="flex flex-col gap-2 relative max-h-80 overflow-y-scroll border border-black-400">
+    <div className="flex flex-col gap-2 relative overflow-y-scroll border border-black-400 max-h-[500px]">
       {messages.map((msg, index) => (
         <motion.div
           key={index}

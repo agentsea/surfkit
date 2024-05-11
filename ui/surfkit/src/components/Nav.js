@@ -60,7 +60,7 @@ export function Nav() {
       <div className="flex items-center justify-between text-blue-gray-900">
         <img
           className="h-10 w-10 rounded-full object-contain object-center rounded-full border border-blue-gray-100 p-1 shadow-xl"
-          src="https://storage.googleapis.com/guisurfer-assets/surf_logo_cropped.png"
+          src="https://storage.googleapis.com/guisurfer-assets/logo_black.png"
           alt="logo"
         />
 
