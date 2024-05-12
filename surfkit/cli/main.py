@@ -734,7 +734,7 @@ def delete_agent(
             raise ValueError(f"Unknown runtime '{runtime}'")
 
         runt.delete(name)
-        typer.echo("Agent deleted")
+        typer.echo(f"Agent '{name}' deleted")
 
     else:
         from surfkit.runtime.agent.base import AgentInstance
@@ -744,6 +744,7 @@ def delete_agent(
             raise ValueError(f"Agent '{name}' not found")
         agent = agents[0]
         agent.delete(force=force)
+        typer.echo(f"Agent '{name}' deleted")
 
 
 @delete_group.command("device")
@@ -799,7 +800,7 @@ def delete_type(
         raise ValueError(f"Agent type '{type}' not found")
     agent_type = types[0]
     agent_type.remove()
-    typer.echo("Agent type deleted")
+    typer.echo(f"Agent type '{name}' deleted")
 
 
 # View subcommands
@@ -970,9 +971,7 @@ def solve(
     agent_file: Optional[str] = typer.Option(
         None, "--agent-file", "-f", help="Path to agent config file."
     ),
-    agent_version: Optional[str] = typer.Option(
-        None, help="Version of agent to use."
-    ),
+    agent_version: Optional[str] = typer.Option(None, help="Version of agent to use."),
     device: Optional[str] = typer.Option(
         None, help="Name of device to use if applicable."
     ),

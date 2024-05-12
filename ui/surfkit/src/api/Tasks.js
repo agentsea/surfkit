@@ -1,4 +1,4 @@
-export async function getTasks(addr, signal) {
+export async function getTasks(addr) {
   const url = new URL(`/v1/tasks`, addr);
   try {
     const resp = await fetch(url, {
@@ -8,7 +8,6 @@ export async function getTasks(addr, signal) {
         "Content-Type": "application/json",
       },
       redirect: "follow",
-      signal,
     });
     if (!resp.ok) {
       throw new Error("HTTP status " + resp.status);

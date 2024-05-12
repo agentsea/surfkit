@@ -275,7 +275,7 @@ export default function Task({ data, addr }) {
         </div>
       )}
       {data.error && data.error !== "" && (
-        <div className="flex flex-row">
+        <div className="flex flex-row overflow-y-scroll">
           <Typography
             variant="paragraph"
             className="font-semibold mr-2"

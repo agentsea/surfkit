@@ -14,26 +14,27 @@ export default function DesktopPage() {
 
   const [agentTasks, setAgentTasks] = useState(null);
 
+  const abortControllerRef = useRef(new AbortController());
+  const timeoutRef = useRef(null);
   useEffect(() => {
-    let abortController = new AbortController();
     const handleStart = async () => {
-      const tasks = await getTasks(agentAddr, abortController.signal);
+      console.log("Starting fetch at:", new Date().toISOString());
+      const tasks = await getTasks(agentAddr);
       if (!tasks) {
         return;
       }
       setAgentTasks(tasks);
+      console.log("Tasks updated at:", new Date().toISOString());
+      // Schedule the next call
+      timeoutRef.current = setTimeout(handleStart, 1000);
     };
-    handleStart();
 
-    const intervalId = setInterval(() => {
-      abortController.abort(); // Cancel the previous request
-      abortController = new AbortController(); // Create a new controller for the new request
-      handleStart();
-    }, 2000);
+    handleStart(); // Call initially
 
     return () => {
-      clearInterval(intervalId);
-      abortController.abort(); // Ensure fetch is also cancelled when the component unmounts
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current); // Clear the timeout if the component unmounts
+      }
     };
   }, [agentAddr]);
   const ref = useRef();

@@ -359,14 +359,11 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 logger.info(f"Deleted metadata file for {name}.")
 
         except subprocess.CalledProcessError as e:
-            logger.error("Error while attempting to delete the process:", str(e))
-            raise
+            raise SystemError(f"Error while attempting to delete the process: {str(e)}")
         except ValueError as e:
-            logger.error("Error parsing process ID:", str(e))
-            raise
+            raise SystemError(f"Error parsing process ID: {str(e)}")
         except Exception as e:
-            logger.error(f"An unexpected error occurred: {str(e)}")
-            raise
+            raise SystemError(f"An unexpected error occurred: {str(e)}")
 
     def clean(
         self,
