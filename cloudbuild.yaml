@@ -1,25 +1,21 @@
 steps:
-  # Set up Docker Buildx
   - name: "gcr.io/cloud-builders/docker"
     entrypoint: "bash"
     args:
       - "-c"
       - |
         docker buildx create --name mybuilder --use
-        docker buildx inspect --bootstrap
-
-  # Build and push the image using Buildx
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      - "buildx"
-      - "build"
-      - "--platform=linux/amd64,linux/arm64"
-      - "-t"
-      - "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:$COMMIT_SHA"
-      - "-f"
-      - "./ui/surfkit/Dockerfile"
-      - "--push"
-      - "./ui/surfkit"
-
-# Removed the images field
-timeout: "1200s"
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          -t us-central1-docker.pkg.dev/agentsea-dev/core/poetry:$SHORT_SHA . \
+          --push \
+          --cache-from=type=registry,ref=us-central1-docker.pkg.dev/agentsea-dev/core/poetry:cache \
+          --cache-to=type=registry,ref=us-central1-docker.pkg.dev/agentsea-dev/core/poetry:cache,mode=max
+        if [ "$BRANCH_NAME" == "main" ]; then
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t us-central1-docker.pkg.dev/agentsea-dev/core/poetry:latest . \
+            --push \
+            --cache-from=type=registry,ref=us-central1-docker.pkg.dev/agentsea-dev/core/poetry:cache \
+            --cache-to=type=registry,ref=us-central1-docker.pkg.dev/agentsea-dev/core/poetry:cache,mode=max
+        fi

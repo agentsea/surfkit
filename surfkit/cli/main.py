@@ -180,21 +180,25 @@ def create_task_server(
         "docker",
         "--runtime",
         "-r",
-        help="The runtime to use for the task server. Options are 'process', 'docker', and 'kubernetes'.",
+        help="The runtime to use for the task server. Options are 'docker' or 'kubernetes'.",
+    ),
+    image: str = typer.Option(
+        "us-central1-docker.pkg.dev/agentsea-dev/taskara/api:latest",
+        "--image",
+        "-i",
+        help="The Docker image to use for the agent.",
     ),
 ):
-    from taskara.runtime.docker import DockerTaskServerRuntime
-    from taskara.runtime.kube import KubeTaskServerRuntime
-    from taskara.runtime.process import ProcessTaskServerRuntime
 
     if runtime == "docker":
-        runt = DockerTaskServerRuntime()
+        from taskara.runtime.docker import DockerTaskServerRuntime, DockerConnectConfig
+
+        runt = DockerTaskServerRuntime(DockerConnectConfig(image=image))
 
     elif runtime == "kubernetes":
-        runt = KubeTaskServerRuntime()
+        from taskara.runtime.kube import KubeTaskServerRuntime, KubeConnectConfig
 
-    elif runtime == "process":
-        runt = ProcessTaskServerRuntime()
+        runt = KubeTaskServerRuntime(KubeConnectConfig(image=image))
 
     else:
         typer.echo(f"Invalid runtime: {runtime}")
