@@ -180,7 +180,7 @@ def create_task_server(
         "docker",
         "--runtime",
         "-r",
-        help="The runtime to use for the task server. Options are 'docker' or 'kubernetes'.",
+        help="The runtime to use for the task server. Options are 'docker' or 'kube'.",
     ),
     image: str = typer.Option(
         "us-central1-docker.pkg.dev/agentsea-dev/taskara/api:latest",
@@ -195,7 +195,7 @@ def create_task_server(
 
         runt = DockerTaskServerRuntime(DockerConnectConfig(image=image))
 
-    elif runtime == "kubernetes":
+    elif runtime == "kube":
         from taskara.runtime.kube import KubeTaskServerRuntime, KubeConnectConfig
 
         runt = KubeTaskServerRuntime(KubeConnectConfig(image=image))
@@ -492,7 +492,7 @@ def list_task_servers():
             table.append(
                 [
                     server.name,
-                    server.runtime,
+                    server.runtime.name(),
                     server.port,
                     server.status,
                 ]
@@ -1074,7 +1074,8 @@ def solve(
     ),
     task_server: Optional[str] = typer.Option(None, help="Name of task server to use."),
     task_runtime: Optional[str] = typer.Option(
-        None, help="Runtime to create a task server if needed."
+        None,
+        help="Runtime to create a task server if needed. Options are 'docker' or 'kube'.",
     ),
     task_remote: Optional[str] = typer.Option(
         None, help="URL of remote task server if needed."
@@ -1117,15 +1118,10 @@ def solve(
 
             task_runt = DockerTaskServerRuntime()
 
-        elif task_runtime == "kubernetes":
+        elif task_runtime == "kube":
             from taskara.runtime.kube import KubeTaskServerRuntime
 
             task_runt = KubeTaskServerRuntime()
-
-        elif task_runtime == "process":
-            from taskara.runtime.process import ProcessTaskServerRuntime
-
-            task_runt = ProcessTaskServerRuntime()
 
         else:
             typer.echo(f"Invalid runtime: {task_runtime}")
