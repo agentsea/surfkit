@@ -10,17 +10,22 @@ from typing import Optional
 import docker
 from agentdesk.key import SSHKeyPair
 from agentdesk.proxy import cleanup_proxy, ensure_ssh_proxy
-from agentdesk.util import (check_command_availability, find_open_port,
-                            get_docker_host)
+from agentdesk.util import check_command_availability, find_open_port, get_docker_host
 from agentdesk.vm.base import DesktopVM
 from docker.models.containers import Container
 
 from surfkit.runtime.agent.base import AgentInstance
 
-UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:07106b0f31932ee5ec67230ef0b8f27112b90808"
+
+UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:f0de5aa00d66fdddd4b203722fef84c40c8cb77f"
 
 
-def view(desk: DesktopVM, agent: AgentInstance, background: bool = False) -> None:
+def view(
+    desk: DesktopVM,
+    agent: AgentInstance,
+    task_server_addr: str,
+    background: bool = False,
+) -> None:
     """Opens the desktop in a browser window"""
 
     desk_port = 6080
@@ -86,10 +91,11 @@ def view(desk: DesktopVM, agent: AgentInstance, background: bool = False) -> Non
         time.sleep(10)
 
     encoded_agent_addr = urllib.parse.quote(f"http://localhost:{agent_port}")
+    encoded_task_addr = urllib.parse.quote(task_server_addr)
     encoded_vnc_addr = urllib.parse.quote(f"ws://localhost:{desk_port}")
 
     # Construct the URL with the encoded parameters
-    url = f"http://localhost:{host_port}/?agentAddr={encoded_agent_addr}&vncAddr={encoded_vnc_addr}"
+    url = f"http://localhost:{host_port}/?agentAddr={encoded_agent_addr}&vncAddr={encoded_vnc_addr}?taskAddr={encoded_task_addr}"
     webbrowser.open(url)
 
     if background:
