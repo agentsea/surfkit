@@ -27,9 +27,12 @@ taskara = "^0.1.61"
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.4"
 
+black = "^24.4.2"
+isort = "^5.13.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 surfkit = "surfkit.cli.main:app"
+lint = "scripts.lint:main"

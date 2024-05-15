@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 import os
 import yaml
+import time
 
 from .env import AGENTSEA_HUB_URL_ENV, HUB_SERVER_ENV, HUB_SERVER_API_ENV
 
@@ -12,6 +13,21 @@ import rootpath
 AGENTSEA_HUB_URL = os.getenv(AGENTSEA_HUB_URL_ENV, "https://hub.agentsea.ai")
 HUB_URL = os.getenv(HUB_SERVER_ENV, "https://surf.agentlabs.xyz")
 HUB_API_URL = os.getenv(HUB_SERVER_API_ENV, "https://api.surf.agentlabs.xyz")
+
+AGENTSEA_HOME = os.path.expanduser(os.environ.get("AGENTSEA_HOME", "~/.agentsea"))
+AGENTSEA_DB_DIR = os.path.expanduser(
+    os.environ.get("AGENTSEA_DB_DIR", os.path.join(AGENTSEA_HOME, "data"))
+)
+AGENTSEA_LOG_DIR = os.path.expanduser(
+    os.environ.get("AGENTSEA_LOG_DIR", os.path.join(AGENTSEA_HOME, "logs"))
+)
+AGENTSEA_PROC_DIR = os.path.expanduser(
+    os.environ.get("AGENTSEA_PROC_DIR", os.path.join(AGENTSEA_HOME, "proc"))
+)
+DB_TEST = os.environ.get("AGENTSEA_DB_TEST", "false") == "true"
+DB_NAME = os.environ.get("SURFKIT_DB_NAME", "surfkit.db")
+if DB_TEST:
+    DB_NAME = f"surfkit_test_{int(time.time())}.db"
 
 
 @dataclass

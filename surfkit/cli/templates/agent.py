@@ -212,7 +212,8 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=int(port),
         reload=True,
-        reload_excludes=[".data"],
+        # TODO: Figure out what needs to happen here after the ~/.agentsea swapover.
+        # reload_excludes=["./logs"],
     )
 """
     with open(f"{pkg_from_name(agent_name)}/server.py", "w") as f:
