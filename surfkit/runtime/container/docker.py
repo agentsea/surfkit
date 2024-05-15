@@ -1,9 +1,9 @@
-from typing import List, TypeVar, Optional, Tuple, Type
+from typing import List, Optional, Tuple, Type, TypeVar
 
 import docker
-from docker.errors import NotFound
-from agentdesk.util import find_open_port
 import requests
+from agentdesk.util import find_open_port
+from docker.errors import NotFound
 from namesgenerator import get_random_name
 from pydantic import BaseModel
 

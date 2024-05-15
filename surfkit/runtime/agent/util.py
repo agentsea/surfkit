@@ -1,8 +1,9 @@
 import random
 import string
 
-from surfkit.types import AgentType
 from namesgenerator import get_random_name
+
+from surfkit.types import AgentType
 
 
 def instance_name(type: AgentType) -> str:

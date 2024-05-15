@@ -1,19 +1,18 @@
-from pdb import run
-from urllib.parse import urljoin
-from typing import Optional
+import webbrowser
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkgversion
-import rich
-import yaml
+from pdb import run
+from typing import Optional
+from urllib.parse import urljoin
 
-import typer
-import webbrowser
-from namesgenerator import get_random_name
 import requests
+import rich
+import typer
+import yaml
+from namesgenerator import get_random_name
 from tabulate import tabulate
 
 from surfkit.runtime.agent.base import AgentInstance
-
 
 art = """
  _______                ___  __  __  __  __   
@@ -196,28 +195,22 @@ def create_agent(
             runtime = "docker"
 
     if runtime == "docker":
-        from surfkit.runtime.agent.docker import (
-            DockerAgentRuntime,
-            DockerConnectConfig,
-        )
+        from surfkit.runtime.agent.docker import (DockerAgentRuntime,
+                                                  DockerConnectConfig)
 
         conf = DockerConnectConfig()
         runt = DockerAgentRuntime.connect(cfg=conf)
 
     elif runtime == "kube":
-        from surfkit.runtime.agent.kube import (
-            KubeAgentRuntime,
-            KubeConnectConfig,
-        )
+        from surfkit.runtime.agent.kube import (KubeAgentRuntime,
+                                                KubeConnectConfig)
 
         conf = KubeConnectConfig()
         runt = KubeAgentRuntime.connect(cfg=conf)
 
     elif runtime == "process":
-        from surfkit.runtime.agent.process import (
-            ProcessAgentRuntime,
-            ProcessConnectConfig,
-        )
+        from surfkit.runtime.agent.process import (ProcessAgentRuntime,
+                                                   ProcessConnectConfig)
 
         conf = ProcessConnectConfig()
         runt = ProcessAgentRuntime.connect(cfg=conf)
@@ -283,10 +276,8 @@ def list_agents(
 
     if runtime:
         if runtime == "docker" or runtime == "all":
-            from surfkit.runtime.agent.docker import (
-                DockerAgentRuntime,
-                DockerConnectConfig,
-            )
+            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
+                                                      DockerConnectConfig)
 
             try:
                 dconf = DockerConnectConfig()
@@ -300,10 +291,8 @@ def list_agents(
                 print(f"Failed to list agents for Docker runtime: {e}")
 
         if runtime == "kube" or runtime == "all":
-            from surfkit.runtime.agent.kube import (
-                KubeAgentRuntime,
-                KubeConnectConfig,
-            )
+            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
+                                                    KubeConnectConfig)
 
             try:
                 kconf = KubeConnectConfig()
@@ -317,10 +306,8 @@ def list_agents(
                 print(f"Failed to list agents for Kubernetes runtime: {e}")
 
         if runtime == "process" or runtime == "all":
-            from surfkit.runtime.agent.process import (
-                ProcessAgentRuntime,
-                ProcessConnectConfig,
-            )
+            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
+                                                       ProcessConnectConfig)
 
             try:
                 pconf = ProcessConnectConfig()
@@ -385,6 +372,7 @@ def list_devices(
 ):
     from agentdesk.vm import DesktopVM
     from agentdesk.vm.load import load_provider
+
     from surfkit.util import convert_unix_to_datetime
 
     provider_is_refreshed = {}
@@ -442,8 +430,8 @@ def list_devices(
 
 @list_group.command("types")
 def list_types():
-    from surfkit.types import AgentType
     from surfkit.config import HUB_API_URL
+    from surfkit.types import AgentType
 
     types = AgentType.find(remote=HUB_API_URL)
     if not types:
@@ -478,9 +466,10 @@ def list_tasks(
 ):
     import os
     from typing import List
+
     from taskara import Task
 
-    from surfkit.config import GlobalConfig, HUB_API_URL
+    from surfkit.config import HUB_API_URL, GlobalConfig
     from surfkit.env import HUB_API_KEY_ENV
 
     config = GlobalConfig.read()
@@ -539,28 +528,22 @@ def get_agent(
 ):
     if runtime:
         if runtime == "docker":
-            from surfkit.runtime.agent.docker import (
-                DockerAgentRuntime,
-                DockerConnectConfig,
-            )
+            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
+                                                      DockerConnectConfig)
 
             dconf = DockerConnectConfig()
             runt = DockerAgentRuntime.connect(cfg=dconf)
 
         elif runtime == "kube":
-            from surfkit.runtime.agent.kube import (
-                KubeAgentRuntime,
-                KubeConnectConfig,
-            )
+            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
+                                                    KubeConnectConfig)
 
             kconf = KubeConnectConfig()
             runt = KubeAgentRuntime.connect(cfg=kconf)
 
         elif runtime == "process":
-            from surfkit.runtime.agent.process import (
-                ProcessAgentRuntime,
-                ProcessConnectConfig,
-            )
+            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
+                                                       ProcessConnectConfig)
 
             pconf = ProcessConnectConfig()
             runt = ProcessAgentRuntime.connect(cfg=pconf)
@@ -651,9 +634,10 @@ def get_task(
 ):
     import os
     from typing import List
+
     from taskara import Task
 
-    from surfkit.config import GlobalConfig, HUB_API_URL
+    from surfkit.config import HUB_API_URL, GlobalConfig
     from surfkit.env import HUB_API_KEY_ENV
 
     config = GlobalConfig.read()
@@ -704,28 +688,22 @@ def delete_agent(
 ):
     if runtime:
         if runtime == "docker":
-            from surfkit.runtime.agent.docker import (
-                DockerAgentRuntime,
-                DockerConnectConfig,
-            )
+            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
+                                                      DockerConnectConfig)
 
             dconf = DockerConnectConfig()
             runt = DockerAgentRuntime.connect(cfg=dconf)
 
         elif runtime == "kube":
-            from surfkit.runtime.agent.kube import (
-                KubeAgentRuntime,
-                KubeConnectConfig,
-            )
+            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
+                                                    KubeConnectConfig)
 
             kconf = KubeConnectConfig()
             runt = KubeAgentRuntime.connect(cfg=kconf)
 
         elif runtime == "process":
-            from surfkit.runtime.agent.process import (
-                ProcessAgentRuntime,
-                ProcessConnectConfig,
-            )
+            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
+                                                       ProcessConnectConfig)
 
             pconf = ProcessConnectConfig()
             runt = ProcessAgentRuntime.connect(cfg=pconf)
@@ -792,8 +770,8 @@ def delete_device(
 def delete_type(
     name: str = typer.Option(..., "--name", "-n", help="The name of the type."),
 ):
-    from surfkit.types import AgentType
     from surfkit.config import HUB_API_URL
+    from surfkit.types import AgentType
 
     types = AgentType.find(remote=HUB_API_URL, name=name)
     if not types:
@@ -827,7 +805,7 @@ def view_device(
 # Other commands
 @app.command(help="Login to the hub")
 def login():
-    from surfkit.config import GlobalConfig, HUB_URL
+    from surfkit.config import HUB_URL, GlobalConfig
 
     url = urljoin(HUB_URL, "cli-login")
     typer.echo(f"\nVisit {url} to get an API key\n")
@@ -870,7 +848,7 @@ def publish(
 
         build_docker_image(dockerfile_path="./Dockerfile", tag=ver, push=True)
 
-    from surfkit.config import GlobalConfig, HUB_API_URL
+    from surfkit.config import HUB_API_URL, GlobalConfig
 
     url = urljoin(HUB_API_URL, "v1/agenttypes")
     typer.echo(f"\nPublishing agent to {url}...\n")
@@ -895,6 +873,7 @@ def new(
     )
 ):
     from rich.prompt import Prompt
+
     from .new import new_agent
     from .util import get_git_global_user_config
 
@@ -939,6 +918,7 @@ def build(
     push: bool = typer.Option(True, "--push", "-p", help="Also push the image"),
 ):
     from surfkit.types import AgentType
+
     from .util import build_docker_image
 
     typer.echo(f"Building docker image for agent '{agent_file}' version '{version}'")
@@ -991,10 +971,11 @@ def solve(
         None, help="Starting URL if applicable."
     ),
 ):
-    from taskara import Task
     from agentdesk import Desktop
-    from surfkit.types import AgentType
+    from taskara import Task
+
     from surfkit.server.models import V1SolveTask
+    from surfkit.types import AgentType
 
     if not agent_runtime:
         if agent_file:
@@ -1015,28 +996,22 @@ def solve(
 
     else:
         if agent_runtime == "docker":
-            from surfkit.runtime.agent.docker import (
-                DockerAgentRuntime,
-                DockerConnectConfig,
-            )
+            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
+                                                      DockerConnectConfig)
 
             dconf = DockerConnectConfig()
             runt = DockerAgentRuntime.connect(cfg=dconf)
 
         elif agent_runtime == "kube":
-            from surfkit.runtime.agent.kube import (
-                KubeAgentRuntime,
-                KubeConnectConfig,
-            )
+            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
+                                                    KubeConnectConfig)
 
             kconf = KubeConnectConfig()
             runt = KubeAgentRuntime.connect(cfg=kconf)
 
         elif agent_runtime == "process":
-            from surfkit.runtime.agent.process import (
-                ProcessAgentRuntime,
-                ProcessConnectConfig,
-            )
+            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
+                                                       ProcessConnectConfig)
 
             pconf = ProcessConnectConfig()
             runt = ProcessAgentRuntime.connect(cfg=pconf)
@@ -1170,28 +1145,22 @@ def get_logs(
     """
     if runtime:
         if runtime == "docker":
-            from surfkit.runtime.agent.docker import (
-                DockerAgentRuntime,
-                DockerConnectConfig,
-            )
+            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
+                                                      DockerConnectConfig)
 
             config = DockerConnectConfig()
             runtime_instance = DockerAgentRuntime.connect(cfg=config)
 
         elif runtime == "kube":
-            from surfkit.runtime.agent.kube import (
-                KubeAgentRuntime,
-                KubeConnectConfig,
-            )
+            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
+                                                    KubeConnectConfig)
 
             config = KubeConnectConfig()
             runtime_instance = KubeAgentRuntime.connect(cfg=config)
 
         elif runtime == "process":
-            from surfkit.runtime.agent.process import (
-                ProcessAgentRuntime,
-                ProcessConnectConfig,
-            )
+            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
+                                                       ProcessConnectConfig)
 
             config = ProcessConnectConfig()
             runtime_instance = ProcessAgentRuntime.connect(cfg=config)

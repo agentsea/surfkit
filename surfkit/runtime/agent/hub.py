@@ -1,12 +1,13 @@
 # type: ignore
-from typing import List, Type, Union, Iterator, Optional
+from typing import Iterator, List, Optional, Type, Union
 
 from pydantic import BaseModel
 from taskara import V1Task
 
-from surfkit.types import AgentType
 from surfkit.server.models import V1AgentInstance, V1SolveTask
-from .base import AgentRuntime, AgentInstance
+from surfkit.types import AgentType
+
+from .base import AgentInstance, AgentRuntime
 
 
 class ConnectConfig(BaseModel):
