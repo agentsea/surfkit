@@ -11,7 +11,7 @@ import RoleThreads from "./RoleThreads";
 
 export default function Task({ data, addr }) {
   const endOfMessagesRef = useRef(null);
-  const prevMessagesLength = useRef(data.thread?.messages.length || 0);
+  const prevMessagesLength = useRef(data?.thread?.messages.length || 0);
   const [message, setMessage] = useState(null);
   const [thread, setThread] = useState("feed");
   const messageContainerRef = useRef(null);

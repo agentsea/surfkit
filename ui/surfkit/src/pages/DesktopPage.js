@@ -26,8 +26,9 @@ export default function DesktopPage() {
       }
       setAgentTasks(tasks);
       console.log("Tasks updated at:", new Date().toISOString());
+      console.log(tasks);
       // Schedule the next call
-      timeoutRef.current = setTimeout(handleStart, 1000);
+      timeoutRef.current = setTimeout(handleStart, 2000);
     };
 
     handleStart(); // Call initially
@@ -44,7 +45,7 @@ export default function DesktopPage() {
     <Layout>
       <div className="flex flex-row mt-16 gap-6">
         <div className="min-w-[400px] h-screen">
-          {agentTasks ? (
+          {agentTasks && agentTasks.length > 0 ? (
             <Task data={agentTasks[0]} addr={taskAddr} />
           ) : (
             <div className="border border-black flex flex-row p-12 items-center justify-center rounded-xl bg-white">

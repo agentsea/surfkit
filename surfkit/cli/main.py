@@ -863,6 +863,12 @@ def delete_taskserver(
         "-n",
         help="The name of the taskserver to delete",
     ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Whether to force delete the task server",
+    ),
 ):
     from taskara.runtime.base import TaskServer
 
@@ -872,7 +878,7 @@ def delete_taskserver(
 
     taskserver = taskservers[0]
 
-    taskserver.delete()
+    taskserver.delete(force=force)
     typer.echo("Task server deleted")
     return
 
@@ -1144,9 +1150,21 @@ def solve(
         _remote_task_svr = task_remote
 
     else:
-        raise ValueError(
-            "`task_server`, `task_runtime`, or `task_remote` flag must be provided"
+        task_servers = TaskServer.find()
+        if not task_servers:
+            raise ValueError(
+                "`task_server`, `task_runtime`, or `task_remote` flag must be provided. Or a task server must be running"
+            )
+        task_svr = task_servers[0]
+        typer.echo(
+            f"Using task server '{task_svr.name}' running on '{task_svr.runtime.name()}'"
         )
+
+        local_port = find_open_port(9070, 10070)
+        if not local_port:
+            raise SystemError("No available ports found")
+        task_svr.proxy(local_port=local_port)
+        _remote_task_svr = f"http://localhost:{local_port}"
 
     if not agent_runtime:
         if agent_file:
