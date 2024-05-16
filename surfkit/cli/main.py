@@ -26,7 +26,7 @@ art = """
 app = typer.Typer()
 
 # Sub-command groups
-create_group = typer.Typer(help="Create an agent or device")
+create_group = typer.Typer(help="Create resources")
 list_group = typer.Typer(help="List resources")
 get_group = typer.Typer(help="Get resources")
 view_group = typer.Typer(help="View resources")
@@ -1111,10 +1111,12 @@ def solve(
             raise ValueError(f"Expected servers with name '{task_server}'")
         task_svr = task_servers[0]
 
-        local_port = find_open_port(9070, 10070)
-        if not local_port:
-            raise SystemError("No available ports found")
-        task_svr.proxy(local_port=local_port)
+        local_port = task_svr.port
+        if task_svr.runtime.requires_proxy():
+            local_port = find_open_port(9070, 10070)
+            if not local_port:
+                raise SystemError("No available ports found")
+            task_svr.proxy(local_port=local_port)
         _remote_task_svr = f"http://localhost:{local_port}"
 
     elif task_runtime:
@@ -1140,10 +1142,12 @@ def solve(
         task_svr = task_runt.run(name=name, auth_enabled=False)
         typer.echo(f"Task server '{name}' created using '{task_runtime}' runtime")
 
-        local_port = find_open_port(9070, 10070)
-        if not local_port:
-            raise SystemError("No available ports found")
-        task_svr.proxy(local_port=local_port)
+        local_port = task_svr.port
+        if task_svr.runtime.requires_proxy():
+            local_port = find_open_port(9070, 10070)
+            if not local_port:
+                raise SystemError("No available ports found")
+            task_svr.proxy(local_port=local_port)
         _remote_task_svr = f"http://localhost:{local_port}"
 
     elif task_remote:
@@ -1152,18 +1156,37 @@ def solve(
     else:
         task_servers = TaskServer.find()
         if not task_servers:
-            raise ValueError(
-                "`task_server`, `task_runtime`, or `task_remote` flag must be provided. Or a task server must be running"
+            create = typer.confirm(
+                "No task servers found. Would you like to create one?"
             )
-        task_svr = task_servers[0]
-        typer.echo(
-            f"Using task server '{task_svr.name}' running on '{task_svr.runtime.name()}'"
-        )
+            if create:
+                from taskara.runtime.docker import DockerTaskServerRuntime
+                task_runt = DockerTaskServerRuntime()
 
-        local_port = find_open_port(9070, 10070)
-        if not local_port:
-            raise SystemError("No available ports found")
-        task_svr.proxy(local_port=local_port)
+                name = get_random_name(sep="-")
+                if not name:
+                    raise SystemError("Name is required for task server")
+
+                task_svr = task_runt.run(name=name, auth_enabled=False)
+                typer.echo(
+                    f"Task server '{name}' created using '{task_runt.name()}' runtime"
+                )
+            else:
+                raise ValueError(
+                    "`task_server`, `task_runtime`, or `task_remote` flag must be provided. Or a task server must be running"
+                )
+        else:
+            task_svr = task_servers[0]
+            typer.echo(
+                f"Using task server '{task_svr.name}' running on '{task_svr.runtime.name()}'"
+            )
+
+        local_port = task_svr.port
+        if task_svr.runtime.requires_proxy():
+            local_port = find_open_port(9070, 10070)
+            if not local_port:
+                raise SystemError("No available ports found")
+            task_svr.proxy(local_port=local_port)
         _remote_task_svr = f"http://localhost:{local_port}"
 
     if not agent_runtime:
