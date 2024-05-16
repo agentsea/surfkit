@@ -10,6 +10,7 @@ export default function DesktopPage() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const agentAddr = queryParams.get("agentAddr") || "http://localhost:9090";
+  const taskAddr = queryParams.get("taskAddr") || "http://localhost:9070";
   const vncAddr = queryParams.get("vncAddr") || "ws://localhost:6080";
 
   const [agentTasks, setAgentTasks] = useState(null);
@@ -19,14 +20,15 @@ export default function DesktopPage() {
   useEffect(() => {
     const handleStart = async () => {
       console.log("Starting fetch at:", new Date().toISOString());
-      const tasks = await getTasks(agentAddr);
+      const tasks = await getTasks(taskAddr);
       if (!tasks) {
         return;
       }
       setAgentTasks(tasks);
       console.log("Tasks updated at:", new Date().toISOString());
+      console.log(tasks);
       // Schedule the next call
-      timeoutRef.current = setTimeout(handleStart, 1000);
+      timeoutRef.current = setTimeout(handleStart, 2000);
     };
 
     handleStart(); // Call initially
@@ -36,15 +38,15 @@ export default function DesktopPage() {
         clearTimeout(timeoutRef.current); // Clear the timeout if the component unmounts
       }
     };
-  }, [agentAddr]);
+  }, [taskAddr]);
   const ref = useRef();
 
   return (
     <Layout>
       <div className="flex flex-row mt-16 gap-6">
         <div className="min-w-[400px] h-screen">
-          {agentTasks ? (
-            <Task data={agentTasks[0]} addr={agentAddr} />
+          {agentTasks && agentTasks.length > 0 ? (
+            <Task data={agentTasks[0]} addr={taskAddr} />
           ) : (
             <div className="border border-black flex flex-row p-12 items-center justify-center rounded-xl bg-white">
               <Typography variant="h5">No tasks</Typography>

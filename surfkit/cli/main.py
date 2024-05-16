@@ -1,4 +1,6 @@
 import webbrowser
+from urllib.parse import urljoin
+from typing import Optional
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkgversion
 from pdb import run
@@ -24,7 +26,7 @@ art = """
 app = typer.Typer()
 
 # Sub-command groups
-create_group = typer.Typer(help="Create an agent or device")
+create_group = typer.Typer(help="Create resources")
 list_group = typer.Typer(help="List resources")
 get_group = typer.Typer(help="Get resources")
 view_group = typer.Typer(help="View resources")
@@ -166,6 +168,51 @@ def create_device(
         return
 
 
+@create_group.command("taskserver")
+def create_task_server(
+    name: Optional[str] = typer.Option(
+        None,
+        "--name",
+        "-n",
+        help="The name of the desktop to create. Defaults to a generated name.",
+    ),
+    runtime: str = typer.Option(
+        "docker",
+        "--runtime",
+        "-r",
+        help="The runtime to use for the task server. Options are 'docker' or 'kube'.",
+    ),
+    image: str = typer.Option(
+        "us-central1-docker.pkg.dev/agentsea-dev/taskara/api:latest",
+        "--image",
+        "-i",
+        help="The Docker image to use for the agent.",
+    ),
+):
+
+    if runtime == "docker":
+        from taskara.runtime.docker import DockerTaskServerRuntime, DockerConnectConfig
+
+        runt = DockerTaskServerRuntime(DockerConnectConfig(image=image))
+
+    elif runtime == "kube":
+        from taskara.runtime.kube import KubeTaskServerRuntime, KubeConnectConfig
+
+        runt = KubeTaskServerRuntime(KubeConnectConfig(image=image))
+
+    else:
+        typer.echo(f"Invalid runtime: {runtime}")
+        raise typer.Exit()
+
+    if not name:
+        name = get_random_name(sep="-")
+        if not name:
+            raise SystemError("Name is required for task server")
+
+    server = runt.run(name=name, auth_enabled=False)
+    typer.echo(f"Task server '{name}' created using '{runtime}' runtime")
+
+
 @create_group.command("agent")
 def create_agent(
     runtime: str = typer.Option(
@@ -195,22 +242,22 @@ def create_agent(
             runtime = "docker"
 
     if runtime == "docker":
-        from surfkit.runtime.agent.docker import (DockerAgentRuntime,
-                                                  DockerConnectConfig)
+        from surfkit.runtime.agent.docker import DockerAgentRuntime, DockerConnectConfig
 
         conf = DockerConnectConfig()
         runt = DockerAgentRuntime.connect(cfg=conf)
 
     elif runtime == "kube":
-        from surfkit.runtime.agent.kube import (KubeAgentRuntime,
-                                                KubeConnectConfig)
+        from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
 
         conf = KubeConnectConfig()
         runt = KubeAgentRuntime.connect(cfg=conf)
 
     elif runtime == "process":
-        from surfkit.runtime.agent.process import (ProcessAgentRuntime,
-                                                   ProcessConnectConfig)
+        from surfkit.runtime.agent.process import (
+            ProcessAgentRuntime,
+            ProcessConnectConfig,
+        )
 
         conf = ProcessConnectConfig()
         runt = ProcessAgentRuntime.connect(cfg=conf)
@@ -276,8 +323,10 @@ def list_agents(
 
     if runtime:
         if runtime == "docker" or runtime == "all":
-            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
-                                                      DockerConnectConfig)
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
             try:
                 dconf = DockerConnectConfig()
@@ -291,8 +340,7 @@ def list_agents(
                 print(f"Failed to list agents for Docker runtime: {e}")
 
         if runtime == "kube" or runtime == "all":
-            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
-                                                    KubeConnectConfig)
+            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
 
             try:
                 kconf = KubeConnectConfig()
@@ -306,8 +354,10 @@ def list_agents(
                 print(f"Failed to list agents for Kubernetes runtime: {e}")
 
         if runtime == "process" or runtime == "all":
-            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
-                                                       ProcessConnectConfig)
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
             try:
                 pconf = ProcessConnectConfig()
@@ -428,6 +478,40 @@ def list_devices(
         print("")
 
 
+@list_group.command("taskservers")
+def list_task_servers():
+    from taskara.runtime.base import TaskServer
+
+    task_servers = TaskServer.find()
+
+    if not task_servers:
+        print("No task servers found")
+    else:
+        table = []
+        for server in task_servers:
+            table.append(
+                [
+                    server.name,
+                    server.runtime.name(),
+                    server.port,
+                    server.status,
+                ]
+            )
+
+        print(
+            tabulate(
+                table,
+                headers=[
+                    "Name",
+                    "Runtime",
+                    "Port",
+                    "Status",
+                ],
+            )
+        )
+        print("")
+
+
 @list_group.command("types")
 def list_types():
     from surfkit.config import HUB_API_URL
@@ -528,22 +612,25 @@ def get_agent(
 ):
     if runtime:
         if runtime == "docker":
-            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
-                                                      DockerConnectConfig)
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
             dconf = DockerConnectConfig()
             runt = DockerAgentRuntime.connect(cfg=dconf)
 
         elif runtime == "kube":
-            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
-                                                    KubeConnectConfig)
+            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
 
             kconf = KubeConnectConfig()
             runt = KubeAgentRuntime.connect(cfg=kconf)
 
         elif runtime == "process":
-            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
-                                                       ProcessConnectConfig)
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
             pconf = ProcessConnectConfig()
             runt = ProcessAgentRuntime.connect(cfg=pconf)
@@ -688,22 +775,25 @@ def delete_agent(
 ):
     if runtime:
         if runtime == "docker":
-            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
-                                                      DockerConnectConfig)
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
             dconf = DockerConnectConfig()
             runt = DockerAgentRuntime.connect(cfg=dconf)
 
         elif runtime == "kube":
-            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
-                                                    KubeConnectConfig)
+            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
 
             kconf = KubeConnectConfig()
             runt = KubeAgentRuntime.connect(cfg=kconf)
 
         elif runtime == "process":
-            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
-                                                       ProcessConnectConfig)
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
             pconf = ProcessConnectConfig()
             runt = ProcessAgentRuntime.connect(cfg=pconf)
@@ -731,7 +821,7 @@ def delete_device(
         ...,
         "--name",
         "-n",
-        help="The name of the desktop to retrieve.",
+        help="The name of the desktop to delete.",
     ),
     provider: Optional[str] = typer.Option(
         None, "--provider", "-p", help="The provider type for the desktop."
@@ -740,30 +830,57 @@ def delete_device(
     from agentdesk.vm import DesktopVM
     from agentdesk.vm.load import load_provider
 
-    if name:
+    desktop = DesktopVM.get(name)
+    if not desktop:
+        raise ValueError("desktop not found")
+    if not desktop.provider:
+        raise ValueError("no desktop provider")
+    if provider and desktop.provider.type != provider:
+        print(f"Desktop '{name}' not found")
+        return
+
+    _provider = load_provider(desktop.provider)
+    if not desktop.reserved_ip:
+        _provider.refresh(log=False)
         desktop = DesktopVM.get(name)
         if not desktop:
-            raise ValueError("desktop not found")
-        if not desktop.provider:
-            raise ValueError("no desktop provider")
-        if provider and desktop.provider.type != provider:
             print(f"Desktop '{name}' not found")
             return
 
-        _provider = load_provider(desktop.provider)
-        if not desktop.reserved_ip:
-            _provider.refresh(log=False)
-            desktop = DesktopVM.get(name)
-            if not desktop:
-                print(f"Desktop '{name}' not found")
-                return
+    if desktop:
+        desktop.remove()
+        typer.echo("Desktop deleted")
+    else:
+        print(f"Desktop '{name}' not found")
+    return
 
-        if desktop:
-            desktop.remove()
-            typer.echo("Desktop deleted")
-        else:
-            print(f"Desktop '{name}' not found")
-        return
+
+@delete_group.command("taskserver")
+def delete_taskserver(
+    name: str = typer.Option(
+        ...,
+        "--name",
+        "-n",
+        help="The name of the taskserver to delete",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Whether to force delete the task server",
+    ),
+):
+    from taskara.runtime.base import TaskServer
+
+    taskservers = TaskServer.find(name=name)
+    if not taskservers:
+        raise ValueError(f"Task server '{name}' not found")
+
+    taskserver = taskservers[0]
+
+    taskserver.delete(force=force)
+    typer.echo("Task server deleted")
+    return
 
 
 @delete_group.command("type")
@@ -961,6 +1078,14 @@ def solve(
     device_provider: Optional[str] = typer.Option(
         None, "--device-provider", "-p", help="The provider type for the device."
     ),
+    task_server: Optional[str] = typer.Option(None, help="Name of task server to use."),
+    task_runtime: Optional[str] = typer.Option(
+        None,
+        help="Runtime to create a task server if needed. Options are 'docker' or 'kube'.",
+    ),
+    task_remote: Optional[str] = typer.Option(
+        None, help="URL of remote task server if needed."
+    ),
     max_steps: int = typer.Option(30, help="Maximum steps for the task."),
     kill: bool = typer.Option(
         False, "--kill", "-k", help="Whether to kill the agent when done"
@@ -971,11 +1096,98 @@ def solve(
         None, help="Starting URL if applicable."
     ),
 ):
+    from taskara import Task
+    from taskara.runtime.base import TaskServer
     from agentdesk import Desktop
     from taskara import Task
 
     from surfkit.server.models import V1SolveTask
+    from surfkit.util import find_open_port
     from surfkit.types import AgentType
+
+    if task_server:
+        task_servers = TaskServer.find(name=task_server)
+        if not task_servers:
+            raise ValueError(f"Expected servers with name '{task_server}'")
+        task_svr = task_servers[0]
+
+        local_port = task_svr.port
+        if task_svr.runtime.requires_proxy():
+            local_port = find_open_port(9070, 10070)
+            if not local_port:
+                raise SystemError("No available ports found")
+            task_svr.proxy(local_port=local_port)
+        _remote_task_svr = f"http://localhost:{local_port}"
+
+    elif task_runtime:
+
+        if task_runtime == "docker":
+            from taskara.runtime.docker import DockerTaskServerRuntime
+
+            task_runt = DockerTaskServerRuntime()
+
+        elif task_runtime == "kube":
+            from taskara.runtime.kube import KubeTaskServerRuntime
+
+            task_runt = KubeTaskServerRuntime()
+
+        else:
+            typer.echo(f"Invalid runtime: {task_runtime}")
+            raise typer.Exit()
+
+        name = get_random_name(sep="-")
+        if not name:
+            raise SystemError("Name is required for task server")
+
+        task_svr = task_runt.run(name=name, auth_enabled=False)
+        typer.echo(f"Task server '{name}' created using '{task_runtime}' runtime")
+
+        local_port = task_svr.port
+        if task_svr.runtime.requires_proxy():
+            local_port = find_open_port(9070, 10070)
+            if not local_port:
+                raise SystemError("No available ports found")
+            task_svr.proxy(local_port=local_port)
+        _remote_task_svr = f"http://localhost:{local_port}"
+
+    elif task_remote:
+        _remote_task_svr = task_remote
+
+    else:
+        task_servers = TaskServer.find()
+        if not task_servers:
+            create = typer.confirm(
+                "No task servers found. Would you like to create one?"
+            )
+            if create:
+                from taskara.runtime.docker import DockerTaskServerRuntime
+                task_runt = DockerTaskServerRuntime()
+
+                name = get_random_name(sep="-")
+                if not name:
+                    raise SystemError("Name is required for task server")
+
+                task_svr = task_runt.run(name=name, auth_enabled=False)
+                typer.echo(
+                    f"Task server '{name}' created using '{task_runt.name()}' runtime"
+                )
+            else:
+                raise ValueError(
+                    "`task_server`, `task_runtime`, or `task_remote` flag must be provided. Or a task server must be running"
+                )
+        else:
+            task_svr = task_servers[0]
+            typer.echo(
+                f"Using task server '{task_svr.name}' running on '{task_svr.runtime.name()}'"
+            )
+
+        local_port = task_svr.port
+        if task_svr.runtime.requires_proxy():
+            local_port = find_open_port(9070, 10070)
+            if not local_port:
+                raise SystemError("No available ports found")
+            task_svr.proxy(local_port=local_port)
+        _remote_task_svr = f"http://localhost:{local_port}"
 
     if not agent_runtime:
         if agent_file:
@@ -996,22 +1208,25 @@ def solve(
 
     else:
         if agent_runtime == "docker":
-            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
-                                                      DockerConnectConfig)
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
             dconf = DockerConnectConfig()
             runt = DockerAgentRuntime.connect(cfg=dconf)
 
         elif agent_runtime == "kube":
-            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
-                                                    KubeConnectConfig)
+            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
 
             kconf = KubeConnectConfig()
             runt = KubeAgentRuntime.connect(cfg=kconf)
 
         elif agent_runtime == "process":
-            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
-                                                       ProcessConnectConfig)
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
             pconf = ProcessConnectConfig()
             runt = ProcessAgentRuntime.connect(cfg=pconf)
@@ -1105,15 +1320,22 @@ def solve(
         if not vm:
             raise ValueError("vm not found for ui")
 
-        _view(vm, instance, True)
+        _view(
+            desk=vm, agent=instance, task_server_addr=_remote_task_svr, background=True
+        )
+
+    params = {}
+    if starting_url:
+        params["site"] = starting_url
 
     task = Task(
         description=description,
-        parameters={"site": starting_url},
+        parameters=params,
         max_steps=max_steps,
         device=v1device,
         assigned_to=agent,
         assigned_type=agent_type,
+        remote=_remote_task_svr,
     )
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
@@ -1145,22 +1367,25 @@ def get_logs(
     """
     if runtime:
         if runtime == "docker":
-            from surfkit.runtime.agent.docker import (DockerAgentRuntime,
-                                                      DockerConnectConfig)
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
 
             config = DockerConnectConfig()
             runtime_instance = DockerAgentRuntime.connect(cfg=config)
 
         elif runtime == "kube":
-            from surfkit.runtime.agent.kube import (KubeAgentRuntime,
-                                                    KubeConnectConfig)
+            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
 
             config = KubeConnectConfig()
             runtime_instance = KubeAgentRuntime.connect(cfg=config)
 
         elif runtime == "process":
-            from surfkit.runtime.agent.process import (ProcessAgentRuntime,
-                                                       ProcessConnectConfig)
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
 
             config = ProcessConnectConfig()
             runtime_instance = ProcessAgentRuntime.connect(cfg=config)

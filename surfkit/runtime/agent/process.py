@@ -98,16 +98,16 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 )
             metadata["env_vars"].update(found)
 
-        command = f"SURF_PORT={port} nohup {agent_type.cmd} SURFER={name} SURF_PORT={port} > {config.LOG_PATH}/{name.lower()}.log 2>&1 &"
+        command = f"SURF_PORT={port} nohup {agent_type.cmd} SURFER={name} SURF_PORT={port} > {os.path.join(config.AGENTSEA_LOG_DIR, name.lower())}.log 2>&1 &"
         metadata["command"] = command
 
         # Create metadata directory if it does not exist
-        os.makedirs(f"{config.PROC_PATH}", exist_ok=True)
+        os.makedirs(config.AGENTSEA_PROC_DIR, exist_ok=True)
         # Write metadata to a file
-        with open(f"{config.PROC_PATH}/{name}.json", "w") as f:
+        with open(os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json"), "w") as f:
             json.dump(metadata, f, indent=4)
 
-        os.makedirs(config.LOG_PATH, exist_ok=True)
+        os.makedirs(config.AGENTSEA_LOG_DIR, exist_ok=True)
         print(f"running agent on port {port}")
 
         environment = os.environ.copy()
@@ -223,7 +223,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         return handle_signal
 
     def _follow_logs(self, agent_name: str):
-        log_path = f"{config.LOG_PATH}/{agent_name.lower()}.log"
+        log_path = os.path.join(config.AGENTSEA_LOG_DIR, f"{agent_name.lower()}.log")
         if not os.path.exists(log_path):
             logger.error("No log file found.")
             return
@@ -265,7 +265,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         if source:
             try:
                 # Read the metadata file
-                with open(f"{config.PROC_PATH}/{name}.json", "r") as f:
+                with open(os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json", "r")) as f:
                     metadata = json.load(f)
 
                 agent_type = V1AgentType.model_validate(metadata["agent_type"])
@@ -293,7 +293,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
     ) -> List[AgentInstance]:
         instances = []
         if source:
-            metadata_dir = config.PROC_PATH
+            metadata_dir = config.AGENTSEA_PROC_DIR
             all_processes = subprocess.check_output(
                 "ps ax -o pid,command", shell=True, text=True
             )
@@ -354,7 +354,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 raise SystemError(f"No running process found with the name {name}.")
 
             # Delete the metadata file whether or not the process was found
-            metadata_file = f"{config.PROC_PATH}/{name}.json"
+            metadata_file = os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json")
             if os.path.exists(metadata_file):
                 os.remove(metadata_file)
                 logger.info(f"Deleted metadata file for {name}.")
@@ -403,7 +403,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         follow: bool = False,
         owner_id: Optional[str] = None,
     ) -> Union[str, Iterator[str]]:
-        log_path = f"{config.LOG_PATH}/{name.lower()}.log"
+        log_path = os.path.join(config.AGENTSEA_LOG_DIR, f"{name.lower()}.log")
         if not os.path.exists(log_path):
             return "No logs available for this agent."
 

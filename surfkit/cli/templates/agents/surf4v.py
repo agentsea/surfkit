@@ -266,7 +266,7 @@ class {agent_name}(TaskAgent):
                 tool=desktop.ref(),
                 result=action_response,
                 agent_id=self.name(),
-                model="TODO",
+                model=response.model,
             )
 
             _thread.add_msg(response.msg)

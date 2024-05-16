@@ -139,7 +139,7 @@ def _solve_task(task_model: V1SolveTask):
 
     logger.info("starting agent...")
     if task_model.agent:
-        config = Agent.config_type()(**task_model.agent.config.model_dump())
+        config = Agent.config_type().model_validate(task_model.agent.config)
         agent = Agent.from_config(config=config)
     else:
         agent = Agent.default()

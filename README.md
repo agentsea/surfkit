@@ -108,6 +108,26 @@ Delete a device
 surfkit delete device --name bar
 ```
 
+### Tracking Tasks
+
+Create a task server
+
+```sh
+surfkit create taskserver
+```
+
+List task servers
+
+```sh
+surfkit list taskservers
+```
+
+Delete a task server
+
+```sh
+surfkit delete taskserver -n foo
+```
+
 ### Solving Tasks
 
 Solve a task with an existing setup
