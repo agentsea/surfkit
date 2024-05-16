@@ -4031,13 +4031,22 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
+<<<<<<< HEAD
 version = "0.1.77"
+=======
+version = "0.1.73"
+>>>>>>> a0ec3dc (bump tasks)
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
+<<<<<<< HEAD
     {file = "taskara-0.1.77-py3-none-any.whl", hash = "sha256:b543bb56137f8862e422293696121850b7a33d7c6d2cecfabfbf7ea6e98b2b3a"},
     {file = "taskara-0.1.77.tar.gz", hash = "sha256:e9feb7e22ba071925ffe6ca1e543db0e96232396786a56dace4a143a973eb350"},
+=======
+    {file = "taskara-0.1.73-py3-none-any.whl", hash = "sha256:bda5ec205d01a01f63801d4731a92e4595de9ab4154201b1d0ee7b7b28173b4c"},
+    {file = "taskara-0.1.73.tar.gz", hash = "sha256:3c3f44fa2757af4087140a9c0f033bdf0f2485a7e426a9ff4abe35320a116400"},
+>>>>>>> a0ec3dc (bump tasks)
 ]
 
 [package.dependencies]
@@ -4957,4 +4966,8 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
+<<<<<<< HEAD
 content-hash = "6b4e3da7f09e6f5b5e420b6e49bc8bf6f28dc7f6d0b614bd0df9ff1f9f8fe9fe"
+=======
+content-hash = "ac4d9ee47df21eb963d59e301c4592d2604ac43f18861ad5f78a533cec3bda0a"
+>>>>>>> a0ec3dc (bump tasks)
