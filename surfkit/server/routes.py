@@ -1,16 +1,17 @@
 # type: ignore
-import os
-from typing import List, Final
 import logging
+import os
+from contextlib import asynccontextmanager
+from typing import Final, List
 
+import uvicorn
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from taskara.server.models import V1Task, V1Tasks
 from taskara.task import Task
-from surfkit.hub import Hub
-from fastapi import FastAPI, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 from tenacity import retry, stop_after_attempt, wait_fixed
-import uvicorn
+
+from surfkit.hub import Hub
 
 from .agent import Agent, router  # TODO: how do you do this?
 

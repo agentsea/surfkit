@@ -1,25 +1,21 @@
 # from __future__ import annotations
-import urllib.parse
-import time
-import os
-from typing import Optional
 import atexit
+import os
 import random
+import time
+import urllib.parse
 import webbrowser
+from typing import Optional
 
 import docker
-from docker.models.containers import Container
-from agentdesk.vm.base import DesktopVM
-from agentdesk.util import (
-    get_docker_host,
-    check_command_availability,
-    find_open_port,
-)
 from agentdesk.key import SSHKeyPair
-from agentdesk.proxy import ensure_ssh_proxy, cleanup_proxy
+from agentdesk.proxy import cleanup_proxy, ensure_ssh_proxy
+from agentdesk.util import (check_command_availability, find_open_port,
+                            get_docker_host)
+from agentdesk.vm.base import DesktopVM
+from docker.models.containers import Container
 
 from surfkit.runtime.agent.base import AgentInstance
-
 
 UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:07106b0f31932ee5ec67230ef0b8f27112b90808"
 

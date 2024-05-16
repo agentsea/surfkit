@@ -1,15 +1,17 @@
-from typing import List, TypeVar, Type, Generic, Union, Iterator, Optional, Dict
-from abc import ABC, abstractmethod
+import json
 import time
 import uuid
-import json
+from abc import ABC, abstractmethod
+from typing import (Dict, Generic, Iterator, List, Optional, Type, TypeVar,
+                    Union)
 
 from pydantic import BaseModel
 
-from surfkit.types import AgentType
-from surfkit.server.models import V1AgentInstance, V1SolveTask, V1RuntimeConnect
 from surfkit.db.conn import WithDB
 from surfkit.db.models import AgentInstanceRecord
+from surfkit.server.models import (V1AgentInstance, V1RuntimeConnect,
+                                   V1SolveTask)
+from surfkit.types import AgentType
 
 R = TypeVar("R", bound="AgentRuntime")
 C = TypeVar("C", bound="BaseModel")

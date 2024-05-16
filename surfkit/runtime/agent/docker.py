@@ -1,19 +1,19 @@
-from typing import List, Optional, Type, Union, Iterator, Dict
 import os
 import signal
 import sys
+from typing import Dict, Iterator, List, Optional, Type, Union
 
 import docker
-from docker.errors import NotFound
-from agentdesk.util import find_open_port
 import requests
-from pydantic import BaseModel
+from agentdesk.util import find_open_port
+from docker.errors import NotFound
 from mllm import Router
+from pydantic import BaseModel
 
 from surfkit.server.models import V1AgentType, V1SolveTask
-
-from .base import AgentRuntime, AgentInstance
 from surfkit.types import AgentType
+
+from .base import AgentInstance, AgentRuntime
 
 
 class DockerConnectConfig(BaseModel):

@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, TypeVar, Type, Generic, Optional
-
-from pydantic import BaseModel
+from typing import Generic, List, Optional, Type, TypeVar
 
 from devicebay import Device
+from pydantic import BaseModel
 from taskara import Task
 
 C = TypeVar("C", bound="BaseModel")

@@ -1,8 +1,7 @@
-from typing import List, Optional, Tuple, TypeVar, Type, Generic
 from abc import ABC, abstractmethod
+from typing import Generic, List, Optional, Tuple, Type, TypeVar
 
 from pydantic import BaseModel
-
 
 R = TypeVar("R", bound="ContainerRuntime")
 C = TypeVar("C", bound="BaseModel")
