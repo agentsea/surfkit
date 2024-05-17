@@ -17,7 +17,7 @@ from docker.models.containers import Container
 from surfkit.runtime.agent.base import AgentInstance
 
 
-UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:f0de5aa00d66fdddd4b203722fef84c40c8cb77f"
+UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:latest"
 
 
 def view(
