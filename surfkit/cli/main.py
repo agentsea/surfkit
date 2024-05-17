@@ -150,8 +150,13 @@ def create_device(
     if not name:
         name = get_random_name(sep="-")
 
-    data = V1ProviderData(type=provider)
-    _provider = load_provider(data)
+    if provider == "ec2":
+        data = V1ProviderData(type=provider, args={"region": "us-east-1"})
+        _provider = load_provider(data)
+
+    else:
+        data = V1ProviderData(type=provider)
+        _provider = load_provider(data)
 
     typer.echo(f"Creating desktop '{name}' using '{provider}' provider")
     try:
@@ -1161,6 +1166,7 @@ def solve(
             )
             if create:
                 from taskara.runtime.docker import DockerTaskServerRuntime
+
                 task_runt = DockerTaskServerRuntime()
 
                 name = get_random_name(sep="-")
