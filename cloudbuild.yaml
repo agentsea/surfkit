@@ -1,6 +1,7 @@
 steps:
   # Build and push the image using Buildx
   - name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
     args:
       - "-c"
       - |
