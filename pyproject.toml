@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "surfkit"
-version = "0.1.163"
-description = "A toolkit to build AI agents that use devices"
+version = "0.1.164"
+description = "A toolkit for building AI agents that use devices"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>"]
 license = "MIT"
 readme = "README.md"
