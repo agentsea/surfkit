@@ -116,7 +116,7 @@ Create a tracker
 surfkit create tracker
 ```
 
-List task servers
+List trackers
 
 ```sh
 surfkit list trackers
