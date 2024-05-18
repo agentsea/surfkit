@@ -45,7 +45,8 @@ app.add_typer(delete_group, name="delete")
 def show_help(ctx: typer.Context, command_group: str):
     if ctx.invoked_subcommand is None:
         if command_group == "root":
-            typer.echo(art)
+            pass
+            # typer.echo(art)
         typer.echo(ctx.get_help())
         raise typer.Exit()
 
@@ -175,37 +176,37 @@ def create_device(
         raise
 
 
-@create_group.command("taskserver")
-def create_task_server(
+@create_group.command("tracker")
+def create_tracker(
     name: Optional[str] = typer.Option(
         None,
         "--name",
         "-n",
-        help="The name of the desktop to create. Defaults to a generated name.",
+        help="The name of the tracker to create. Defaults to a generated name.",
     ),
     runtime: str = typer.Option(
         "docker",
         "--runtime",
         "-r",
-        help="The runtime to use for the task server. Options are 'docker' or 'kube'.",
+        help="The runtime to use for the tracker. Options are 'docker' or 'kube'.",
     ),
     image: str = typer.Option(
         "us-central1-docker.pkg.dev/agentsea-dev/taskara/api:latest",
         "--image",
         "-i",
-        help="The Docker image to use for the agent.",
+        help="The Docker image to use for the tracker.",
     ),
 ):
 
     if runtime == "docker":
-        from taskara.runtime.docker import DockerTaskServerRuntime, DockerConnectConfig
+        from taskara.runtime.docker import DockerTrackerRuntime, DockerConnectConfig
 
-        runt = DockerTaskServerRuntime(DockerConnectConfig(image=image))
+        runt = DockerTrackerRuntime(DockerConnectConfig(image=image))
 
     elif runtime == "kube":
-        from taskara.runtime.kube import KubeTaskServerRuntime, KubeConnectConfig
+        from taskara.runtime.kube import KubeTrackerRuntime, KubeConnectConfig
 
-        runt = KubeTaskServerRuntime(KubeConnectConfig(image=image))
+        runt = KubeTrackerRuntime(KubeConnectConfig(image=image))
 
     else:
         typer.echo(f"Invalid runtime: {runtime}")
@@ -214,10 +215,10 @@ def create_task_server(
     if not name:
         name = get_random_name(sep="-")
         if not name:
-            raise SystemError("Name is required for task server")
+            raise SystemError("Name is required for tracker")
 
     server = runt.run(name=name, auth_enabled=False)
-    typer.echo(f"Task server '{name}' created using '{runtime}' runtime")
+    typer.echo(f"Tracker '{name}' created using '{runtime}' runtime")
 
 
 @create_group.command("agent")
@@ -485,17 +486,17 @@ def list_devices(
         print("")
 
 
-@list_group.command("taskservers")
-def list_task_servers():
-    from taskara.runtime.base import TaskServer
+@list_group.command("trackers")
+def list_trackers():
+    from taskara.runtime.base import Tracker
 
-    task_servers = TaskServer.find()
+    trackers = Tracker.find()
 
-    if not task_servers:
-        print("No task servers found")
+    if not trackers:
+        print("No trackers found")
     else:
         table = []
-        for server in task_servers:
+        for server in trackers:
             table.append(
                 [
                     server.name,
@@ -862,31 +863,31 @@ def delete_device(
     return
 
 
-@delete_group.command("taskserver")
-def delete_taskserver(
+@delete_group.command("tracker")
+def delete_tracker(
     name: str = typer.Option(
         ...,
         "--name",
         "-n",
-        help="The name of the taskserver to delete",
+        help="The name of the tracker to delete",
     ),
     force: bool = typer.Option(
         False,
         "--force",
         "-f",
-        help="Whether to force delete the task server",
+        help="Whether to force delete the tracker",
     ),
 ):
-    from taskara.runtime.base import TaskServer
+    from taskara.runtime.base import Tracker
 
-    taskservers = TaskServer.find(name=name)
-    if not taskservers:
-        raise ValueError(f"Task server '{name}' not found")
+    trackers = Tracker.find(name=name)
+    if not trackers:
+        raise ValueError(f"Tracker '{name}' not found")
 
-    taskserver = taskservers[0]
+    tracker = trackers[0]
 
-    taskserver.delete(force=force)
-    typer.echo("Task server deleted")
+    tracker.delete(force=force)
+    typer.echo("Tracker deleted")
     return
 
 
@@ -1085,13 +1086,13 @@ def solve(
     device_provider: Optional[str] = typer.Option(
         None, "--device-provider", "-p", help="The provider type for the device."
     ),
-    task_server: Optional[str] = typer.Option(None, help="Name of task server to use."),
-    task_runtime: Optional[str] = typer.Option(
+    tracker: Optional[str] = typer.Option(None, help="Name of tracker to use."),
+    tracker_runtime: Optional[str] = typer.Option(
         None,
-        help="Runtime to create a task server if needed. Options are 'docker' or 'kube'.",
+        help="Runtime to create a tracker if needed. Options are 'docker' or 'kube'.",
     ),
-    task_remote: Optional[str] = typer.Option(
-        None, help="URL of remote task server if needed."
+    tracker_remote: Optional[str] = typer.Option(
+        None, help="URL of remote tracker if needed."
     ),
     max_steps: int = typer.Option(30, help="Maximum steps for the task."),
     kill: bool = typer.Option(
@@ -1104,7 +1105,7 @@ def solve(
     ),
 ):
     from taskara import Task
-    from taskara.runtime.base import TaskServer
+    from taskara.runtime.base import Tracker
     from agentdesk import Desktop
     from taskara import Task
 
@@ -1112,11 +1113,11 @@ def solve(
     from surfkit.util import find_open_port
     from surfkit.types import AgentType
 
-    if task_server:
-        task_servers = TaskServer.find(name=task_server)
-        if not task_servers:
-            raise ValueError(f"Expected servers with name '{task_server}'")
-        task_svr = task_servers[0]
+    if tracker:
+        trackers = Tracker.find(name=tracker)
+        if not trackers:
+            raise ValueError(f"Expected tracker with name '{tracker}'")
+        task_svr = trackers[0]
 
         local_port = task_svr.port
         if task_svr.runtime.requires_proxy():
@@ -1126,28 +1127,28 @@ def solve(
             task_svr.proxy(local_port=local_port)
         _remote_task_svr = f"http://localhost:{local_port}"
 
-    elif task_runtime:
+    elif tracker_runtime:
 
-        if task_runtime == "docker":
-            from taskara.runtime.docker import DockerTaskServerRuntime
+        if tracker_runtime == "docker":
+            from taskara.runtime.docker import DockerTrackerRuntime
 
-            task_runt = DockerTaskServerRuntime()
+            task_runt = DockerTrackerRuntime()
 
-        elif task_runtime == "kube":
-            from taskara.runtime.kube import KubeTaskServerRuntime
+        elif tracker_runtime == "kube":
+            from taskara.runtime.kube import KubeTrackerRuntime
 
-            task_runt = KubeTaskServerRuntime()
+            task_runt = KubeTrackerRuntime()
 
         else:
-            typer.echo(f"Invalid runtime: {task_runtime}")
+            typer.echo(f"Invalid runtime: {tracker_runtime}")
             raise typer.Exit()
 
         name = get_random_name(sep="-")
         if not name:
-            raise SystemError("Name is required for task server")
+            raise SystemError("Name is required for tracker")
 
         task_svr = task_runt.run(name=name, auth_enabled=False)
-        typer.echo(f"Task server '{name}' created using '{task_runtime}' runtime")
+        typer.echo(f"Tracker '{name}' created using '{tracker_runtime}' runtime")
 
         local_port = task_svr.port
         if task_svr.runtime.requires_proxy():
@@ -1157,36 +1158,34 @@ def solve(
             task_svr.proxy(local_port=local_port)
         _remote_task_svr = f"http://localhost:{local_port}"
 
-    elif task_remote:
-        _remote_task_svr = task_remote
+    elif tracker_remote:
+        _remote_task_svr = tracker_remote
 
     else:
-        task_servers = TaskServer.find()
-        if not task_servers:
-            create = typer.confirm(
-                "No task servers found. Would you like to create one?"
-            )
+        trackers = Tracker.find()
+        if not trackers:
+            create = typer.confirm("No trackers found. Would you like to create one?")
             if create:
-                from taskara.runtime.docker import DockerTaskServerRuntime
+                from taskara.runtime.docker import DockerTrackerRuntime
 
-                task_runt = DockerTaskServerRuntime()
+                task_runt = DockerTrackerRuntime()
 
                 name = get_random_name(sep="-")
                 if not name:
-                    raise SystemError("Name is required for task server")
+                    raise SystemError("Name is required for tracker")
 
                 task_svr = task_runt.run(name=name, auth_enabled=False)
                 typer.echo(
-                    f"Task server '{name}' created using '{task_runt.name()}' runtime"
+                    f"Tracker '{name}' created using '{task_runt.name()}' runtime"
                 )
             else:
                 raise ValueError(
-                    "`task_server`, `task_runtime`, or `task_remote` flag must be provided. Or a task server must be running"
+                    "`tracker`, `tracker_runtime`, or `tracker_remote` flag must be provided. Or a tracker must be running"
                 )
         else:
-            task_svr = task_servers[0]
+            task_svr = trackers[0]
             typer.echo(
-                f"Using task server '{task_svr.name}' running on '{task_svr.runtime.name()}'"
+                f"Using tracker '{task_svr.name}' running on '{task_svr.runtime.name()}'"
             )
 
         local_port = task_svr.port
@@ -1328,9 +1327,7 @@ def solve(
         if not vm:
             raise ValueError("vm not found for ui")
 
-        _view(
-            desk=vm, agent=instance, task_server_addr=_remote_task_svr, background=True
-        )
+        _view(desk=vm, agent=instance, tracker_addr=_remote_task_svr, background=True)
 
     params = {}
     if starting_url:

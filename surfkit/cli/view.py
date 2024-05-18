@@ -23,7 +23,7 @@ UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:latest"
 def view(
     desk: DesktopVM,
     agent: AgentInstance,
-    task_server_addr: str,
+    tracker_addr: str,
     background: bool = False,
 ) -> None:
     """Opens the desktop in a browser window"""
@@ -91,7 +91,7 @@ def view(
         time.sleep(10)
 
     encoded_agent_addr = urllib.parse.quote(f"http://localhost:{agent_port}")
-    encoded_task_addr = urllib.parse.quote(task_server_addr)
+    encoded_task_addr = urllib.parse.quote(tracker_addr)
     encoded_vnc_addr = urllib.parse.quote(f"ws://localhost:{desk_port}")
 
     # Construct the URL with the encoded parameters

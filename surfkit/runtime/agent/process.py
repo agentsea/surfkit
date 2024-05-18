@@ -132,7 +132,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 print(stdout)
 
         # Health check logic
-        max_retries = 20
+        max_retries = 30
         retry_delay = 1
         health_url = f"http://localhost:{port}/health"
 
@@ -265,7 +265,9 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         if source:
             try:
                 # Read the metadata file
-                with open(os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json", "r")) as f:
+                with open(
+                    os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json", "r")
+                ) as f:
                     metadata = json.load(f)
 
                 agent_type = V1AgentType.model_validate(metadata["agent_type"])
