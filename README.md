@@ -110,22 +110,22 @@ surfkit delete device --name bar
 
 ### Tracking Tasks
 
-Create a task server
+Create a tracker
 
 ```sh
-surfkit create taskserver
+surfkit create tracker
 ```
 
 List task servers
 
 ```sh
-surfkit list taskservers
+surfkit list trackers
 ```
 
-Delete a task server
+Delete a tracker
 
 ```sh
-surfkit delete taskserver -n foo
+surfkit delete tracker -n foo
 ```
 
 ### Solving Tasks
