@@ -171,6 +171,8 @@ def create_device(
     except KeyboardInterrupt:
         print("Keyboard interrupt received, exiting...")
         return
+    except:
+        raise
 
 
 @create_group.command("taskserver")
@@ -853,7 +855,7 @@ def delete_device(
             return
 
     if desktop:
-        desktop.remove()
+        _provider.delete(name)
         typer.echo("Desktop deleted")
     else:
         print(f"Desktop '{name}' not found")
