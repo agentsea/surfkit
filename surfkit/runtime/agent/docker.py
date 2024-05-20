@@ -23,6 +23,7 @@ class DockerConnectConfig(BaseModel):
 class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]):
 
     def __init__(self, cfg: Optional[DockerConnectConfig] = None) -> None:
+        self._configure_docker_socket()
         if not cfg:
             cfg = DockerConnectConfig()
 
@@ -31,6 +32,22 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             self.client = docker.from_env(timeout=cfg.timeout)
         else:
             self.client = docker.from_env()
+
+    def _configure_docker_socket(self):
+        if os.path.exists("/var/run/docker.sock"):
+            docker_socket = "unix:///var/run/docker.sock"
+        else:
+            user = os.environ.get("USER")
+            if os.path.exists(f"/Users/{user}/.docker/run/docker.sock"):
+                docker_socket = f"unix:///Users/{user}/.docker/run/docker.sock"
+            else:
+                raise FileNotFoundError(
+                    (
+                        "Neither '/var/run/docker.sock' nor '/Users/<USER>/.docker/run/docker.sock' are available."
+                        "Please make sure you have Docker installed and running."
+                    )
+                )
+        os.environ["DOCKER_HOST"] = docker_socket
 
     @classmethod
     def name(cls) -> str:
@@ -107,6 +124,8 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         img = agent_type.versions.get(version)
         if not img:
             raise ValueError("img not found")
+
+        self.client.images.pull(img)
         container = self.client.containers.run(
             img,
             network_mode="host",
