@@ -26,8 +26,12 @@ from pydantic import BaseModel
 from taskara.server.models import V1Task
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from surfkit.server.models import (V1AgentType, V1ResourceLimits,
-                                   V1ResourceRequests, V1SolveTask)
+from surfkit.server.models import (
+    V1AgentType,
+    V1ResourceLimits,
+    V1ResourceRequests,
+    V1SolveTask,
+)
 from surfkit.types import AgentType
 
 from .base import AgentInstance, AgentRuntime
@@ -124,11 +128,18 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         resource_limits: V1ResourceLimits = V1ResourceLimits(),
         env_vars: Optional[dict] = None,
         owner_id: Optional[str] = None,
+        auth_enabled: bool = True,
     ) -> None:
         if not name:
             name = get_random_name("-")
             if not name:
                 raise ValueError("Could not generate a random name")
+
+        if env_vars is None:
+            env_vars = {}
+
+        if not auth_enabled:
+            env_vars["AGENT_NO_AUTH"] = "true"
 
         secret = None
         if env_vars:
@@ -722,6 +733,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         owner_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
+        auth_enabled: bool = True,
     ) -> AgentInstance:
         print("creating agent with type: ", agent_type.__dict__)
         if not agent_type.versions:
@@ -765,6 +777,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             resource_limits=agent_type.resource_limits,
             env_vars=env_vars,
             owner_id=owner_id,
+            auth_enabled=auth_enabled,
         )
 
         return AgentInstance(

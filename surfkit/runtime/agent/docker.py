@@ -74,6 +74,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         owner_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
+        auth_enabled: bool = True,
     ) -> AgentInstance:
         labels = {
             "provisioner": "surfkit",
@@ -120,6 +121,8 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             version = list(agent_type.versions.keys())[0]
 
         env_vars["SURF_PORT"] = str(port)
+        if not auth_enabled:
+            env_vars["AGENT_NO_AUTH"] = "true"
 
         img = agent_type.versions.get(version)
         if not img:
