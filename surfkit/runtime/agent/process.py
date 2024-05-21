@@ -53,6 +53,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         owner_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
+        auth_enabled: bool = True,
     ) -> AgentInstance:
 
         port = find_open_port(9090, 10090)
@@ -111,6 +112,9 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         print(f"running agent on port {port}")
 
         environment = os.environ.copy()
+        if not auth_enabled:
+            environment["AGENT_NO_AUTH"] = "true"
+
         process = subprocess.Popen(
             command,
             shell=True,

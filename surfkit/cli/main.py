@@ -16,12 +16,12 @@ from tabulate import tabulate
 
 from surfkit.runtime.agent.base import AgentInstance
 
-art = """
- _______                ___  __  __  __  __   
-|     __|.--.--..----..'  _||  |/  ||__||  |_ 
-|__     ||  |  ||   _||   _||     < |  ||   _|
-|_______||_____||__|  |__|  |__|\__||__||____|
-"""
+# art = """
+#  _______                ___  __  __  __  __
+# |     __|.--.--..----..'  _||  |/  ||__||  |_
+# |__     ||  |  ||   _||   _||     < |  ||   _|
+# |_______||_____||__|  |__|  |__|\__||__||____|
+# """
 
 app = typer.Typer()
 
@@ -31,6 +31,7 @@ list_group = typer.Typer(help="List resources")
 get_group = typer.Typer(help="Get resources")
 view_group = typer.Typer(help="View resources")
 delete_group = typer.Typer(help="Delete resources")
+logs_group = typer.Typer(help="Logs resources")
 clean_group = typer.Typer(help="Clean resources")
 
 app.add_typer(create_group, name="create")
@@ -38,6 +39,7 @@ app.add_typer(list_group, name="list")
 app.add_typer(get_group, name="get")
 app.add_typer(view_group, name="view")
 app.add_typer(delete_group, name="delete")
+app.add_typer(logs_group, name="logs")
 # app.add_typer(clean_group, name="clean")
 
 
@@ -98,6 +100,12 @@ def delete_default(ctx: typer.Context):
 @view_group.callback(invoke_without_command=True)
 def view_default(ctx: typer.Context):
     show_help(ctx, "view")
+
+
+# 'logs' command group callback
+@logs_group.callback(invoke_without_command=True)
+def logs_default(ctx: typer.Context):
+    show_help(ctx, "logs")
 
 
 # 'clean' command group callback
@@ -196,6 +204,9 @@ def create_tracker(
         "-i",
         help="The Docker image to use for the tracker.",
     ),
+    auth_enabled: bool = typer.Option(
+        False, "--auth-enabled", "-e", help="Whether to enable auth for the tracker."
+    ),
 ):
 
     if runtime == "docker":
@@ -217,7 +228,7 @@ def create_tracker(
         if not name:
             raise SystemError("Name is required for tracker")
 
-    server = runt.run(name=name, auth_enabled=False)
+    server = runt.run(name=name, auth_enabled=auth_enabled)
     typer.echo(f"Tracker '{name}' created using '{runtime}' runtime")
 
 
@@ -237,6 +248,9 @@ def create_agent(
     ),
     type: Optional[str] = typer.Option(
         None, "--type", "-t", help="Type of the agent if predefined."
+    ),
+    auth_enabled: bool = typer.Option(
+        False, "--auth-enabled", "-e", help="Whether to enable auth for the agent."
     ),
 ):
 
@@ -311,7 +325,7 @@ def create_agent(
             f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
         )
 
-    runt.run(agent_type, name)
+    runt.run(agent_type, name, auth_enabled=auth_enabled)
     typer.echo(f"Successfully created agent '{name}'")
 
 
@@ -611,9 +625,7 @@ def list_tasks(
 # 'get' sub-commands
 @get_group.command("agent")
 def get_agent(
-    name: str = typer.Option(
-        ..., "--name", "-n", help="The name of the agent to retrieve."
-    ),
+    name: str = typer.Argument(..., help="The name of the agent to retrieve."),
     runtime: Optional[str] = typer.Option(
         None, "--runtime", "-r", help="Get agent directly from the runtime"
     ),
@@ -660,10 +672,8 @@ def get_agent(
 
 @get_group.command("device")
 def get_device(
-    name: str = typer.Option(
+    name: str = typer.Argument(
         ...,
-        "--name",
-        "-n",
         help="The name of the desktop to retrieve.",
     ),
     provider: Optional[str] = typer.Option(
@@ -699,11 +709,7 @@ def get_device(
 
 
 @get_group.command("type")
-def get_type(
-    name: str = typer.Option(
-        ..., "--name", "-n", help="The name of the type to retrieve."
-    )
-):
+def get_type(name: str = typer.Argument(..., help="The name of the type to retrieve.")):
     from surfkit.types import AgentType
 
     typer.echo(f"Getting type: {name}")
@@ -719,7 +725,7 @@ def get_type(
 
 @get_group.command("task")
 def get_task(
-    id: str = typer.Option(..., help="ID of the task"),
+    id: str = typer.Argument(..., help="ID of the task"),
     remote: str = typer.Option(
         None,
         "--remote",
@@ -765,9 +771,7 @@ def get_task(
 # 'delete' sub-commands
 @delete_group.command("agent")
 def delete_agent(
-    name: str = typer.Option(
-        ..., "--name", "-n", help="The name of the agent to retrieve."
-    ),
+    name: str = typer.Argument(..., help="The name of the agent to retrieve."),
     runtime: Optional[str] = typer.Option(
         None,
         "--runtime",
@@ -825,10 +829,8 @@ def delete_agent(
 
 @delete_group.command("device")
 def delete_device(
-    name: str = typer.Option(
+    name: str = typer.Argument(
         ...,
-        "--name",
-        "-n",
         help="The name of the desktop to delete.",
     ),
     provider: Optional[str] = typer.Option(
@@ -865,10 +867,8 @@ def delete_device(
 
 @delete_group.command("tracker")
 def delete_tracker(
-    name: str = typer.Option(
+    name: str = typer.Argument(
         ...,
-        "--name",
-        "-n",
         help="The name of the tracker to delete",
     ),
     force: bool = typer.Option(
@@ -893,7 +893,7 @@ def delete_tracker(
 
 @delete_group.command("type")
 def delete_type(
-    name: str = typer.Option(..., "--name", "-n", help="The name of the type."),
+    name: str = typer.Argument(..., help="The name of the type."),
 ):
     from surfkit.config import HUB_API_URL
     from surfkit.types import AgentType
@@ -911,9 +911,7 @@ def delete_type(
 
 @view_group.command("device")
 def view_device(
-    name: str = typer.Option(
-        ..., "--name", "-n", help="The name of the device to view."
-    ),
+    name: str = typer.Argument(..., help="The name of the device to view."),
     background: bool = typer.Option(
         False, "--background", "-b", help="Run the viewer in background mode"
     ),
@@ -1096,12 +1094,18 @@ def solve(
     ),
     max_steps: int = typer.Option(30, help="Maximum steps for the task."),
     kill: bool = typer.Option(
-        False, "--kill", "-k", help="Whether to kill the agent when done"
+        False, "--kill", "-k", help="Whether to kill the agent when done."
     ),
-    view: bool = typer.Option(True, "--view", "-v", help="Whether to view the device"),
-    follow: bool = typer.Option(True, help="Whether to follow the agent logs"),
+    view: bool = typer.Option(True, "--view", "-v", help="Whether to view the device."),
+    follow: bool = typer.Option(True, help="Whether to follow the agent logs."),
     starting_url: Optional[str] = typer.Option(
         None, help="Starting URL if applicable."
+    ),
+    auth_enabled: bool = typer.Option(
+        False,
+        "--auth-enabled",
+        "-e",
+        help="Whether to enable auth for the agent.",
     ),
 ):
     from taskara import Task
@@ -1147,7 +1151,7 @@ def solve(
         if not name:
             raise SystemError("Name is required for tracker")
 
-        task_svr = task_runt.run(name=name, auth_enabled=False)
+        task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
         typer.echo(f"Tracker '{name}' created using '{tracker_runtime}' runtime")
 
         local_port = task_svr.port
@@ -1174,7 +1178,7 @@ def solve(
                 if not name:
                     raise SystemError("Name is required for tracker")
 
-                task_svr = task_runt.run(name=name, auth_enabled=False)
+                task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
                 typer.echo(
                     f"Tracker '{name}' created using '{task_runt.name()}' runtime"
                 )
@@ -1291,7 +1295,9 @@ def solve(
             if not agent:
                 raise ValueError("could not generate agent name")
         typer.echo(f"creating agent {agent}...")
-        instance = runt.run(agent_type=typ, name=agent, version=agent_version)
+        instance = runt.run(
+            agent_type=typ, name=agent, version=agent_version, auth_enabled=auth_enabled
+        )
         agent = instance.name
 
     if agent_file:
@@ -1309,7 +1315,9 @@ def solve(
             typ.save()
 
         typer.echo(f"creating agent {agent} from file {agent_file}...")
-        instance = runt.run(agent_type=typ, name=agent, version=agent_version)
+        instance = runt.run(
+            agent_type=typ, name=agent, version=agent_version, auth_enabled=auth_enabled
+        )
         agent = instance.name
 
     if not agent:
@@ -1352,12 +1360,10 @@ def solve(
         runt.delete(agent)
 
 
-@app.command("logs")
-def get_logs(
-    name: str = typer.Option(
+@logs_group.command("agent")
+def get_agent_logs(
+    name: str = typer.Argument(
         ...,
-        "--name",
-        "-n",
         help="The name of the agent whose logs are to be retrieved.",
     ),
     runtime: Optional[str] = typer.Option(
@@ -1436,6 +1442,41 @@ def get_logs(
                         break
             except KeyboardInterrupt:
                 typer.echo("Stopped following logs.")
+
+
+@logs_group.command("tracker")
+def get_tracker_logs(
+    name: str = typer.Argument(
+        ...,
+        help="The name of the tracker whose logs are to be retrieved.",
+    ),
+    follow: bool = typer.Option(
+        False, "--follow", "-f", help="Whether to continuously follow the logs."
+    ),
+):
+    """
+    Retrieve tracker logs
+    """
+    from taskara.runtime.base import Tracker
+
+    trackers = Tracker.find(name=name)
+    if not trackers:
+        typer.echo(f"Tracker '{name}' not found")
+        raise typer.Exit(1)
+
+    tracker = trackers[0]
+    logs = tracker.logs(follow=follow)
+    if isinstance(logs, str):
+        typer.echo(logs)
+    else:
+        # Handle log streaming
+        try:
+            for log_entry in logs:
+                typer.echo(log_entry)
+                if not follow:
+                    break
+        except KeyboardInterrupt:
+            typer.echo("Stopped following logs.")
 
 
 if __name__ == "__main__":

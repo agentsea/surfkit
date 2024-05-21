@@ -2,15 +2,13 @@ import json
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import (Dict, Generic, Iterator, List, Optional, Type, TypeVar,
-                    Union)
+from typing import Dict, Generic, Iterator, List, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel
 
 from surfkit.db.conn import WithDB
 from surfkit.db.models import AgentInstanceRecord
-from surfkit.server.models import (V1AgentInstance, V1RuntimeConnect,
-                                   V1SolveTask)
+from surfkit.server.models import V1AgentInstance, V1RuntimeConnect, V1SolveTask
 from surfkit.types import AgentType
 
 R = TypeVar("R", bound="AgentRuntime")
@@ -270,6 +268,7 @@ class AgentRuntime(Generic[R, C], ABC):
         owner_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
+        auth_enabled: bool = True,
     ) -> AgentInstance:
         """Run the agent
 
@@ -282,6 +281,7 @@ class AgentRuntime(Generic[R, C], ABC):
             owner_id (Optional[str], optional): Owner ID. Defaults to None.
             tags (Optional[List[str]], optional): Tags for the agent. Defaults to None.
             labels (Optional[Dict[str, str]], optional): Labels for the agent. Defaults to None.
+            auth_enabled (bool, optional): Whether to enable auth. Defaults to True.
 
         Returns:
             AgentInstance: An agent instance
