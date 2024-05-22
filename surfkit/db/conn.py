@@ -5,7 +5,7 @@ import time
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import sessionmaker
 
-from surfkit import config
+from surfkit.config import AGENTSEA_DB_DIR, DB_NAME
 
 from .models import Base
 
@@ -41,13 +41,10 @@ def get_pg_conn() -> Engine:
 
 
 def get_sqlite_conn() -> Engine:
-    logger.debug(
-        f"connecting to local sqlite db {config.AGENTSEA_DB_DIR}/{config.DB_NAME}"
-    )
-    os.makedirs(
-        os.path.dirname(f"{config.AGENTSEA_DB_DIR}/{config.DB_NAME}"), exist_ok=True
-    )
-    engine = create_engine(f"sqlite:///{config.AGENTSEA_DB_DIR}/{config.DB_NAME}")
+    db_path = os.path.join(AGENTSEA_DB_DIR, DB_NAME)
+    logger.debug(f"connecting to local sqlite db {db_path}")
+    os.makedirs(AGENTSEA_DB_DIR, exist_ok=True)
+    engine = create_engine(f"sqlite:///{db_path}")
     return engine
 
 
