@@ -12,6 +12,7 @@ import rich
 from taskara import V1Task
 import typer
 import yaml
+import json
 from namesgenerator import get_random_name
 from tabulate import tabulate
 
@@ -1204,278 +1205,326 @@ def solve(
         help="Whether to enable auth for the agent.",
     ),
 ):
-    from taskara import Task
-    from taskara.runtime.base import Tracker
-    from agentdesk import Desktop
-    from taskara import Task
+    try:
+        from taskara import Task
+        from taskara.runtime.base import Tracker
+        from agentdesk import Desktop
+        from taskara import Task
 
-    from surfkit.server.models import V1SolveTask
-    from surfkit.util import find_open_port
-    from surfkit.types import AgentType
+        from surfkit.server.models import V1SolveTask
+        from surfkit.util import find_open_port
+        from surfkit.types import AgentType
 
-    if tracker:
-        trackers = Tracker.find(name=tracker)
-        if not trackers:
-            raise ValueError(f"Expected tracker with name '{tracker}'")
-        task_svr = trackers[0]
+        if tracker:
+            trackers = Tracker.find(name=tracker)
+            if not trackers:
+                raise ValueError(f"Expected tracker with name '{tracker}'")
+            task_svr = trackers[0]
 
-        local_port = task_svr.port
-        if task_svr.runtime.requires_proxy():
-            local_port = find_open_port(9070, 10070)
-            if not local_port:
-                raise SystemError("No available ports found")
-            task_svr.proxy(local_port=local_port)
-        _remote_task_svr = f"http://localhost:{local_port}"
+            local_port = task_svr.port
+            if task_svr.runtime.requires_proxy():
+                local_port = find_open_port(9070, 10070)
+                if not local_port:
+                    raise SystemError("No available ports found")
+                task_svr.proxy(local_port=local_port)
+            _remote_task_svr = f"http://localhost:{local_port}"
 
-    elif tracker_runtime:
+        elif tracker_runtime:
 
-        if tracker_runtime == "docker":
-            from taskara.runtime.docker import DockerTrackerRuntime
-
-            task_runt = DockerTrackerRuntime()
-
-        elif tracker_runtime == "kube":
-            from taskara.runtime.kube import KubeTrackerRuntime
-
-            task_runt = KubeTrackerRuntime()
-
-        else:
-            typer.echo(f"Invalid runtime: {tracker_runtime}")
-            raise typer.Exit()
-
-        name = get_random_name(sep="-")
-        if not name:
-            raise SystemError("Name is required for tracker")
-
-        task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
-        typer.echo(f"Tracker '{name}' created using '{tracker_runtime}' runtime")
-
-        local_port = task_svr.port
-        if task_svr.runtime.requires_proxy():
-            local_port = find_open_port(9070, 10070)
-            if not local_port:
-                raise SystemError("No available ports found")
-            task_svr.proxy(local_port=local_port)
-        _remote_task_svr = f"http://localhost:{local_port}"
-
-    elif tracker_remote:
-        _remote_task_svr = tracker_remote
-
-    else:
-        trackers = Tracker.find()
-        if not trackers:
-            create = typer.confirm("No trackers found. Would you like to create one?")
-            if create:
+            if tracker_runtime == "docker":
                 from taskara.runtime.docker import DockerTrackerRuntime
 
                 task_runt = DockerTrackerRuntime()
 
-                name = get_random_name(sep="-")
-                if not name:
-                    raise SystemError("Name is required for tracker")
+            elif tracker_runtime == "kube":
+                from taskara.runtime.kube import KubeTrackerRuntime
 
-                task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
-                typer.echo(
-                    f"Tracker '{name}' created using '{task_runt.name()}' runtime"
-                )
+                task_runt = KubeTrackerRuntime()
+
             else:
-                raise ValueError(
-                    "`tracker`, `tracker_runtime`, or `tracker_remote` flag must be provided. Or a tracker must be running"
+                typer.echo(f"Invalid runtime: {tracker_runtime}")
+                raise typer.Exit()
+
+            name = get_random_name(sep="-")
+            if not name:
+                raise SystemError("Name is required for tracker")
+
+            task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
+            typer.echo(f"Tracker '{name}' created using '{tracker_runtime}' runtime")
+
+            local_port = task_svr.port
+            if task_svr.runtime.requires_proxy():
+                local_port = find_open_port(9070, 10070)
+                if not local_port:
+                    raise SystemError("No available ports found")
+                task_svr.proxy(local_port=local_port)
+            _remote_task_svr = f"http://localhost:{local_port}"
+
+        elif tracker_remote:
+            _remote_task_svr = tracker_remote
+
+        else:
+            trackers = Tracker.find()
+            if not trackers:
+                create = typer.confirm(
+                    "No trackers found. Would you like to create one?"
                 )
-        else:
-            task_svr = trackers[0]
-            typer.echo(
-                f"Using tracker '{task_svr.name}' running on '{task_svr.runtime.name()}'"
-            )
+                if create:
+                    from taskara.runtime.docker import DockerTrackerRuntime
 
-        local_port = task_svr.port
-        if task_svr.runtime.requires_proxy():
-            local_port = find_open_port(9070, 10070)
-            if not local_port:
-                raise SystemError("No available ports found")
-            task_svr.proxy(local_port=local_port)
-        _remote_task_svr = f"http://localhost:{local_port}"
+                    task_runt = DockerTrackerRuntime()
 
-    if not agent_runtime:
-        if agent_file:
-            agent_runtime = "process"
-        elif agent_type:
-            agent_runtime = "docker"
-        else:
-            agent_runtime = "docker"
+                    name = get_random_name(sep="-")
+                    if not name:
+                        raise SystemError("Name is required for tracker")
 
-    runt = None
-    if agent:
-        instances = AgentInstance.find(name=agent)
-        if not instances:
-            raise ValueError(f"Expected instances of '{agent}'")
-        typer.echo(f"Found agent instance '{agent}'")
-        instance = instances[0]
-        runt = instance.runtime
-
-    else:
-        if agent_runtime == "docker":
-            from surfkit.runtime.agent.docker import (
-                DockerAgentRuntime,
-                DockerConnectConfig,
-            )
-
-            dconf = DockerConnectConfig()
-            runt = DockerAgentRuntime.connect(cfg=dconf)
-
-        elif agent_runtime == "kube":
-            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
-
-            kconf = KubeConnectConfig()
-            runt = KubeAgentRuntime.connect(cfg=kconf)
-
-        elif agent_runtime == "process":
-            from surfkit.runtime.agent.process import (
-                ProcessAgentRuntime,
-                ProcessConnectConfig,
-            )
-
-            pconf = ProcessConnectConfig()
-            runt = ProcessAgentRuntime.connect(cfg=pconf)
-
-        else:
-            if agent_file or agent_type:
-                raise ValueError(f"Unknown runtime '{agent_runtime}'")
-
-    if not runt:
-        raise ValueError(f"Unknown runtime '{agent_runtime}'")
-
-    v1device = None
-    _device = None
-    if device_type:
-        if device_type == "desktop":
-            from agentdesk.server.models import V1ProviderData
-            from agentdesk.vm.load import load_provider
-
-            data = V1ProviderData(type=device_provider)
-            _provider = load_provider(data)
-
-            typer.echo(f"Creating desktop '{agent}' using '{device_provider}' provider")
-            try:
-                vm = _provider.create(
-                    name=agent,
+                    task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
+                    typer.echo(
+                        f"Tracker '{name}' created using '{task_runt.name()}' runtime"
+                    )
+                else:
+                    raise ValueError(
+                        "`tracker`, `tracker_runtime`, or `tracker_remote` flag must be provided. Or a tracker must be running"
+                    )
+            else:
+                task_svr = trackers[0]
+                typer.echo(
+                    f"Using tracker '{task_svr.name}' running on '{task_svr.runtime.name()}'"
                 )
-                _device = Desktop.from_vm(vm)
-                v1device = _device.to_v1()
-            except KeyboardInterrupt:
-                print("Keyboard interrupt received, exiting...")
-                return
+
+            local_port = task_svr.port
+            if task_svr.runtime.requires_proxy():
+                local_port = find_open_port(9070, 10070)
+                if not local_port:
+                    raise SystemError("No available ports found")
+                task_svr.proxy(local_port=local_port)
+            _remote_task_svr = f"http://localhost:{local_port}"
+
+        if not agent_runtime:
+            if agent_file:
+                agent_runtime = "process"
+            elif agent_type:
+                agent_runtime = "docker"
+            else:
+                agent_runtime = "docker"
+
+        runt = None
+        if agent:
+            instances = AgentInstance.find(name=agent)
+            if not instances:
+                raise ValueError(f"Expected instances of '{agent}'")
+            typer.echo(f"Found agent instance '{agent}'")
+            instance = instances[0]
+            runt = instance.runtime
+
         else:
-            raise ValueError(f"unknown device type {device_type}")
+            if agent_runtime == "docker":
+                from surfkit.runtime.agent.docker import (
+                    DockerAgentRuntime,
+                    DockerConnectConfig,
+                )
 
-    vm = None
-    if device:
-        typer.echo(f"finding device '{device}'...")
-        vms = Desktop.find(name=device)
-        if not vms:
-            raise ValueError(f"Device '{device}' not found")
-        vm = vms[0]
-        _device = Desktop.from_vm(vm)
-        v1device = _device.to_v1()
-        typer.echo(f"found device '{device}'...")
+                dconf = DockerConnectConfig()
+                runt = DockerAgentRuntime.connect(cfg=dconf)
 
-    if agent_type:
-        from surfkit.config import HUB_API_URL, GlobalConfig
-        from typing import List
+            elif agent_runtime == "kube":
+                from surfkit.runtime.agent.kube import (
+                    KubeAgentRuntime,
+                    KubeConnectConfig,
+                )
 
-        all_types: List[AgentType] = []
+                kconf = KubeConnectConfig()
+                runt = KubeAgentRuntime.connect(cfg=kconf)
 
-        types = AgentType.find()
-        all_types.extend(types)
+            elif agent_runtime == "process":
+                from surfkit.runtime.agent.process import (
+                    ProcessAgentRuntime,
+                    ProcessConnectConfig,
+                )
 
-        try:
-            config = GlobalConfig.read()
-            if config.api_key:
-                types = AgentType.find(remote=HUB_API_URL, name=type)
-                if types:
-                    all_types.extend(types)
-        except Exception as e:
-            logger.debug(f"Failed to load global config: {e}")
+                pconf = ProcessConnectConfig()
+                runt = ProcessAgentRuntime.connect(cfg=pconf)
 
-        if not all_types:
-            print("No types found")
-            return
+            else:
+                if agent_file or agent_type:
+                    raise ValueError(f"Unknown runtime '{agent_runtime}'")
 
-        types = AgentType.find(name=type)
-        if types:
+        if not runt:
+            raise ValueError(f"Unknown runtime '{agent_runtime}'")
+
+        v1device = None
+        _device = None
+        if device_type:
+            if device_type == "desktop":
+                from agentdesk.server.models import V1ProviderData
+                from agentdesk.vm.load import load_provider
+
+                data = V1ProviderData(type=device_provider)
+                _provider = load_provider(data)
+
+                typer.echo(
+                    f"Creating desktop '{agent}' using '{device_provider}' provider"
+                )
+                try:
+                    vm = _provider.create(
+                        name=agent,
+                    )
+                    _device = Desktop.from_vm(vm)
+                    v1device = _device.to_v1()
+                except KeyboardInterrupt:
+                    print("Keyboard interrupt received, exiting...")
+                    return
+            else:
+                raise ValueError(f"unknown device type {device_type}")
+
+        vm = None
+        if device:
+            typer.echo(f"finding device '{device}'...")
+            vms = Desktop.find(name=device)
+            if not vms:
+                raise ValueError(f"Device '{device}' not found")
+            vm = vms[0]
+            _device = Desktop.from_vm(vm)
+            v1device = _device.to_v1()
+            typer.echo(f"found device '{device}'...")
+
+        if agent_type:
+            from surfkit.config import HUB_API_URL, GlobalConfig
+            from typing import List
+
+            all_types: List[AgentType] = []
+
+            types = AgentType.find()
             all_types.extend(types)
 
-        if not all_types:
-            raise ValueError(f"Agent type '{type}' not found")
-        typ = all_types[0]
-        if not agent:
-            agent = get_random_name("-")
+            try:
+                config = GlobalConfig.read()
+                if config.api_key:
+                    types = AgentType.find(remote=HUB_API_URL, name=type)
+                    if types:
+                        all_types.extend(types)
+            except Exception as e:
+                logger.debug(f"Failed to load global config: {e}")
+
+            if not all_types:
+                print("No types found")
+                return
+
+            types = AgentType.find(name=type)
+            if types:
+                all_types.extend(types)
+
+            if not all_types:
+                raise ValueError(f"Agent type '{type}' not found")
+            typ = all_types[0]
             if not agent:
-                raise ValueError("could not generate agent name")
-        typer.echo(f"creating agent {agent}...")
-        instance = runt.run(
-            agent_type=typ, name=agent, version=agent_version, auth_enabled=auth_enabled
-        )
-        agent = instance.name
+                agent = get_random_name("-")
+                if not agent:
+                    raise ValueError("could not generate agent name")
+            typer.echo(f"creating agent {agent}...")
+            instance = runt.run(
+                agent_type=typ,
+                name=agent,
+                version=agent_version,
+                auth_enabled=auth_enabled,
+            )
+            agent = instance.name
 
-    if agent_file:
-        typ = AgentType.from_file(agent_file)
+        if agent_file:
+            typ = AgentType.from_file(agent_file)
+            if not agent:
+                from surfkit.runtime.agent.util import instance_name
+
+                agent = instance_name(typ)
+
+            types = AgentType.find(name=typ.name)
+            if types:
+                typ = types[0]
+                typ.update(typ.to_v1())
+            else:
+                typ.save()
+
+            typer.echo(f"creating agent {agent} from file {agent_file}...")
+            instance = runt.run(
+                agent_type=typ,
+                name=agent,
+                version=agent_version,
+                auth_enabled=auth_enabled,
+            )
+            agent = instance.name
+
         if not agent:
-            from surfkit.runtime.agent.util import instance_name
+            raise ValueError("Either agent or agent_type needs to be provided")
 
-            agent = instance_name(typ)
+        if _device and view:
+            typer.echo("viewing device...")
+            from surfkit.cli.view import view as _view
 
-        types = AgentType.find(name=typ.name)
-        if types:
-            typ = types[0]
-            typ.update(typ.to_v1())
-        else:
-            typ.save()
+            instances = AgentInstance.find(name=agent)
+            if not instances:
+                raise ValueError(f"agent '{agent}' not found")
+            instance = instances[0]
 
-        typer.echo(f"creating agent {agent} from file {agent_file}...")
-        instance = runt.run(
-            agent_type=typ, name=agent, version=agent_version, auth_enabled=auth_enabled
+            if not vm:
+                raise ValueError("vm not found for ui")
+
+            _view(
+                desk=vm, agent=instance, tracker_addr=_remote_task_svr, background=True
+            )
+
+        params = {}
+        if starting_url:
+            params["site"] = starting_url
+
+        task = Task(
+            description=description,
+            parameters=params,
+            max_steps=max_steps,
+            device=v1device,
+            assigned_to=agent,
+            assigned_type=agent_type,
+            remote=_remote_task_svr,
         )
-        agent = instance.name
 
-    if not agent:
-        raise ValueError("Either agent or agent_type needs to be provided")
+        typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
+        solve_v1 = V1SolveTask(task=task.to_v1())
+        runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
 
-    if _device and view:
-        typer.echo("viewing device...")
-        from surfkit.cli.view import view as _view
+        if kill and not follow:
+            typer.echo(f"Killing agent {agent}...")
+            runt.delete(agent)
 
-        instances = AgentInstance.find(name=agent)
-        if not instances:
-            raise ValueError(f"agent '{agent}' not found")
-        instance = instances[0]
+    except Exception as e:
+        typer.echo(f"An error occurred: {e}")
 
-        if not vm:
-            raise ValueError("vm not found for ui")
+        arguments = {
+            "description": description,
+            "agent": agent,
+            "agent_runtime": agent_runtime,
+            "agent_type": agent_type,
+            "agent_file": agent_file,
+            "agent_version": agent_version,
+            "device": device,
+            "device_type": device_type,
+            "device_provider": device_provider,
+            "tracker": tracker,
+            "tracker_runtime": tracker_runtime,
+            "tracker_remote": tracker_remote,
+            "max_steps": max_steps,
+            "kill": kill,
+            "view": view,
+            "follow": follow,
+            "starting_url": starting_url,
+            "auth_enabled": auth_enabled,
+        }
 
-        _view(desk=vm, agent=instance, tracker_addr=_remote_task_svr, background=True)
+        typer.echo("Arguments for solve():")
+        typer.echo(json.dumps(arguments, indent=2))
 
-    params = {}
-    if starting_url:
-        params["site"] = starting_url
-
-    task = Task(
-        description=description,
-        parameters=params,
-        max_steps=max_steps,
-        device=v1device,
-        assigned_to=agent,
-        assigned_type=agent_type,
-        remote=_remote_task_svr,
-    )
-
-    typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
-    solve_v1 = V1SolveTask(task=task.to_v1())
-    runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
-
-    if kill and not follow:
-        typer.echo(f"Killing agent {agent}...")
-        runt.delete(agent)
+        typer.echo(f"=== AGENT LOGS name: {agent} runtime: {agent_runtime} ===")
+        get_agent_logs(name=agent, runtime=agent_runtime, follow=False)
+        typer.echo(f"=== TRACKER LOGS name: {tracker} ===")
+        get_tracker_logs(name=tracker, follow=False)
 
 
 @logs_group.command("agent")
