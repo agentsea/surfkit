@@ -3,9 +3,9 @@ from urllib.parse import urljoin
 from typing import Optional
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkgversion
-from pdb import run
 from typing import Optional
 from urllib.parse import urljoin
+import logging
 
 import requests
 import rich
@@ -16,6 +16,8 @@ from namesgenerator import get_random_name
 from tabulate import tabulate
 
 from surfkit.runtime.agent.base import AgentInstance
+
+logger = logging.getLogger(__name__)
 
 # art = """
 #  _______                ___  __  __  __  __
@@ -289,12 +291,35 @@ def create_agent(
         raise ValueError(f"Unknown runtime '{runtime}'")
 
     if type:
-        from surfkit.config import HUB_API_URL
 
-        types = AgentType.find(remote=HUB_API_URL, name=type)
-        if not types:
+        from surfkit.config import HUB_API_URL, GlobalConfig
+        from typing import List
+
+        all_types: List[AgentType] = []
+
+        types = AgentType.find()
+        all_types.extend(types)
+
+        try:
+            config = GlobalConfig.read()
+            if config.api_key:
+                types = AgentType.find(remote=HUB_API_URL, name=type)
+                if types:
+                    all_types.extend(types)
+        except Exception as e:
+            logger.debug(f"Failed to load global config: {e}")
+
+        if not all_types:
+            print("No types found")
+            return
+
+        types = AgentType.find(name=type)
+        if types:
+            all_types.extend(types)
+
+        if not all_types:
             raise ValueError(f"Agent type '{type}' not found")
-        agent_type = types[0]
+        agent_type = all_types[0]
     else:
         try:
             with open(file, "r") as f:
@@ -550,10 +575,13 @@ def list_types():
     types = AgentType.find()
     all_types.extend(types)
 
-    config = GlobalConfig.read()
-    if config.api_key:
-        types = AgentType.find(remote=HUB_API_URL)
-        all_types.extend(types)
+    try:
+        config = GlobalConfig.read()
+        if config.api_key:
+            types = AgentType.find(remote=HUB_API_URL)
+            all_types.extend(types)
+    except Exception as e:
+        logger.debug(f"Failed to load global config: {e}")
 
     if not all_types:
         print("No types found")
@@ -1352,12 +1380,34 @@ def solve(
         typer.echo(f"found device '{device}'...")
 
     if agent_type:
-        from surfkit.config import HUB_API_URL
+        from surfkit.config import HUB_API_URL, GlobalConfig
+        from typing import List
 
-        types = AgentType.find(remote=HUB_API_URL, name=agent_type)
-        if not types:
-            raise ValueError(f"Agent type '{agent_type}' not found")
-        typ = types[0]
+        all_types: List[AgentType] = []
+
+        types = AgentType.find()
+        all_types.extend(types)
+
+        try:
+            config = GlobalConfig.read()
+            if config.api_key:
+                types = AgentType.find(remote=HUB_API_URL, name=type)
+                if types:
+                    all_types.extend(types)
+        except Exception as e:
+            logger.debug(f"Failed to load global config: {e}")
+
+        if not all_types:
+            print("No types found")
+            return
+
+        types = AgentType.find(name=type)
+        if types:
+            all_types.extend(types)
+
+        if not all_types:
+            raise ValueError(f"Agent type '{type}' not found")
+        typ = all_types[0]
         if not agent:
             agent = get_random_name("-")
             if not agent:

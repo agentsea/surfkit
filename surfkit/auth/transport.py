@@ -11,7 +11,7 @@ from .provider import default_auth_provider
 
 logger = logging.getLogger(__name__)
 
-if os.getenv("TASK_SERVER_NO_AUTH", "false").lower() == "true":
+if os.getenv("AGENT_NO_AUTH", "false").lower() == "true":
     user_auth = None
 else:
     user_auth = default_auth_provider()
