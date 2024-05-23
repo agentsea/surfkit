@@ -1475,7 +1475,13 @@ def solve(
 
     if kill and not follow:
         typer.echo(f"Killing agent {agent}...")
-        runt.delete(agent)
+        try:
+            runt.delete(agent)
+            instances = AgentInstance.find(name=agent)
+            if instances:
+                instances[0].delete(force=True)
+        except:
+            pass
 
 
 @logs_group.command("agent")

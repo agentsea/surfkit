@@ -567,6 +567,18 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         background: bool = True,
         owner_id: Optional[str] = None,
     ) -> Optional[int]:
+        """Proxy the agent port to localhost.
+
+        Args:
+            name (str): Name of the agent
+            local_port (Optional[int], optional): Local port to proxy to. Defaults to None.
+            agent_port (int, optional): Agent port. Defaults to 9090.
+            background (bool, optional): Whether to run in the background. Defaults to True.
+            owner_id (Optional[str], optional): Owner ID. Defaults to None.
+
+        Returns:
+            Optional[int]: An optional PID of the proxy
+        """
         if local_port is None:
             local_port = find_open_port(9090, 10090)
 
@@ -845,6 +857,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         def handle_signal(signum, frame):
             print(f"Signal {signum} received, stopping and deleting pod '{agent_name}'")
             self.delete(agent_name)
+            instances = AgentInstance.find(name=agent_name)
+            if instances:
+                instances[0].delete(force=True)
             sys.exit(1)
 
         return handle_signal
