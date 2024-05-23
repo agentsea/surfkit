@@ -1,9 +1,9 @@
-from abc import abstractmethod, ABC
 import os
-import requests
+from abc import ABC, abstractmethod
 from typing import Optional
-from requests.exceptions import RequestException
 
+import requests
+from requests.exceptions import RequestException
 from threadmem.db.conn import WithDB
 from threadmem.server.models import V1UserProfile
 

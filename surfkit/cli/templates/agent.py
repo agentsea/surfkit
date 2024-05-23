@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-from grpc import server
-
 from surfkit.cli.util import pkg_from_name
 
 

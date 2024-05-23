@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import sessionmaker
