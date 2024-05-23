@@ -17,6 +17,7 @@ from .agent import Agent, router  # TODO: how do you do this?
 
 logger: Final = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize the agent type before the server comes live
@@ -47,8 +48,7 @@ async def health():
 
 @app.post("/v1/tasks")
 async def solve_task(background_tasks: BackgroundTasks, task_model: V1Task):
-    print(f"solving task: 
-{task_model.model_dump()}")
+    print(f"solving task: {task_model.model_dump()}")
     try:
         # TODO: we need to find a way to do this earlier but get status back
         router.check_model()
@@ -61,6 +61,7 @@ async def solve_task(background_tasks: BackgroundTasks, task_model: V1Task):
 
     background_tasks.add_task(_solve_task, task_model)
     print("created background task...")
+
 
 def _solve_task(task_model: V1Task):
     task = Task.from_v1(task_model.task, owner_id="local")
@@ -177,7 +178,9 @@ def _work(work_model: V1Task):
 
         for task in tasks:
             logger.debug("got remote task: ", task.__dict__)
-            V1SolveTask(task=task.to_v1(), )
+            V1SolveTask(
+                task=task.to_v1(),
+            )
             _solve_task(task)
 
 
@@ -201,7 +204,7 @@ def get_remote_task(id: str, owner_id: str, server: str) -> Task:
     except Exception as e:
         print("error getting remote task: ", e)
         raise e
-    
+
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(10))
 def get_remote_assigned(owner_id: str, server: str, agent_name: str) -> List[Task]:
@@ -223,7 +226,7 @@ def get_remote_assigned(owner_id: str, server: str, agent_name: str) -> List[Tas
     except Exception as e:
         print("error getting remote task: ", e)
         raise e
-    
+
 
 if __name__ == "__main__":
     port = os.getenv("SURF_PORT", "9090")
