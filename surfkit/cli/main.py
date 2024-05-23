@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 import requests
 import rich
+from taskara import V1Task
 import typer
 import yaml
 from namesgenerator import get_random_name
@@ -504,6 +505,9 @@ def list_devices(
 def list_trackers():
     from taskara.runtime.base import Tracker
 
+    runtimes = Tracker.active_runtimes()
+    for runtime in runtimes:
+        runtime.refresh()
     trackers = Tracker.find()
 
     if not trackers:
@@ -536,12 +540,24 @@ def list_trackers():
 
 @list_group.command("types")
 def list_types():
-    from surfkit.config import HUB_API_URL
-    from surfkit.types import AgentType
+    from typing import List
 
-    types = AgentType.find(remote=HUB_API_URL)
-    if not types:
-        raise ValueError(f"Agent type '{type}' not found")
+    from surfkit.types import AgentType
+    from surfkit.config import HUB_API_URL, GlobalConfig
+
+    all_types: List[AgentType] = []
+
+    types = AgentType.find()
+    all_types.extend(types)
+
+    config = GlobalConfig.read()
+    if config.api_key:
+        types = AgentType.find(remote=HUB_API_URL)
+        all_types.extend(types)
+
+    if not all_types:
+        print("No types found")
+        return
 
     table = []
     for typ in types:
@@ -568,46 +584,95 @@ def list_types():
 
 @list_group.command("tasks")
 def list_tasks(
-    remote: bool = typer.Option(True, "--remote", "-r", help="List tasks from remote")
+    remote: Optional[str] = typer.Option(
+        None, "--remote", "-r", help="List tasks from remote"
+    ),
+    tracker: Optional[str] = typer.Option(
+        None, "--tracker", "-t", help="The tracker to list tasks from."
+    ),
 ):
-    import os
-    from typing import List
 
-    from taskara import Task
+    from taskara import Task, V1Tasks
+    from taskara.runtime.base import Tracker
 
     from surfkit.config import HUB_API_URL, GlobalConfig
-    from surfkit.env import HUB_API_KEY_ENV
-
-    config = GlobalConfig.read()
-    if not config.api_key:
-        raise ValueError("No API key found. Please run `surfkit login` first.")
-
-    os.environ[HUB_API_KEY_ENV] = config.api_key
-
-    all_tasks: List[Task] = []
-
-    if remote:
-        try:
-            tasks = Task.find(remote=HUB_API_URL)
-            all_tasks.extend(tasks)
-        except:
-            pass
-
-    try:
-        tasks = Task.find()
-        all_tasks.extend(tasks)
-    except:
-        pass
 
     table = []
-    for task in all_tasks:
-        table.append(
-            [
-                task.id,
-                task.description,
-                task.status,
-            ]
-        )
+    if tracker:
+        runtimes = Tracker.active_runtimes()
+        for runtime in runtimes:
+            runtime.refresh()
+        trackers = Tracker.find(name=tracker)
+        if not trackers:
+            raise ValueError(f"Tracker '{tracker}' not found")
+        trck = trackers[0]
+        status, text = trck.call("/v1/tasks", "GET")
+        if status != 200:
+            raise ValueError(f"Failed to list tasks from tracker: {text}")
+        v1tasks = V1Tasks.model_validate_json(text)
+        for task in v1tasks.tasks:
+            table.append(
+                [
+                    task.id,
+                    task.description,
+                    task.status,
+                    trck.runtime.name(),
+                ]
+            )
+
+    elif remote:
+        tasks = Task.find(remote=remote)
+        for task in tasks:
+            table.append(
+                [
+                    task.id,
+                    task.description,
+                    task.status,
+                    remote,
+                ]
+            )
+
+    else:
+        runtimes = Tracker.active_runtimes()
+        for runtime in runtimes:
+            runtime.refresh()
+        trackers = Tracker.find()
+
+        if trackers:
+            for trck in trackers:
+                status, text = trck.call("/v1/tasks", "GET")
+                if status != 200:
+                    raise ValueError(f"Failed to list tasks from tracker: {text}")
+                v1tasks = V1Tasks.model_validate_json(text)
+                for task in v1tasks.tasks:
+                    table.append(
+                        [
+                            task.id,
+                            task.description,
+                            task.status,
+                            trck.name,
+                        ]
+                    )
+
+        config = GlobalConfig.read()
+        if config.api_key:
+            try:
+                tasks = Task.find(remote=HUB_API_URL)
+                for task in tasks:
+                    table.append(
+                        [
+                            task.id,
+                            task.description,
+                            task.status,
+                            HUB_API_URL,
+                        ]
+                    )
+            except:
+                pass
+
+    if not table:
+        typer.echo("No tasks found")
+        return
 
     print(
         tabulate(
@@ -616,6 +681,7 @@ def list_tasks(
                 "ID",
                 "Description",
                 "Status",
+                "Tracker",
             ],
         )
     )
@@ -851,6 +917,7 @@ def delete_device(
 
     _provider = load_provider(desktop.provider)
     if not desktop.reserved_ip:
+        typer.echo("refreshing provider...")
         _provider.refresh(log=False)
         desktop = DesktopVM.get(name)
         if not desktop:
@@ -858,8 +925,9 @@ def delete_device(
             return
 
     if desktop:
+        typer.echo(f"Deleting '{name}' desktop...")
         _provider.delete(name)
-        typer.echo("Desktop deleted")
+        typer.echo(f"Desktop '{name}' deleted")
     else:
         print(f"Desktop '{name}' not found")
     return
