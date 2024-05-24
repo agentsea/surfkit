@@ -11,6 +11,7 @@ import requests
 from agentdesk.util import find_open_port
 from mllm import Router
 from pydantic import BaseModel
+from taskara import Task
 
 from surfkit import config
 from surfkit.server.models import V1AgentType, V1SolveTask
@@ -201,7 +202,9 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                     # If required, follow the logs
                     if attach:
                         signal.signal(signal.SIGINT, self._signal_handler(name))
-                    self._follow_logs(name)
+
+                    _task = Task.from_v1(task.task)
+                    self._follow_logs(name, _task)
 
             else:
                 logger.error(
@@ -221,12 +224,12 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             self.delete(agent_name)
             instances = AgentInstance.find(name=agent_name)
             if instances:
-                instances[0].delete()
+                instances[0].delete(force=True)
             sys.exit(1)
 
         return handle_signal
 
-    def _follow_logs(self, agent_name: str):
+    def _follow_logs(self, agent_name: str, task: Task):
         log_path = os.path.join(config.AGENTSEA_LOG_DIR, f"{agent_name.lower()}.log")
         if not os.path.exists(log_path):
             logger.error("No log file found.")
@@ -241,7 +244,10 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                     if not line:
                         time.sleep(0.5)  # Wait briefly for new log entries
                         continue
-                    print(line.strip())
+                    clean_line = line.strip()
+                    print(clean_line)
+                    if clean_line.startswith("► task run ended"):
+                        return
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully if we are attached to the logs
                 print(f"Interrupt received, stopping logs for '{agent_name}'")
@@ -260,7 +266,6 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         background: bool = True,
         owner_id: Optional[str] = None,
     ) -> Optional[int]:
-        logger.info("no proxy needed")
         return
 
     def get(

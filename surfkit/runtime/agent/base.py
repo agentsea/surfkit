@@ -98,14 +98,31 @@ class AgentInstance(WithDB):
         local_port: Optional[int] = None,
         background: bool = True,
     ) -> Optional[int]:
+        """Proxy the agent instance locally.
+
+        Args:
+            local_port (Optional[int], optional): Local port to use. Defaults to None.
+            background (bool, optional): Whether to run in the background. Defaults to True.
+
+        Returns:
+            Optional[int]: Optional pid of the proxy
+        """
         return self._runtime.proxy(self._name, local_port, self.port, background)
 
     def solve_task(self, task: V1SolveTask, follow_logs: bool = False) -> None:
+        """Solve a task with the agent instance.
+
+        Args:
+            task (V1SolveTask): The task
+            follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
+        """
         return self._runtime.solve_task(self._name, task, follow_logs)
 
     def delete(self, force: bool = False) -> None:
-        """
-        Deletes the agent instance from the runtime and the database.
+        """Deletes the agent instance from the runtime and the database.
+
+        Args:
+            force (bool, optional): Whether to force delete. Defaults to False.
         """
         # First, delete the agent instance from the runtime.
         try:
@@ -133,6 +150,7 @@ class AgentInstance(WithDB):
         return self._runtime.logs(self._name, follow)
 
     def save(self) -> None:
+        """Save the agent instance"""
         for db in self.get_db():
             record = self.to_record()
             db.merge(record)
@@ -140,6 +158,11 @@ class AgentInstance(WithDB):
 
     @classmethod
     def find(cls, **kwargs) -> List["AgentInstance"]:
+        """Find agent instances by name and type.
+
+        Returns:
+            List[AgentInstance]: A list of agent instances.
+        """
         for db in cls.get_db():
             records = (
                 db.query(AgentInstanceRecord)

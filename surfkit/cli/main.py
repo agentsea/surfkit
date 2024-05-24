@@ -1,15 +1,12 @@
+import logging
 import webbrowser
-from urllib.parse import urljoin
-from typing import Optional
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkgversion
 from typing import Optional
 from urllib.parse import urljoin
-import logging
 
 import requests
 import rich
-from taskara import V1Task
 import typer
 import yaml
 from namesgenerator import get_random_name
@@ -34,7 +31,7 @@ list_group = typer.Typer(help="List resources")
 get_group = typer.Typer(help="Get resources")
 view_group = typer.Typer(help="View resources")
 delete_group = typer.Typer(help="Delete resources")
-logs_group = typer.Typer(help="Logs resources")
+logs_group = typer.Typer(help="Resource logs")
 clean_group = typer.Typer(help="Clean resources")
 
 app.add_typer(create_group, name="create")
@@ -213,12 +210,12 @@ def create_tracker(
 ):
 
     if runtime == "docker":
-        from taskara.runtime.docker import DockerTrackerRuntime, DockerConnectConfig
+        from taskara.runtime.docker import DockerConnectConfig, DockerTrackerRuntime
 
         runt = DockerTrackerRuntime(DockerConnectConfig(image=image))
 
     elif runtime == "kube":
-        from taskara.runtime.kube import KubeTrackerRuntime, KubeConnectConfig
+        from taskara.runtime.kube import KubeConnectConfig, KubeTrackerRuntime
 
         runt = KubeTrackerRuntime(KubeConnectConfig(image=image))
 
@@ -292,8 +289,9 @@ def create_agent(
 
     if type:
 
-        from surfkit.config import HUB_API_URL, GlobalConfig
         from typing import List
+
+        from surfkit.config import HUB_API_URL, GlobalConfig
 
         all_types: List[AgentType] = []
 
@@ -567,8 +565,8 @@ def list_trackers():
 def list_types():
     from typing import List
 
-    from surfkit.types import AgentType
     from surfkit.config import HUB_API_URL, GlobalConfig
+    from surfkit.types import AgentType
 
     all_types: List[AgentType] = []
 
@@ -1128,7 +1126,7 @@ def new(
     )
 
 
-@app.command(help="Build the agent container")
+@app.command(help="Build an agent container")
 def build(
     version: str = typer.Option("latest", "--version", "-v", help="Version to build"),
     agent_file: str = typer.Option(
@@ -1204,14 +1202,13 @@ def solve(
         help="Whether to enable auth for the agent.",
     ),
 ):
-    from taskara import Task
-    from taskara.runtime.base import Tracker
     from agentdesk import Desktop
     from taskara import Task
+    from taskara.runtime.base import Tracker
 
     from surfkit.server.models import V1SolveTask
-    from surfkit.util import find_open_port
     from surfkit.types import AgentType
+    from surfkit.util import find_open_port
 
     if tracker:
         trackers = Tracker.find(name=tracker)
@@ -1380,8 +1377,9 @@ def solve(
         typer.echo(f"found device '{device}'...")
 
     if agent_type:
-        from surfkit.config import HUB_API_URL, GlobalConfig
         from typing import List
+
+        from surfkit.config import HUB_API_URL, GlobalConfig
 
         all_types: List[AgentType] = []
 
@@ -1467,6 +1465,7 @@ def solve(
         assigned_to=agent,
         assigned_type=agent_type,
         remote=_remote_task_svr,
+        owner_id="local",
     )
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
@@ -1475,7 +1474,13 @@ def solve(
 
     if kill and not follow:
         typer.echo(f"Killing agent {agent}...")
-        runt.delete(agent)
+        try:
+            runt.delete(agent)
+            instances = AgentInstance.find(name=agent)
+            if instances:
+                instances[0].delete(force=True)
+        except:
+            pass
 
 
 @logs_group.command("agent")

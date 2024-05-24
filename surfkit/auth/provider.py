@@ -1,13 +1,12 @@
-from abc import ABC, abstractmethod
 import logging
 import os
-import logging
-import requests
+from abc import ABC, abstractmethod
 from typing import Optional
 
+import requests
 from threadmem.server.models import V1UserProfile
-from .key import KeyProvider, default_key_provider, MockProvider
 
+from .key import KeyProvider, MockProvider, default_key_provider
 
 logger = logging.getLogger(__name__)
 

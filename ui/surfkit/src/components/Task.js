@@ -22,7 +22,7 @@ export default function Task({ data, addr }) {
 
   const handleCancelTask = () => {
     console.log("cancelling task...");
-    updateTask(addr, data.id, { status: "cancelling" });
+    updateTask(addr, data.id, { status: "canceling" });
   };
 
   const handleFailTask = () => {

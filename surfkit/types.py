@@ -14,9 +14,18 @@ from surfkit.config import GlobalConfig
 from .db.conn import WithDB
 from .db.models import AgentTypeRecord
 from .env import HUB_API_KEY_ENV, HUB_SERVER_API_ENV
-from .server.models import (V1AgentType, V1AgentTypes, V1DeviceConfig,
-                            V1EnvVarOpt, V1Find, V1LLMProviders, V1Meter,
-                            V1ResourceLimits, V1ResourceRequests, V1Runtime)
+from .server.models import (
+    V1AgentType,
+    V1AgentTypes,
+    V1DeviceConfig,
+    V1EnvVarOpt,
+    V1Find,
+    V1LLMProviders,
+    V1Meter,
+    V1ResourceLimits,
+    V1ResourceRequests,
+    V1Runtime,
+)
 
 logger = logging.getLogger(__name__)
 

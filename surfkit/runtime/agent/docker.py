@@ -182,6 +182,8 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         try:
             for line in self.logs(agent_name, follow=True):
                 print(line)
+                if line.startswith("► task run ended"):
+                    return
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs for '{agent_name}'")
@@ -193,6 +195,9 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         def handle_signal(signum, frame):
             print(f"Signal {signum} received, stopping container '{agent_name}'")
             self.delete(agent_name)
+            instances = AgentInstance.find(name=agent_name)
+            if instances:
+                instances[0].delete(force=True)
             sys.exit(1)
 
         return handle_signal
