@@ -1,9 +1,11 @@
 import json
+import os
 import time
 import uuid
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, Iterator, List, Optional, Type, TypeVar, Union
 
+from mllm import Router
 from pydantic import BaseModel
 
 from surfkit.db.conn import WithDB
@@ -117,6 +119,31 @@ class AgentInstance(WithDB):
             follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
         """
         return self._runtime.solve_task(self._name, task, follow_logs)
+
+    @classmethod
+    def active_runtimes(cls) -> List["AgentRuntime"]:
+        """Find all unique runtime objects currently used by agent instances.
+
+        Returns:
+            List[AgentRuntime]: A list of unique runtime objects.
+        """
+        unique_runtimes = set()
+        for db in cls.get_db():
+            records = db.query(AgentInstanceRecord.runtime_name).distinct().all()
+            unique_runtimes.update(record.runtime_name for record in records)
+
+        # Import the function to convert runtime names to runtime objects
+        from surfkit.runtime.agent.load import runtime_from_name
+
+        runtime_objects = []
+        for runtime_name in unique_runtimes:
+            try:
+                runtime_class = runtime_from_name(runtime_name)
+                runtime_objects.append(runtime_class)
+            except ValueError:
+                continue
+
+        return runtime_objects
 
     def delete(self, force: bool = False) -> None:
         """Deletes the agent instance from the runtime and the database.
@@ -424,3 +451,36 @@ class AgentRuntime(Generic[R, C], ABC):
             str: The logs from the pod.
         """
         pass
+
+    @abstractmethod
+    def refresh(self, owner_id: Optional[str] = None) -> None:
+        """
+        Synchronizes the state between running processes and the database.
+        Ensures that the processes and the database reflect the same set of running agent instances.
+
+        Parameters:
+            owner_id (Optional[str]): The ID of the owner to filter instances.
+        """
+        pass
+
+    def check_llm_providers(self, agent_type: AgentType, environment: dict) -> None:
+        if agent_type.llm_providers:
+            found = 0
+            num_opts = len(agent_type.llm_providers.preference)
+            key_opts = []
+            if not num_opts:
+                return
+            for provider in agent_type.llm_providers.preference:
+                key = Router.provider_api_keys.get(provider)
+                if not key:
+                    continue
+                key_opts.append(key)
+                if environment.get(key):
+                    found += 1
+            if not found:
+                raise ValueError(
+                    (
+                        "No API keys found for any of the LLM providers required for this agent type."
+                        f" Options are {','.join(key_opts)}"
+                    )
+                )

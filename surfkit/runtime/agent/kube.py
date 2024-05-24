@@ -755,13 +755,13 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         img = agent_type.versions.get(version)
         if not img:
             raise ValueError("img not found")
+        if not env_vars:
+            env_vars = {}
         if llm_providers_local:
             if not agent_type.llm_providers:
                 raise ValueError(
                     "no llm providers in agent type, yet llm_providers_local is True"
                 )
-            if not env_vars:
-                env_vars = {}
             found = {}
             for provider_name in agent_type.llm_providers.preference:
                 api_key_env = Router.provider_api_keys.get(provider_name)
@@ -780,6 +780,8 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     "no api keys found locally for any of the providers in the agent type"
                 )
             env_vars.update(found)
+
+        self.check_llm_providers(agent_type, env_vars)
 
         self.create(
             image=img,
@@ -867,3 +869,64 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             sys.exit(1)
 
         return handle_signal
+
+    def refresh(self, owner_id: Optional[str] = None) -> None:
+        """
+        Synchronizes the state between running Kubernetes pods and the database.
+        Ensures that the pods and the database reflect the same set of running agent instances.
+
+        Parameters:
+            owner_id (Optional[str]): The ID of the owner to filter instances.
+        """
+        # Fetch the running pods from Kubernetes
+        label_selector = "provisioner=surfkit"
+        running_pods = self.core_api.list_namespaced_pod(
+            namespace=self.namespace, label_selector=label_selector
+        ).items
+
+        # Fetch the agent instances from the database
+        db_instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
+
+        # Create a mapping of pod names to pods
+        running_pods_map = {pod.metadata.name: pod for pod in running_pods}  # type: ignore
+
+        # Create a mapping of instance names to instances
+        db_instances_map = {instance.name: instance for instance in db_instances}
+
+        # Check for pods that are running but not in the database
+        for pod_name, pod in running_pods_map.items():
+            if pod_name not in db_instances_map:
+                print(
+                    f"Pod '{pod_name}' is running but not in the database. Creating new instance."
+                )
+                agent_type_model = pod.metadata.annotations.get("agent_model")
+                if not agent_type_model:
+                    print(
+                        f"Skipping pod '{pod_name}' as it lacks 'agent_model' annotation."
+                    )
+                    continue
+
+                agent_type = AgentType.from_v1(
+                    V1AgentType.model_validate_json(agent_type_model)
+                )
+                new_instance = AgentInstance(
+                    name=pod_name,
+                    type=agent_type,
+                    runtime=self,
+                    status="running",
+                    port=9090,
+                    owner_id=owner_id,
+                )
+                new_instance.save()
+
+        # Check for instances in the database that are not running as pods
+        for instance_name, instance in db_instances_map.items():
+            if instance_name not in running_pods_map:
+                print(
+                    f"Instance '{instance_name}' is in the database but not running. Removing from database."
+                )
+                instance.delete()
+
+        print(
+            "Refresh complete. State synchronized between Kubernetes and the database."
+        )

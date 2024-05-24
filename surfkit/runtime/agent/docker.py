@@ -114,13 +114,15 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                 )
             env_vars.update(found)
 
+        self.check_llm_providers(agent_type, env_vars)
+
         if not agent_type.versions:
             raise ValueError("No versions specified in agent type")
 
         if not version:
             version = list(agent_type.versions.keys())[0]
 
-        env_vars["SURF_PORT"] = str(port)
+        env_vars["SERVER_PORT"] = str(port)
         if not auth_enabled:
             env_vars["AGENT_NO_AUTH"] = "true"
 
@@ -235,13 +237,13 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                 agent_type = AgentType.from_v1(agentv1)
                 agent_name = container.name
 
-                # Extract the SURF_PORT environment variable
+                # Extract the SERVER_PORT environment variable
                 env_vars = container.attrs.get("Config", {}).get("Env", [])
                 port = next(
                     (
                         int(var.split("=")[1])
                         for var in env_vars
-                        if var.startswith("SURF_PORT=")
+                        if var.startswith("SERVER_PORT=")
                     ),
                     9090,
                 )
@@ -273,13 +275,13 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                 agentv1 = V1AgentType.model_validate_json(agent_type_model)
                 agent_type = AgentType.from_v1(agentv1)
 
-                # Extract the SURF_PORT environment variable
+                # Extract the SERVER_PORT environment variable
                 env_vars = container.attrs.get("Config", {}).get("Env", [])
                 port = next(
                     (
                         int(var.split("=")[1])
                         for var in env_vars
-                        if var.startswith("SURF_PORT=")
+                        if var.startswith("SERVER_PORT=")
                     ),
                     9090,
                 )
@@ -370,3 +372,68 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         except Exception as e:
             print(f"Failed to fetch logs for container '{name}': {e}")
             raise
+
+    def refresh(self, owner_id: Optional[str] = None) -> None:
+        """
+        Synchronizes the state between running Docker containers and the database.
+        Ensures that the containers and the database reflect the same set of running agent instances.
+
+        Parameters:
+            owner_id (Optional[str]): The ID of the owner to filter instances.
+        """
+        # Fetch the running containers from Docker
+        label_filter = {"label": "provisioner=surfkit"}
+        running_containers = self.client.containers.list(filters=label_filter)
+
+        # Fetch the agent instances from the database
+        db_instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
+
+        # Create a mapping of container names to containers
+        running_containers_map = {container.name: container for container in running_containers}  # type: ignore
+
+        # Create a mapping of instance names to instances
+        db_instances_map = {instance.name: instance for instance in db_instances}
+
+        # Check for containers that are running but not in the database
+        for container_name, container in running_containers_map.items():
+            if container_name not in db_instances_map:
+                print(
+                    f"Container '{container_name}' is running but not in the database. Creating new instance."
+                )
+                agent_type_model = container.labels.get("agent_type_model")
+                if not agent_type_model:
+                    print(
+                        f"Skipping container '{container_name}' as it lacks 'agent_type_model' label."
+                    )
+                    continue
+
+                agentv1 = V1AgentType.model_validate_json(agent_type_model)
+                agent_type = AgentType.from_v1(agentv1)
+                env_vars = container.attrs.get("Config", {}).get("Env", [])
+                port = next(
+                    (
+                        int(var.split("=")[1])
+                        for var in env_vars
+                        if var.startswith("SERVER_PORT=")
+                    ),
+                    9090,
+                )
+                new_instance = AgentInstance(
+                    name=container_name,
+                    type=agent_type,
+                    runtime=self,
+                    status="running",
+                    port=port,
+                    owner_id=owner_id,
+                )
+                new_instance.save()
+
+        # Check for instances in the database that are not running as containers
+        for instance_name, instance in db_instances_map.items():
+            if instance_name not in running_containers_map:
+                print(
+                    f"Instance '{instance_name}' is in the database but not running. Removing from database."
+                )
+                instance.delete()
+
+        print("Refresh complete. State synchronized between Docker and the database.")

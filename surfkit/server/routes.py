@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 from typing import Annotated, Type
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
