@@ -244,11 +244,10 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                     if not line:
                         time.sleep(0.5)  # Wait briefly for new log entries
                         continue
-                    print(line.strip())
-                    task.refresh()
-                    if task.status in ["completed", "failed", "error"]:
-                        print(f"Task {task.id} finished with status {task.status}")
-                        break
+                    clean_line = line.strip()
+                    print(clean_line)
+                    if clean_line.startswith("► task run ended"):
+                        return
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully if we are attached to the logs
                 print(f"Interrupt received, stopping logs for '{agent_name}'")

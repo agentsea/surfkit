@@ -840,8 +840,12 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
 
         try:
             log_lines = self.logs(name=agent_name, follow=True)
+
             for line in log_lines:
-                print(line.decode("utf-8"))  # type: ignore
+                clean_line = line.decode("utf-8").strip())  # type: ignore
+                print(clean_line)
+                if clean_line.startswith("► task run ended"):
+                    return
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs and deleting pod '{agent_name}'")

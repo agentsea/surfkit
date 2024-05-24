@@ -182,6 +182,8 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         try:
             for line in self.logs(agent_name, follow=True):
                 print(line)
+                if line.startswith("► task run ended"):
+                    return
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs for '{agent_name}'")
