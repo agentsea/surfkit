@@ -101,6 +101,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             final_task = agent.solve_task(
                 task=task, device=device, max_steps=task.max_steps
             )
+            print("final task: ", final_task)
 
         except Exception as e:
             logger.error(f"error running agent: {e}")
@@ -113,7 +114,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             return
 
         finally:
-            print(f"task run ended '{task.id}'")
+            print(f"► task run ended '{task.id}'")
 
         if final_task:
             final_task.save()

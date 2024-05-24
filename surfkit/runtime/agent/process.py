@@ -266,7 +266,6 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         background: bool = True,
         owner_id: Optional[str] = None,
     ) -> Optional[int]:
-        logger.info("no proxy needed")
         return
 
     def get(

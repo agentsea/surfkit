@@ -31,7 +31,7 @@ list_group = typer.Typer(help="List resources")
 get_group = typer.Typer(help="Get resources")
 view_group = typer.Typer(help="View resources")
 delete_group = typer.Typer(help="Delete resources")
-logs_group = typer.Typer(help="Logs resources")
+logs_group = typer.Typer(help="Resource logs")
 clean_group = typer.Typer(help="Clean resources")
 
 app.add_typer(create_group, name="create")
@@ -1126,7 +1126,7 @@ def new(
     )
 
 
-@app.command(help="Build the agent container")
+@app.command(help="Build an agent container")
 def build(
     version: str = typer.Option("latest", "--version", "-v", help="Version to build"),
     agent_file: str = typer.Option(
