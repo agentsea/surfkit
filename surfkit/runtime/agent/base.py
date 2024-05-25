@@ -1,5 +1,4 @@
 import json
-import os
 import time
 import uuid
 from abc import ABC, abstractmethod
@@ -128,18 +127,31 @@ class AgentInstance(WithDB):
             List[AgentRuntime]: A list of unique runtime objects.
         """
         unique_runtimes = set()
+        runtime_objects = []
+
         for db in cls.get_db():
-            records = db.query(AgentInstanceRecord.runtime_name).distinct().all()
-            unique_runtimes.update(record.runtime_name for record in records)
+            records = (
+                db.query(
+                    AgentInstanceRecord.runtime_name, AgentInstanceRecord.runtime_config
+                )
+                .distinct()
+                .all()
+            )
+            unique_runtimes.update(
+                (record.runtime_name, record.runtime_config) for record in records
+            )
 
         # Import the function to convert runtime names to runtime objects
         from surfkit.runtime.agent.load import runtime_from_name
 
-        runtime_objects = []
-        for runtime_name in unique_runtimes:
+        for runtime_name, runtime_config in unique_runtimes:
             try:
-                runtime_class = runtime_from_name(runtime_name)
-                runtime_objects.append(runtime_class)
+                runtype = runtime_from_name(runtime_name)
+                runcfg = runtype.connect_config_type().model_validate_json(
+                    str(runtime_config)
+                )
+                runtime = runtype.connect(runcfg)
+                runtime_objects.append(runtime)
             except ValueError:
                 continue
 

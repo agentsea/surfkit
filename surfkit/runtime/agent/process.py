@@ -305,6 +305,15 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         owner_id: Optional[str] = None,
         source: bool = False,
     ) -> List[AgentInstance]:
+        """List agents that are currently running.
+
+        Args:
+            owner_id (Optional[str], optional): Owner ID to list for. Defaults to None.
+            source (bool, optional): Whether to list from the source. Defaults to False.
+
+        Returns:
+            List[AgentInstance]: A list of agent instances
+        """
         instances = []
         if source:
             metadata_dir = config.AGENTSEA_PROC_DIR
@@ -384,6 +393,11 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         self,
         owner_id: Optional[str] = None,
     ) -> None:
+        """Clean the runtime by terminating all running processes.
+
+        Args:
+            owner_id (Optional[str], optional): Scope to owner ID. Defaults to None.
+        """
         try:
             # Fetch the list of all processes that were started with the 'SURFER' environment variable
             process_list = subprocess.check_output(
@@ -520,6 +534,6 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 )
                 instance.delete()
 
-        print(
+        logger.debug(
             "Refresh complete. State synchronized between processes and the database."
         )

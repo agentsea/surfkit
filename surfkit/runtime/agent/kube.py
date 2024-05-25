@@ -1,6 +1,7 @@
 import atexit
 import base64
 import json
+import logging
 import os
 import signal
 import socket
@@ -23,7 +24,6 @@ from kubernetes.stream import portforward
 from mllm import Router
 from namesgenerator import get_random_name
 from pydantic import BaseModel
-from taskara.server.models import V1Task
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from surfkit.server.models import (
@@ -35,6 +35,8 @@ from surfkit.server.models import (
 from surfkit.types import AgentType
 
 from .base import AgentInstance, AgentRuntime
+
+logger = logging.getLogger(__name__)
 
 
 class GKEOpts(BaseModel):
@@ -96,7 +98,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         Returns:
             client.V1Secret: The created Kubernetes Secret object.
         """
-        print("creating secret with envs: ", env_vars)
+        logger.debug("creating secret with envs: ", env_vars)
         secret = client.V1Secret(
             api_version="v1",
             kind="Secret",
@@ -162,7 +164,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         if resource_requests.gpu:
             raise ValueError("GPU resource requests are not supported")
 
-        print("\nusing resources: ", resources.__dict__)
+        logger.debug("using resources: ", resources.__dict__)
 
         # Container configuration
         container = client.V1Container(
@@ -264,23 +266,23 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 "Missing project_id, cluster_name, or region in credentials or metadata"
             )
 
-        print("\nK8s getting cluster...")
+        logger.debug("K8s getting cluster...")
         cluster_request = container_v1.GetClusterRequest(
             name=f"projects/{project_id}/locations/{opts.region}/clusters/{opts.cluster_name}"
         )
         cluster = gke_service.get_cluster(request=cluster_request)
 
         # Configure Kubernetes client
-        print("\nK8s getting token...")
+        logger.debug("K8s getting token...")
         ca_cert = base64.b64decode(cluster.master_auth.cluster_ca_certificate)
         try:
-            print("\nK8s refreshing token...")
+            logger.debug("K8s refreshing token...")
             credentials.refresh(Request())
         except Exception as e:
-            print("\nK8s token refresh failed: ", e)
+            logger.error("K8s token refresh failed: ", e)
             raise e
         access_token = credentials.token
-        print("\nK8s got token: ", access_token)
+        logger.debug("K8s got token: ", access_token)
 
         cluster_name = opts.cluster_name
 
@@ -320,7 +322,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
 
         config.load_kube_config_from_dict(config_dict=kubeconfig)
         v1_client = client.CoreV1Api()
-        print("\nK8s returning client...")
+        logger.debug("K8s returning client...")
 
         return v1_client, project_id, cluster_name
 
@@ -506,22 +508,22 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     for k, v in headers.items():
                         request.add_header(k, v)
                 request.data = json.dumps(data).encode("utf-8")
-            print(f"Request Data: {request.data}")
+            logger.debug(f"Request Data: {request.data}")
 
         # Send the request and handle the response
         try:
             response = urllib.request.urlopen(request)
             status_code = response.code
             response_text = response.read().decode("utf-8")
-            print(f"Status Code: {status_code}")
+            logger.debug(f"Status Code: {status_code}")
 
             # Parse the JSON response and return a dictionary
             return status_code, response_text
         except urllib.error.HTTPError as e:
             status_code = e.code
             error_message = e.read().decode("utf-8")
-            print(f"Error: {status_code}")
-            print(error_message)
+            logger.error(f"Error: {status_code}")
+            logger.error(error_message)
 
             raise SystemError(
                 f"Error making http request kubernetes pod {status_code}: {error_message}"
@@ -747,7 +749,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         labels: Optional[Dict[str, str]] = None,
         auth_enabled: bool = True,
     ) -> AgentInstance:
-        print("creating agent with type: ", agent_type.__dict__)
+        logger.debug("creating agent with type: ", agent_type.__dict__)
         if not agent_type.versions:
             raise ValueError("No versions specified in agent type")
         if not version:
@@ -822,17 +824,17 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 port=9090,
                 data=task.model_dump(),
             )
-            print(f"Task posted with response: {status_code}, {response_text}")
+            logger.debug(f"Task posted with response: {status_code}, {response_text}")
 
             if follow_logs:
                 print(f"Following logs for '{name}':")
                 self._handle_logs_with_attach(name, attach)
 
         except ApiException as e:
-            print(f"API exception occurred: {e}")
+            logger.error(f"API exception occurred: {e}")
             raise
         except Exception as e:
-            print(f"An error occurred while posting the task: {e}")
+            logger.error(f"An error occurred while posting the task: {e}")
             raise
 
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
@@ -927,6 +929,6 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 )
                 instance.delete()
 
-        print(
+        logger.debug(
             "Refresh complete. State synchronized between Kubernetes and the database."
         )

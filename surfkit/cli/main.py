@@ -339,7 +339,6 @@ def create_agent(
         name = instance_name(agent_type)
 
     env_vars = find_llm_keys(agent_type, llm_providers_local)
-
     if type:
         typer.echo(
             f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
@@ -349,13 +348,18 @@ def create_agent(
             f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
         )
 
-    runt.run(
-        agent_type,
-        name,
-        auth_enabled=auth_enabled,
-        llm_providers_local=llm_providers_local,
-        env_vars=env_vars,
-    )
+    try:
+        runt.run(
+            agent_type,
+            name,
+            auth_enabled=auth_enabled,
+            llm_providers_local=llm_providers_local,
+            env_vars=env_vars,
+        )
+    except Exception as e:
+        typer.echo(f"Failed to run agent: {e}")
+        typer.echo(runt.logs(name))
+        return
     typer.echo(f"Successfully created agent '{name}'")
 
 
@@ -1442,14 +1446,19 @@ def solve(
         env_vars = find_llm_keys(typ, llm_providers_local)
 
         typer.echo(f"creating agent {agent}...")
-        instance = runt.run(
-            agent_type=typ,
-            name=agent,
-            version=agent_version,
-            auth_enabled=auth_enabled,
-            llm_providers_local=llm_providers_local,
-            env_vars=env_vars,
-        )
+        try:
+            instance = runt.run(
+                agent_type=typ,
+                name=agent,
+                version=agent_version,
+                auth_enabled=auth_enabled,
+                llm_providers_local=llm_providers_local,
+                env_vars=env_vars,
+            )
+        except Exception as e:
+            typer.echo(f"Failed to run agent: {e}")
+            typer.echo(runt.logs(agent))
+            return
         agent = instance.name
 
     if agent_file:
@@ -1471,27 +1480,21 @@ def solve(
         env_vars = find_llm_keys(typ, llm_providers_local)
 
         typer.echo(f"creating agent {agent} from file {agent_file}...")
-        instance = runt.run(
-            agent_type=typ, name=agent, version=agent_version, auth_enabled=auth_enabled
-        )
+        try:
+            instance = runt.run(
+                agent_type=typ,
+                name=agent,
+                version=agent_version,
+                auth_enabled=auth_enabled,
+            )
+        except Exception as e:
+            typer.echo(f"Failed to run agent: {e}")
+            typer.echo(runt.logs(agent))
+            return
         agent = instance.name
 
     if not agent:
         raise ValueError("Either agent or agent_type needs to be provided")
-
-    if _device and view:
-        typer.echo("viewing device...")
-        from surfkit.cli.view import view as _view
-
-        instances = AgentInstance.find(name=agent)
-        if not instances:
-            raise ValueError(f"agent '{agent}' not found")
-        instance = instances[0]
-
-        if not vm:
-            raise ValueError("vm not found for ui")
-
-        _view(desk=vm, agent=instance, tracker_addr=_remote_task_svr, background=True)
 
     params = {}
     if starting_url:
@@ -1507,6 +1510,26 @@ def solve(
         remote=_remote_task_svr,
         owner_id="local",
     )
+
+    if _device and view:
+        typer.echo("viewing device...")
+        from surfkit.cli.view import view as _view
+
+        instances = AgentInstance.find(name=agent)
+        if not instances:
+            raise ValueError(f"agent '{agent}' not found")
+        instance = instances[0]
+
+        if not vm:
+            raise ValueError("vm not found for ui")
+
+        _view(
+            desk=vm,
+            agent=instance,
+            tracker_addr=_remote_task_svr,
+            background=True,
+            task_id=task.id,
+        )
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
     solve_v1 = V1SolveTask(task=task.to_v1())

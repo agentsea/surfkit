@@ -1,6 +1,8 @@
+import logging
 import os
 import signal
 import sys
+import time
 from typing import Dict, Iterator, List, Optional, Type, Union
 
 import docker
@@ -14,6 +16,8 @@ from surfkit.server.models import V1AgentType, V1SolveTask
 from surfkit.types import AgentType
 
 from .base import AgentInstance, AgentRuntime
+
+logger = logging.getLogger(__name__)
 
 
 class DockerConnectConfig(BaseModel):
@@ -76,6 +80,23 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         labels: Optional[Dict[str, str]] = None,
         auth_enabled: bool = True,
     ) -> AgentInstance:
+        """
+        Run a Docker container for the specified agent type.
+
+        Args:
+            agent_type (AgentType): The type of agent to run.
+            name (str): The name of the agent.
+            version (Optional[str], optional): The version of the agent. Defaults to None.
+            env_vars (Optional[dict], optional): Environment variables for the container. Defaults to None.
+            llm_providers_local (bool, optional): Whether to use local LLM providers. Defaults to False.
+            owner_id (Optional[str], optional): The ID of the owner. Defaults to None.
+            tags (Optional[List[str]], optional): Tags for the container. Defaults to None.
+            labels (Optional[Dict[str, str]], optional): Labels for the container. Defaults to None.
+            auth_enabled (bool, optional): Whether authentication is enabled. Defaults to True.
+
+        Returns:
+            AgentInstance: An instance of the running agent.
+        """
         labels = {
             "provisioner": "surfkit",
             "agent_type": agent_type.name,
@@ -142,6 +163,30 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         if container and type(container) != bytes:
             print(f"ran container '{container.id}'")  # type: ignore
 
+        # Wait for the container to be in the "running" state
+        for _ in range(10):
+            container.reload()  # type: ignore
+            if container.status == "running":  # type: ignore
+                break
+            time.sleep(1)
+        else:
+            raise RuntimeError(f"Container '{name}' did not start in time")
+
+        # Check /health endpoint
+        health_url = f"http://localhost:{port}/health"
+        for _ in range(10):
+            try:
+                response = requests.get(health_url)
+                if response.status_code == 200:
+                    print(f"Health check passed for '{name}'")
+                    break
+            except requests.RequestException as e:
+                print(f"Health check failed: {e}")
+            time.sleep(1)
+        else:
+            container.remove(force=True)  # type: ignore
+            raise RuntimeError(f"Container '{name}' did not pass health check")
+
         return AgentInstance(
             name=name,
             type=agent_type,
@@ -160,6 +205,22 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         attach: bool = False,
         owner_id: Optional[str] = None,
     ) -> None:
+        """
+        Solve a task by posting it to the specified container instance.
+
+        Args:
+            name (str): The name of the container instance.
+            task (V1SolveTask): The task to be solved.
+            follow_logs (bool, optional): Whether to follow the logs of the container instance. Defaults to False.
+            attach (bool, optional): Whether to attach to the container instance. Defaults to False.
+            owner_id (str, optional): The ID of the owner. Defaults to None.
+
+        Raises:
+            ValueError: If no instances are found for the specified name.
+
+        Returns:
+            None
+        """
         instances = AgentInstance.find(name=name, owner_id=owner_id)
         if not instances:
             raise ValueError(f"No instances found for name '{name}'")
@@ -222,7 +283,18 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
     def list(
         self, owner_id: Optional[str] = None, source: bool = False
     ) -> List[AgentInstance]:
+        """
+        Retrieve a list of AgentInstances.
 
+        Args:
+            owner_id (Optional[str]): The owner ID to filter the instances by. Defaults to None.
+            source (bool): Flag indicating whether to retrieve instances from the source directly or use the find method.
+                Defaults to False.
+
+        Returns:
+            List[AgentInstance]: A list of AgentInstance objects.
+
+        """
         instances = []
         if source:
             label_filter = {"label": "provisioner=surfkit"}
@@ -265,6 +337,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
     def get(
         self, name: str, owner_id: Optional[str] = None, source: bool = False
     ) -> AgentInstance:
+
         if source:
             try:
                 container = self.client.containers.get(name)
@@ -306,6 +379,20 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             return instances[0]
 
     def delete(self, name: str, owner_id: Optional[str] = None) -> None:
+        """
+        Deletes a Docker container by name.
+
+        Args:
+            name (str): The name of the container to delete.
+            owner_id (Optional[str]): The ID of the container's owner (default: None).
+
+        Raises:
+            NotFound: If the container does not exist.
+            Exception: If an error occurs while deleting the container.
+
+        Returns:
+            None
+        """
         try:
             # Attempt to get the container by name
             container = self.client.containers.get(name)
@@ -436,4 +523,6 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                 )
                 instance.delete()
 
-        print("Refresh complete. State synchronized between Docker and the database.")
+        logger.debug(
+            "Refresh complete. State synchronized between Docker and the database."
+        )

@@ -19,6 +19,27 @@ export async function getTasks(addr) {
   }
 }
 
+export async function getTask(addr, id) {
+  const url = new URL(`/v1/tasks/${id}`, addr);
+  try {
+    const resp = await fetch(url, {
+      method: "GET",
+      cache: "no-cache",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      redirect: "follow",
+    });
+    if (!resp.ok) {
+      throw new Error("HTTP status " + resp.status);
+    }
+    const data = await resp.json();
+    return data;
+  } catch (error) {
+    console.error("Failed to list tasks", error);
+  }
+}
+
 export async function updateTask(addr, id, bodyData) {
   console.log("updating task with id: ", id);
   console.log("bodyData: ", bodyData);

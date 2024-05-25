@@ -150,11 +150,12 @@ def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
 
         from mllm import Router
 
-        typer.echo("\nThis agent requires one of the following API keys")
+        typer.echo("\nThis agent requires one of the following API keys:")
         for provider_name in typ.llm_providers.preference:
             api_key_env = Router.provider_api_keys.get(provider_name)
             if api_key_env:
-                typer.echo(f"   {api_key_env}")
+                typer.echo(f"   - {api_key_env}")
+        typer.echo("")
         found = {}
         for provider_name in typ.llm_providers.preference:
             api_key_env = Router.provider_api_keys.get(provider_name)
@@ -172,8 +173,18 @@ def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
                 found[api_key_env] = key
 
         if not found:
+            for provider_name in typ.llm_providers.preference:
+                add = typer.confirm(
+                    f"Would you like to enter an API key for '{provider_name}'"
+                )
+                if add:
+                    api_key_env = Router.provider_api_keys.get(provider_name)
+                    if not api_key_env:
+                        continue
+                    typer.prompt(api_key_env)
+        if not found:
             raise ValueError(
-                "No API keys found locally for any of the providers in the agent type"
+                "No API keys given for any of the llm providers in the agent type"
             )
 
         env_vars = found
