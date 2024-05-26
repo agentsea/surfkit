@@ -838,9 +838,6 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             raise
 
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
-        if attach:
-            # Setup the signal handler to catch interrupt signals
-            signal.signal(signal.SIGINT, self._signal_handler(agent_name))
 
         try:
             log_lines = self.logs(name=agent_name, follow=True)
@@ -853,24 +850,25 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs and deleting pod '{agent_name}'")
-            self.delete(agent_name)
+            import typer
+
+            if not attach:
+                stop = typer.confirm("Do you want to stop the agent?")
+            else:
+                stop = attach
+            try:
+                if stop:
+                    instances = AgentInstance.find(name=agent_name)
+                    if instances:
+                        instances[0].delete(force=True)
+            except:
+                pass
         except ApiException as e:
             print(f"Failed to follow logs for pod '{agent_name}': {e}")
             raise
         except Exception as e:
             print(f"An error occurred while fetching logs: {e}")
             raise
-
-    def _signal_handler(self, agent_name: str):
-        def handle_signal(signum, frame):
-            print(f"Signal {signum} received, stopping and deleting pod '{agent_name}'")
-            self.delete(agent_name)
-            instances = AgentInstance.find(name=agent_name)
-            if instances:
-                instances[0].delete(force=True)
-            sys.exit(1)
-
-        return handle_signal
 
     def refresh(self, owner_id: Optional[str] = None) -> None:
         """

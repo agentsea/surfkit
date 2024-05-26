@@ -238,10 +238,6 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             self._handle_logs_with_attach(name, attach)
 
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
-        if attach:
-            # Setup the signal handler to catch interrupt signals
-            signal.signal(signal.SIGINT, self._signal_handler(agent_name))
-
         try:
             for line in self.logs(agent_name, follow=True):
                 print(line)
@@ -250,20 +246,21 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs for '{agent_name}'")
-            self.delete(agent_name)
+            import typer
+
+            if not attach:
+                stop = typer.confirm("Do you want to stop the agent?")
+            else:
+                stop = attach
+            try:
+                if stop:
+                    instances = AgentInstance.find(name=agent_name)
+                    if instances:
+                        instances[0].delete(force=True)
+            except:
+                pass
         except Exception as e:
             print(f"Error while streaming logs: {e}")
-
-    def _signal_handler(self, agent_name: str):
-        def handle_signal(signum, frame):
-            print(f"Signal {signum} received, stopping container '{agent_name}'")
-            self.delete(agent_name)
-            instances = AgentInstance.find(name=agent_name)
-            if instances:
-                instances[0].delete(force=True)
-            sys.exit(1)
-
-        return handle_signal
 
     def requires_proxy(self) -> bool:
         """Whether this runtime requires a proxy to be used"""
