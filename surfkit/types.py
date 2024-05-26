@@ -416,13 +416,12 @@ class AgentType(WithDB):
             auth_token = os.getenv(HUB_API_KEY_ENV)
             if not auth_token:
                 config = GlobalConfig.read()
-                if not config.api_key:
-                    raise ValueError(
-                        "No API key found. Please run `surfkit login` first."
-                    )
-                auth_token = config.api_key
+                if config.api_key:
+                    auth_token = config.api_key
         logger.debug(f"auth_token: {auth_token}")
-        headers["Authorization"] = f"Bearer {auth_token}"
+
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
         try:
             if method.upper() == "GET":
                 logger.debug("\ncalling remote task GET with url: ", url)
@@ -446,22 +445,22 @@ class AgentType(WithDB):
             try:
                 response.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                print("HTTP Error:", e)
-                print("Status Code:", response.status_code)
+                logger.debug("HTTP Error:", e)
+                logger.debug("Status Code:", response.status_code)
                 try:
-                    print("Response Body:", response.json())
+                    logger.debug("Response Body:", response.json())
                 except ValueError:
-                    print("Raw Response:", response.text)
+                    logger.debug("Raw Response:", response.text)
                 raise
-            logger.debug("\nresponse: ", response.__dict__)
-            logger.debug("\response.status_code: ", response.status_code)
+            logger.debug("response: ", response.__dict__)
+            logger.debug("response.status_code: ", response.status_code)
 
             try:
                 response_json = response.json()
-                logger.debug("\nresponse_json: ", response_json)
+                logger.debug("response_json: ", response_json)
                 return response_json
             except ValueError:
-                print("Raw Response:", response.text)
+                logger.debug("Raw Response:", response.text)
                 return None
 
         except requests.RequestException as e:

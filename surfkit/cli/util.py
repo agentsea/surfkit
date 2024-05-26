@@ -1,5 +1,10 @@
 import subprocess
 import sys
+from typing import Optional
+
+import typer
+
+from surfkit.types import AgentType
 
 
 def get_git_global_user_config():
@@ -136,3 +141,52 @@ def build_docker_image(
         )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+
+def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
+    env_vars = None
+    if typ.llm_providers and typ.llm_providers.preference and not llm_providers_local:
+        import os
+
+        from mllm import Router
+
+        typer.echo("\nThis agent requires one of the following API keys:")
+        for provider_name in typ.llm_providers.preference:
+            api_key_env = Router.provider_api_keys.get(provider_name)
+            if api_key_env:
+                typer.echo(f"   - {api_key_env}")
+        typer.echo("")
+        found = {}
+        for provider_name in typ.llm_providers.preference:
+            api_key_env = Router.provider_api_keys.get(provider_name)
+            if not api_key_env:
+                raise ValueError(f"no api key env for provider {provider_name}")
+
+            key = os.getenv(api_key_env)
+            if not key:
+                continue
+
+            add = typer.confirm(
+                f"Would you like to add your local API key for '{provider_name}'"
+            )
+            if add:
+                found[api_key_env] = key
+
+        if not found:
+            for provider_name in typ.llm_providers.preference:
+                add = typer.confirm(
+                    f"Would you like to enter an API key for '{provider_name}'"
+                )
+                if add:
+                    api_key_env = Router.provider_api_keys.get(provider_name)
+                    if not api_key_env:
+                        continue
+                    typer.prompt(api_key_env)
+        if not found:
+            raise ValueError(
+                "No API keys given for any of the llm providers in the agent type"
+            )
+
+        env_vars = found
+
+    return env_vars

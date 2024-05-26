@@ -23,6 +23,7 @@ def view(
     desk: DesktopVM,
     agent: AgentInstance,
     tracker_addr: str,
+    task_id: str,
     background: bool = False,
 ) -> None:
     """Opens the desktop in a browser window"""
@@ -81,6 +82,8 @@ def view(
     if not ui_container:
         print("creating UI container...")
         host_port = random.randint(1024, 65535)
+
+        client.images.pull(UI_IMG)
         ui_container = client.containers.run(  # type: ignore
             UI_IMG,
             ports={"3000/tcp": host_port},
@@ -92,9 +95,10 @@ def view(
     encoded_agent_addr = urllib.parse.quote(f"http://localhost:{agent_port}")
     encoded_task_addr = urllib.parse.quote(tracker_addr)
     encoded_vnc_addr = urllib.parse.quote(f"ws://localhost:{desk_port}")
+    encoded_task_id = urllib.parse.quote(task_id)
 
     # Construct the URL with the encoded parameters
-    url = f"http://localhost:{host_port}/?agentAddr={encoded_agent_addr}&vncAddr={encoded_vnc_addr}?taskAddr={encoded_task_addr}"
+    url = f"http://localhost:{host_port}/?agentAddr={encoded_agent_addr}&vncAddr={encoded_vnc_addr}?taskAddr={encoded_task_addr}?taskID={encoded_task_id}"
     webbrowser.open(url)
 
     if background:

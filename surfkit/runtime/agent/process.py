@@ -100,7 +100,9 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 )
             metadata["env_vars"].update(found)
 
-        command = f"SURF_PORT={port} nohup {agent_type.cmd} SURFER={name} SURF_PORT={port} > {os.path.join(config.AGENTSEA_LOG_DIR, name.lower())}.log 2>&1 &"
+        self.check_llm_providers(agent_type, metadata["env_vars"])
+
+        command = f"SERVER_PORT={port} nohup {agent_type.cmd} SURFER={name} SERVER_PORT={port} > {os.path.join(config.AGENTSEA_LOG_DIR, name.lower())}.log 2>&1 &"
         metadata["command"] = command
 
         # Create metadata directory if it does not exist
@@ -185,7 +187,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
 
             # Extract the port from the process command
             line = process_list.strip().split("\n")[0]
-            surf_port = line.split("SURF_PORT=")[1].split()[0]
+            surf_port = line.split("SERVER_PORT=")[1].split()[0]
 
             url = f"http://localhost:{surf_port}/v1/tasks"
 
@@ -199,12 +201,8 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             if response.status_code == 200:
                 logger.info("Task successfully posted to the agent.")
                 if follow_logs:
-                    # If required, follow the logs
-                    if attach:
-                        signal.signal(signal.SIGINT, self._signal_handler(name))
-
                     _task = Task.from_v1(task.task)
-                    self._follow_logs(name, _task)
+                    self._follow_logs(name, _task, attach)
 
             else:
                 logger.error(
@@ -229,7 +227,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
 
         return handle_signal
 
-    def _follow_logs(self, agent_name: str, task: Task):
+    def _follow_logs(self, agent_name: str, task: Task, attach: bool = False):
         log_path = os.path.join(config.AGENTSEA_LOG_DIR, f"{agent_name.lower()}.log")
         if not os.path.exists(log_path):
             logger.error("No log file found.")
@@ -251,7 +249,20 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully if we are attached to the logs
                 print(f"Interrupt received, stopping logs for '{agent_name}'")
-                self.delete(agent_name)
+                import typer
+
+                if not attach:
+                    stop = typer.confirm("Do you want to stop the agent?")
+                else:
+                    stop = attach
+
+                if stop:
+                    try:
+                        instances = AgentInstance.find(name=agent_name)
+                        if instances:
+                            instances[0].delete(force=True)
+                    except:
+                        pass
                 raise
 
     def requires_proxy(self) -> bool:
@@ -302,6 +313,15 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         owner_id: Optional[str] = None,
         source: bool = False,
     ) -> List[AgentInstance]:
+        """List agents that are currently running.
+
+        Args:
+            owner_id (Optional[str], optional): Owner ID to list for. Defaults to None.
+            source (bool, optional): Whether to list from the source. Defaults to False.
+
+        Returns:
+            List[AgentInstance]: A list of agent instances
+        """
         instances = []
         if source:
             metadata_dir = config.AGENTSEA_PROC_DIR
@@ -381,6 +401,11 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         self,
         owner_id: Optional[str] = None,
     ) -> None:
+        """Clean the runtime by terminating all running processes.
+
+        Args:
+            owner_id (Optional[str], optional): Scope to owner ID. Defaults to None.
+        """
         try:
             # Fetch the list of all processes that were started with the 'SURFER' environment variable
             process_list = subprocess.check_output(
@@ -414,6 +439,19 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         follow: bool = False,
         owner_id: Optional[str] = None,
     ) -> Union[str, Iterator[str]]:
+        """
+        Retrieve the logs for a specific agent.
+
+        Args:
+            name (str): The name of the agent.
+            follow (bool, optional): Whether to follow the logs in real-time. Defaults to False.
+            owner_id (str, optional): The ID of the owner. Defaults to None.
+
+        Returns:
+            Union[str, Iterator[str]]: If `follow` is True, returns an iterator that yields log lines in real-time.
+            If `follow` is False, returns all logs as a single string.
+            If no logs are available, returns the message "No logs available for this agent."
+        """
         log_path = os.path.join(config.AGENTSEA_LOG_DIR, f"{name.lower()}.log")
         if not os.path.exists(log_path):
             return "No logs available for this agent."
@@ -436,3 +474,74 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             # If not following, return all logs as a single string
             with open(log_path, "r") as log_file:
                 return log_file.read()
+
+    def refresh(self, owner_id: Optional[str] = None) -> None:
+        """
+        Synchronizes the state between running processes and the database.
+        Ensures that the processes and the database reflect the same set of running agent instances.
+
+        Parameters:
+            owner_id (Optional[str]): The ID of the owner to filter instances.
+        """
+        # Fetch the running processes
+        all_processes = subprocess.check_output(
+            "ps ax -o pid,command", shell=True, text=True
+        )
+
+        # Fetch the agent instances from the database
+        db_instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
+
+        # Create a mapping of process names to processes
+        running_processes_map = {}
+        for line in all_processes.strip().split("\n"):
+            if "SURFER=" in line:
+                parts = line.split()
+                pid = parts[0]
+                for part in parts:
+                    if part.startswith("SURFER="):
+                        process_name = part.split("=")[1]
+                        running_processes_map[process_name] = pid
+                        break
+
+        # Create a mapping of instance names to instances
+        db_instances_map = {instance.name: instance for instance in db_instances}
+
+        # Check for processes that are running but not in the database
+        for process_name, pid in running_processes_map.items():
+            if process_name not in db_instances_map:
+                print(
+                    f"Process '{process_name}' is running but not in the database. Creating new instance."
+                )
+                metadata_file = os.path.join(
+                    config.AGENTSEA_PROC_DIR, f"{process_name}.json"
+                )
+                if not os.path.exists(metadata_file):
+                    print(f"Skipping process '{process_name}' as it lacks metadata.")
+                    continue
+
+                with open(metadata_file, "r") as f:
+                    metadata = json.load(f)
+
+                agent_type = V1AgentType.model_validate(metadata["agent_type"])
+                agent_type_instance = AgentType.from_v1(agent_type)
+                new_instance = AgentInstance(
+                    name=process_name,
+                    type=agent_type_instance,
+                    runtime=self,
+                    status="running",
+                    port=metadata["port"],
+                    owner_id=owner_id,
+                )
+                new_instance.save()
+
+        # Check for instances in the database that are not running as processes
+        for instance_name, instance in db_instances_map.items():
+            if instance_name not in running_processes_map:
+                print(
+                    f"Instance '{instance_name}' is in the database but not running. Removing from database."
+                )
+                instance.delete(force=True)
+
+        logger.debug(
+            "Refresh complete. State synchronized between processes and the database."
+        )

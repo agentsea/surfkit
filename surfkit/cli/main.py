@@ -16,13 +16,6 @@ from surfkit.runtime.agent.base import AgentInstance
 
 logger = logging.getLogger(__name__)
 
-# art = """
-#  _______                ___  __  __  __  __
-# |     __|.--.--..----..'  _||  |/  ||__||  |_
-# |__     ||  |  ||   _||   _||     < |  ||   _|
-# |_______||_____||__|  |__|  |__|\__||__||____|
-# """
-
 app = typer.Typer()
 
 # Sub-command groups
@@ -252,10 +245,15 @@ def create_agent(
     auth_enabled: bool = typer.Option(
         False, "--auth-enabled", "-e", help="Whether to enable auth for the agent."
     ),
+    llm_providers_local: bool = typer.Option(
+        False, "--llm-local", "-l", help="Use local LLM provider keys."
+    ),
 ):
 
     from surfkit.server.models import V1AgentType
     from surfkit.types import AgentType
+
+    from .util import find_llm_keys
 
     if not runtime:
         if file:
@@ -340,6 +338,7 @@ def create_agent(
 
         name = instance_name(agent_type)
 
+    env_vars = find_llm_keys(agent_type, llm_providers_local)
     if type:
         typer.echo(
             f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
@@ -349,7 +348,18 @@ def create_agent(
             f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
         )
 
-    runt.run(agent_type, name, auth_enabled=auth_enabled)
+    try:
+        runt.run(
+            agent_type,
+            name,
+            auth_enabled=auth_enabled,
+            llm_providers_local=llm_providers_local,
+            env_vars=env_vars,
+        )
+    except Exception as e:
+        typer.echo(f"Failed to run agent: {e}")
+        typer.echo(runt.logs(name))
+        return
     typer.echo(f"Successfully created agent '{name}'")
 
 
@@ -366,6 +376,12 @@ def list_agents(
     ),
 ):
     agents_list = []
+    from surfkit.runtime.agent.base import AgentInstance
+
+    active_runtimes = AgentInstance.active_runtimes()
+
+    for runtm in active_runtimes:
+        runtm.refresh()
 
     if runtime:
         if runtime == "docker" or runtime == "all":
@@ -579,7 +595,7 @@ def list_types():
             types = AgentType.find(remote=HUB_API_URL)
             all_types.extend(types)
     except Exception as e:
-        logger.debug(f"Failed to load global config: {e}")
+        pass
 
     if not all_types:
         print("No types found")
@@ -722,6 +738,13 @@ def get_agent(
         None, "--runtime", "-r", help="Get agent directly from the runtime"
     ),
 ):
+
+    from surfkit.runtime.agent.base import AgentInstance
+
+    active_runtimes = AgentInstance.active_runtimes()
+    for runtm in active_runtimes:
+        runtm.refresh()
+
     if runtime:
         if runtime == "docker":
             from surfkit.runtime.agent.docker import (
@@ -1201,6 +1224,9 @@ def solve(
         "-e",
         help="Whether to enable auth for the agent.",
     ),
+    llm_providers_local: bool = typer.Option(
+        False, "--llm-local", "-l", help="Use local LLM provider keys."
+    ),
 ):
     from agentdesk import Desktop
     from taskara import Task
@@ -1303,6 +1329,10 @@ def solve(
 
     runt = None
     if agent:
+        active_runtimes = AgentInstance.active_runtimes()
+        for runtm in active_runtimes:
+            runtm.refresh()
+
         instances = AgentInstance.find(name=agent)
         if not instances:
             raise ValueError(f"Expected instances of '{agent}'")
@@ -1393,7 +1423,7 @@ def solve(
                 if types:
                     all_types.extend(types)
         except Exception as e:
-            logger.debug(f"Failed to load global config: {e}")
+            pass
 
         if not all_types:
             print("No types found")
@@ -1410,10 +1440,25 @@ def solve(
             agent = get_random_name("-")
             if not agent:
                 raise ValueError("could not generate agent name")
+
+        from .util import find_llm_keys
+
+        env_vars = find_llm_keys(typ, llm_providers_local)
+
         typer.echo(f"creating agent {agent}...")
-        instance = runt.run(
-            agent_type=typ, name=agent, version=agent_version, auth_enabled=auth_enabled
-        )
+        try:
+            instance = runt.run(
+                agent_type=typ,
+                name=agent,
+                version=agent_version,
+                auth_enabled=auth_enabled,
+                llm_providers_local=llm_providers_local,
+                env_vars=env_vars,
+            )
+        except Exception as e:
+            typer.echo(f"Failed to run agent: {e}")
+            typer.echo(runt.logs(agent))
+            return
         agent = instance.name
 
     if agent_file:
@@ -1430,28 +1475,26 @@ def solve(
         else:
             typ.save()
 
+        from .util import find_llm_keys
+
+        env_vars = find_llm_keys(typ, llm_providers_local)
+
         typer.echo(f"creating agent {agent} from file {agent_file}...")
-        instance = runt.run(
-            agent_type=typ, name=agent, version=agent_version, auth_enabled=auth_enabled
-        )
+        try:
+            instance = runt.run(
+                agent_type=typ,
+                name=agent,
+                version=agent_version,
+                auth_enabled=auth_enabled,
+            )
+        except Exception as e:
+            typer.echo(f"Failed to run agent: {e}")
+            typer.echo(runt.logs(agent))
+            return
         agent = instance.name
 
     if not agent:
         raise ValueError("Either agent or agent_type needs to be provided")
-
-    if _device and view:
-        typer.echo("viewing device...")
-        from surfkit.cli.view import view as _view
-
-        instances = AgentInstance.find(name=agent)
-        if not instances:
-            raise ValueError(f"agent '{agent}' not found")
-        instance = instances[0]
-
-        if not vm:
-            raise ValueError("vm not found for ui")
-
-        _view(desk=vm, agent=instance, tracker_addr=_remote_task_svr, background=True)
 
     params = {}
     if starting_url:
@@ -1467,6 +1510,26 @@ def solve(
         remote=_remote_task_svr,
         owner_id="local",
     )
+
+    if _device and view:
+        typer.echo("viewing device...")
+        from surfkit.cli.view import view as _view
+
+        instances = AgentInstance.find(name=agent)
+        if not instances:
+            raise ValueError(f"agent '{agent}' not found")
+        instance = instances[0]
+
+        if not vm:
+            raise ValueError("vm not found for ui")
+
+        _view(
+            desk=vm,
+            agent=instance,
+            tracker_addr=_remote_task_svr,
+            background=True,
+            task_id=task.id,
+        )
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
     solve_v1 = V1SolveTask(task=task.to_v1())
@@ -1499,6 +1562,12 @@ def get_agent_logs(
     """
     Retrieve agent logs
     """
+    from surfkit.runtime.agent.base import AgentInstance
+
+    active_runtimes = AgentInstance.active_runtimes()
+    for runtm in active_runtimes:
+        runtm.refresh()
+
     if runtime:
         if runtime == "docker":
             from surfkit.runtime.agent.docker import (
@@ -1581,6 +1650,10 @@ def get_tracker_logs(
     Retrieve tracker logs
     """
     from taskara.runtime.base import Tracker
+
+    active_runtimtes = Tracker.active_runtimes()
+    for runtime in active_runtimtes:
+        runtime.refresh()
 
     trackers = Tracker.find(name=name)
     if not trackers:
