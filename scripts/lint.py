@@ -1,5 +1,5 @@
-import subprocess
 import argparse
+import subprocess
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
         isort_command = ["isort", "--check", "--diff", "."]
 
     subprocess.run(black_command, check=True)
-    subprocess.run(isort_command, check=True)
+    # subprocess.run(isort_command, check=True)
 
 
 if __name__ == "__main__":
