@@ -82,6 +82,8 @@ def view(
     if not ui_container:
         print("creating UI container...")
         host_port = random.randint(1024, 65535)
+
+        client.images.pull(UI_IMG)
         ui_container = client.containers.run(  # type: ignore
             UI_IMG,
             ports={"3000/tcp": host_port},

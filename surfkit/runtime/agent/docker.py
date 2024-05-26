@@ -521,7 +521,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                 print(
                     f"Instance '{instance_name}' is in the database but not running. Removing from database."
                 )
-                instance.delete()
+                instance.delete(force=True)
 
         logger.debug(
             "Refresh complete. State synchronized between Docker and the database."

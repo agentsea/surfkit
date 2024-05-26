@@ -927,7 +927,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 print(
                     f"Instance '{instance_name}' is in the database but not running. Removing from database."
                 )
-                instance.delete()
+                instance.delete(force=True)
 
         logger.debug(
             "Refresh complete. State synchronized between Kubernetes and the database."

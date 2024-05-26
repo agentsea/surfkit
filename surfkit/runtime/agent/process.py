@@ -202,7 +202,6 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 logger.info("Task successfully posted to the agent.")
                 if follow_logs:
                     # If required, follow the logs
-                    print("IF ATTACH: ", attach)
                     if attach:
                         signal.signal(signal.SIGINT, self._signal_handler(name))
 
@@ -254,7 +253,6 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully if we are attached to the logs
                 print(f"Interrupt received, stopping logs for '{agent_name}'")
-                self.delete(agent_name)
                 raise
 
     def requires_proxy(self) -> bool:
@@ -532,7 +530,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 print(
                     f"Instance '{instance_name}' is in the database but not running. Removing from database."
                 )
-                instance.delete()
+                instance.delete(force=True)
 
         logger.debug(
             "Refresh complete. State synchronized between processes and the database."
