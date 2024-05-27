@@ -98,7 +98,7 @@ def view(
     encoded_task_id = urllib.parse.quote(task_id)
 
     # Construct the URL with the encoded parameters
-    url = f"http://localhost:{host_port}/?agentAddr={encoded_agent_addr}&vncAddr={encoded_vnc_addr}?taskAddr={encoded_task_addr}?taskID={encoded_task_id}"
+    url = f"http://localhost:{host_port}/?agentAddr={encoded_agent_addr}&vncAddr={encoded_vnc_addr}&taskAddr={encoded_task_addr}&taskID={encoded_task_id}"
     webbrowser.open(url)
 
     if background:

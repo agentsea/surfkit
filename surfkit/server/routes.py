@@ -4,7 +4,7 @@ from typing import Annotated, Type
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from mllm import Router
-from taskara import Task
+from taskara import Task, TaskStatus
 from taskara.server.models import V1Task, V1Tasks, V1TaskUpdate
 from tenacity import retry, stop_after_attempt, wait_fixed
 
@@ -67,7 +67,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
         task = Task.from_v1(task_model.task, owner_id=owner_id)
 
         logger.info("Saving remote tasks status to running...")
-        task.status = "in progress"
+        task.status = TaskStatus.IN_PROGRESS
         task.save()
 
         if task_model.task.device:
@@ -104,7 +104,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
 
         except Exception as e:
             logger.error(f"error running agent: {e}")
-            task.status = "failed"
+            task.status = TaskStatus.FAILED
             task.error = str(e)
             task.save()
             task.post_message(
@@ -146,7 +146,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
         task = tasks[0]
         print("updating task...")
         if data.status:
-            task.status = data.status
+            task.status = TaskStatus(data.status)
             print("updated task status to: ", task.status)
         task.save()
         print("saved task...")
