@@ -238,15 +238,29 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             self._handle_logs_with_attach(name, attach)
 
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
+        import typer
+
         try:
             for line in self.logs(agent_name, follow=True):
                 print(line)
                 if line.startswith("► task run ended"):
-                    return
+                    if not attach:
+                        stop = typer.confirm(
+                            "Task is finished, do you want to stop the agent?"
+                        )
+                    else:
+                        stop = attach
+
+                    if stop:
+                        try:
+                            instances = AgentInstance.find(name=agent_name)
+                            if instances:
+                                instances[0].delete(force=True)
+                        except:
+                            pass
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs for '{agent_name}'")
-            import typer
 
             if not attach:
                 stop = typer.confirm("Do you want to stop the agent?")

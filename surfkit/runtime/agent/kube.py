@@ -838,6 +838,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             raise
 
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
+        import typer
 
         try:
             log_lines = self.logs(name=agent_name, follow=True)
@@ -846,11 +847,23 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 clean_line = line.decode("utf-8").strip()  # type: ignore
                 print(clean_line)
                 if clean_line.startswith("► task run ended"):
-                    return
+                    if not attach:
+                        stop = typer.confirm(
+                            "Task is finished, do you want to stop the agent?"
+                        )
+                    else:
+                        stop = attach
+
+                    if stop:
+                        try:
+                            instances = AgentInstance.find(name=agent_name)
+                            if instances:
+                                instances[0].delete(force=True)
+                        except:
+                            pass
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs and deleting pod '{agent_name}'")
-            import typer
 
             if not attach:
                 stop = typer.confirm("Do you want to stop the agent?")

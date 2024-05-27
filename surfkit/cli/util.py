@@ -181,7 +181,8 @@ def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
                     api_key_env = Router.provider_api_keys.get(provider_name)
                     if not api_key_env:
                         continue
-                    typer.prompt(api_key_env)
+                    response = typer.prompt(api_key_env)
+                    found[api_key_env] = response
         if not found:
             raise ValueError(
                 "No API keys given for any of the llm providers in the agent type"
