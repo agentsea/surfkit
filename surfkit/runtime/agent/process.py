@@ -201,10 +201,6 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             if response.status_code == 200:
                 logger.info("Task successfully posted to the agent.")
                 if follow_logs:
-                    # If required, follow the logs
-                    # if attach:
-                    #     signal.signal(signal.SIGINT, self._signal_handler(name))
-
                     _task = Task.from_v1(task.task)
                     self._follow_logs(name, _task, attach)
 
