@@ -119,9 +119,9 @@ export default function Task({ data, addr }) {
         return "red";
       case "review":
         return "purple";
-      case "cancelled":
+      case "canceled":
         return "gray";
-      case "cancelling":
+      case "canceling":
         return "yellow";
       default:
         return "blue";
