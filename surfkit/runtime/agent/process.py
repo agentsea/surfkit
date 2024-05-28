@@ -261,6 +261,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                                     instances[0].delete(force=True)
                             except:
                                 pass
+                        return
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully if we are attached to the logs
                 print(f"Interrupt received, stopping logs for '{agent_name}'")

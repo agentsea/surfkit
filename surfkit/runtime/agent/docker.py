@@ -259,6 +259,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                                 instances[0].delete(force=True)
                         except:
                             pass
+                    return
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs for '{agent_name}'")

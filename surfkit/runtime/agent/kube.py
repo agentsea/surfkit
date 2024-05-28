@@ -862,6 +862,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                                 instances[0].delete(force=True)
                         except:
                             pass
+                    return
         except KeyboardInterrupt:
             # This block will be executed if SIGINT is caught
             print(f"Interrupt received, stopping logs and deleting pod '{agent_name}'")
