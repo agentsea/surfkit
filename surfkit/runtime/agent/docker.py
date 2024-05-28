@@ -245,6 +245,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                 print(line)
                 if line.startswith("► task run ended"):
                     if not attach:
+                        print("")
                         stop = typer.confirm(
                             "Task is finished, do you want to stop the agent?"
                         )
@@ -263,6 +264,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             print(f"Interrupt received, stopping logs for '{agent_name}'")
 
             if not attach:
+                print("")
                 stop = typer.confirm("Do you want to stop the agent?")
             else:
                 stop = attach

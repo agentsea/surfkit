@@ -247,6 +247,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                     print(clean_line)
                     if clean_line.startswith("► task run ended"):
                         if not attach:
+                            print("")
                             stop = typer.confirm(
                                 "Task is finished, do you want to stop the agent?"
                             )
@@ -265,6 +266,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 print(f"Interrupt received, stopping logs for '{agent_name}'")
 
                 if not attach:
+                    print("")
                     stop = typer.confirm("Do you want to stop the agent?")
                 else:
                     stop = attach

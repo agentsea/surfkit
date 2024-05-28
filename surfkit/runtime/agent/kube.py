@@ -848,6 +848,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 print(clean_line)
                 if clean_line.startswith("► task run ended"):
                     if not attach:
+                        print("")
                         stop = typer.confirm(
                             "Task is finished, do you want to stop the agent?"
                         )
@@ -866,6 +867,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             print(f"Interrupt received, stopping logs and deleting pod '{agent_name}'")
 
             if not attach:
+                print("")
                 stop = typer.confirm("Do you want to stop the agent?")
             else:
                 stop = attach
