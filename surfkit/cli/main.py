@@ -225,6 +225,49 @@ def create_tracker(
     typer.echo(f"Tracker '{name}' created using '{runtime}' runtime")
 
 
+@create_group.command("benchmark")
+def create_benchmark(
+    file: str = typer.Argument(
+        help="The file to create the benchmark from.",
+    ),
+    tracker: str = typer.Option(
+        None,
+        "--tracker",
+        "-t",
+        help="The tracker to use for the benchmark",
+    ),
+):
+    import yaml
+    from taskara import V1Benchmark
+    from taskara.runtime.base import Tracker
+
+    if not tracker:
+        trackers = Tracker.find()
+        if not trackers:
+            typer.echo("No trackers found")
+            raise typer.Exit()
+        trck = trackers[0]
+    else:
+        trackers = Tracker.find(name=tracker)
+        if not trackers:
+            typer.echo(f"Tracker '{tracker}' not found")
+            raise typer.Exit()
+        trck = trackers[0]
+
+    with open(file) as f:
+        dct = yaml.safe_load(f)
+        v1_benchmark = V1Benchmark.model_validate(dct)
+
+    status, text = trck.call(
+        "/v1/benchmarks", method="POST", data=v1_benchmark.model_dump()
+    )
+    if status != 200:
+        typer.echo(f"Error creating benchmark: {text}")
+        raise typer.Exit()
+
+    typer.echo(f"Benchmark '{v1_benchmark.name}' created using '{trck.name}' tracker")
+
+
 @create_group.command("agent")
 def create_agent(
     runtime: str = typer.Option(
@@ -571,6 +614,72 @@ def list_trackers():
                     "Runtime",
                     "Port",
                     "Status",
+                ],
+            )
+        )
+        print("")
+
+
+@list_group.command("benchmarks")
+def list_benchmarks():
+    from taskara import Benchmark
+
+    benchmarks = Benchmark.find()
+
+    if not benchmarks:
+        print("No benchmarks found")
+    else:
+        table = []
+        for benchmark in benchmarks:
+            table.append(
+                [
+                    benchmark.name,
+                    benchmark.description,
+                    len(benchmark.tasks),
+                ]
+            )
+
+        print(
+            tabulate(
+                table,
+                headers=[
+                    "Name",
+                    "Description",
+                    "Num Tasks",
+                ],
+            )
+        )
+        print("")
+
+
+@list_group.command("evals")
+def list_evals():
+    from taskara import Eval
+
+    evals = Eval.find()
+
+    if not evals:
+        print("No evals found")
+    else:
+        table = []
+        for eval in evals:
+            table.append(
+                [
+                    eval.id,
+                    eval.benchmark.name,
+                    eval.benchmark.description,
+                    len(eval.benchmark.tasks),
+                ]
+            )
+
+        print(
+            tabulate(
+                table,
+                headers=[
+                    "ID",
+                    "Name",
+                    "Description",
+                    "Num Tasks",
                 ],
             )
         )
@@ -1544,6 +1653,75 @@ def solve(
                 instances[0].delete(force=True)
         except:
             pass
+
+
+@app.command("eval", help="Evaluate an agent on a benchmark")
+def eval(
+    benchmark: str = typer.Argument(
+        help="Benchmark name",
+    ),
+    parallel: int = typer.Option(
+        4,
+        "--parallel",
+        "-p",
+        help="Max number of parallel runs",
+    ),
+    agent_type: str = typer.Option(
+        None,
+        "--agent-type",
+        "-a",
+        help="The agent type to use for the benchmark",
+    ),
+    agent: str = typer.Option(
+        None,
+        "--agent",
+        "-n",
+        help="The agent to use for the benchmark",
+    ),
+    agent_file: str = typer.Option(
+        None,
+        "--agent-file",
+        "-f",
+        help="The agent file to use for the benchmark",
+    ),
+    tracker: str = typer.Option(
+        None,
+        "--tracker",
+        "-t",
+        help="The tracker to use for the benchmark",
+    ),
+):
+    import yaml
+    from taskara import V1Benchmark
+    from taskara.runtime.base import Tracker
+
+    if not tracker:
+        trackers = Tracker.find()
+        if not trackers:
+            typer.echo("No trackers found")
+            raise typer.Exit()
+        trck = trackers[0]
+    else:
+        trackers = Tracker.find(name=tracker)
+        if not trackers:
+            typer.echo(f"Tracker '{tracker}' not found")
+            raise typer.Exit()
+        trck = trackers[0]
+
+    typer.echo("you wish...")
+
+    # with open(file) as f:
+    #     dct = yaml.safe_load(f)
+    #     v1_benchmark = V1Benchmark.model_validate(dct)
+
+    # status, text = trck.call(
+    #     "/v1/benchmarks", method="POST", data=v1_benchmark.model_dump()
+    # )
+    # if status != 200:
+    #     typer.echo(f"Error creating benchmark: {text}")
+    #     raise typer.Exit()
+
+    # typer.echo(f"Benchmark '{v1_benchmark.name}' created using '{trck.name}' tracker")
 
 
 @logs_group.command("agent")
