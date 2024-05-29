@@ -2,13 +2,13 @@
 
 [[package]]
 name = "agentdesk"
-version = "0.2.81"
+version = "0.2.82"
 description = "A desktop for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "agentdesk-0.2.81-py3-none-any.whl", hash = "sha256:0ab3d571a75011094003cec7ce691fc6e317e117d7705ac793244ad6970e9c23"},
-    {file = "agentdesk-0.2.81.tar.gz", hash = "sha256:cf4de18379984ccd1588c23c7b28aba1208fade54226631a1440a72731ca6a54"},
+    {file = "agentdesk-0.2.82-py3-none-any.whl", hash = "sha256:041a92f2635f0193952734fe3230ecb351682b8921fc0e5f7303ccd760505e21"},
+    {file = "agentdesk-0.2.82.tar.gz", hash = "sha256:0d467918eca4fc76137c91b2a6a29ea71cfe8b3b37fc516898fc4a56d994ad0b"},
 ]
 
 [package.dependencies]
@@ -340,17 +340,17 @@ six = "*"
 
 [[package]]
 name = "boto3"
-version = "1.34.110"
+version = "1.34.115"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.110-py3-none-any.whl", hash = "sha256:2fc871b4a5090716c7a71af52c462e539529227f4d4888fd04896d5028f9cedc"},
-    {file = "boto3-1.34.110.tar.gz", hash = "sha256:83ffe2273da7bdfdb480d85b0705f04e95bd110e9741f23328b7c76c03e6d53c"},
+    {file = "boto3-1.34.115-py3-none-any.whl", hash = "sha256:0a580de3d25364da5db26ecc7dde9438ee1be1e529a7c04cc96972b6e2258378"},
+    {file = "boto3-1.34.115.tar.gz", hash = "sha256:67f5a6d6e6eff9c15711c265173b53eb4ad8d05b756b76ef33ac792cea7958f6"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.110,<1.35.0"
+botocore = ">=1.34.115,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -359,13 +359,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.34.110"
-description = "Type annotations for boto3 1.34.110 generated with mypy-boto3-builder 7.24.0"
+version = "1.34.115"
+description = "Type annotations for boto3 1.34.115 generated with mypy-boto3-builder 7.24.0"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3_stubs-1.34.110-py3-none-any.whl", hash = "sha256:f290e49244b64a05c89f229e1ea8ee4951f5172f83b43d07636199d0d9c58b9a"},
-    {file = "boto3_stubs-1.34.110.tar.gz", hash = "sha256:4b55efa24ee34b54ffe506899f0bdfa8ca8431f6d4b9222d6347dd90e69ba735"},
+    {file = "boto3_stubs-1.34.115-py3-none-any.whl", hash = "sha256:fd06dc6cfb2503fcd4314e63d52eae4889f84e06ff4f92dca4a1f6cae68bfb00"},
+    {file = "boto3_stubs-1.34.115.tar.gz", hash = "sha256:1d58dde687903e9b8cd01b2680219ace3981aab72f82165b58bb0a56cff2ce3f"},
 ]
 
 [package.dependencies]
@@ -417,7 +417,7 @@ bedrock-agent = ["mypy-boto3-bedrock-agent (>=1.34.0,<1.35.0)"]
 bedrock-agent-runtime = ["mypy-boto3-bedrock-agent-runtime (>=1.34.0,<1.35.0)"]
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.34.0,<1.35.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.34.0,<1.35.0)"]
-boto3 = ["boto3 (==1.34.110)", "botocore (==1.34.110)"]
+boto3 = ["boto3 (==1.34.115)", "botocore (==1.34.115)"]
 braket = ["mypy-boto3-braket (>=1.34.0,<1.35.0)"]
 budgets = ["mypy-boto3-budgets (>=1.34.0,<1.35.0)"]
 ce = ["mypy-boto3-ce (>=1.34.0,<1.35.0)"]
@@ -765,13 +765,13 @@ xray = ["mypy-boto3-xray (>=1.34.0,<1.35.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.110"
+version = "1.34.115"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.110-py3-none-any.whl", hash = "sha256:1edf3a825ec0a5edf238b2d42ad23305de11d5a71bb27d6f9a58b7e8862df1b6"},
-    {file = "botocore-1.34.110.tar.gz", hash = "sha256:b2c98c40ecf0b1facb9e61ceb7dfa28e61ae2456490554a16c8dbf99f20d6a18"},
+    {file = "botocore-1.34.115-py3-none-any.whl", hash = "sha256:15b8ad1ee0e9cd57884fb0bcaf3a9551d2552e44a02c2ffb55ec583eebdb888e"},
+    {file = "botocore-1.34.115.tar.gz", hash = "sha256:a5d5e28b9c847b17a1ecb7660b46b83d9512b125f671e03e93d14bf6f0b274c2"},
 ]
 
 [package.dependencies]
@@ -1656,13 +1656,13 @@ protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4
 
 [[package]]
 name = "google-cloud-container"
-version = "2.45.0"
+version = "2.46.0"
 description = "Google Cloud Container API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-cloud-container-2.45.0.tar.gz", hash = "sha256:f2f6922d1f9c20aa210e96c2ebbf5c2b274bb2704a85ec2d4e97410f29b18ecb"},
-    {file = "google_cloud_container-2.45.0-py2.py3-none-any.whl", hash = "sha256:583a8ec051c337bc2845e7621c71e31af24bd33aee419121cc098ee424535c5d"},
+    {file = "google-cloud-container-2.46.0.tar.gz", hash = "sha256:de46d9fb2db69a5f23e0d5637c4cf397525c02c6f2549182449ba2b6fecaee5c"},
+    {file = "google_cloud_container-2.46.0-py2.py3-none-any.whl", hash = "sha256:0864712af56ca81a4c14c57a5d95f89cb24da7f32e0872799303b265eb2af5c5"},
 ]
 
 [package.dependencies]
@@ -2545,13 +2545,13 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.30"
+version = "0.1.31"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.30-py3-none-any.whl", hash = "sha256:e9cf73861343ea50df9dbcc7874df831e1db359bbd25705acc152c8486310cb6"},
-    {file = "mllm-0.1.30.tar.gz", hash = "sha256:279894d5dab7e0b94518e722dc0dd5d0e750a528e561d6b07c7bdb435c796808"},
+    {file = "mllm-0.1.31-py3-none-any.whl", hash = "sha256:cdf9af247a83600829f6997c12f9835456a88d8f35c98c336ec11a8a08732922"},
+    {file = "mllm-0.1.31.tar.gz", hash = "sha256:bb308a6f490e4d6ccd9504e4bfbe1e5326e2d4a5246b5fcb1e3c184b68f46813"},
 ]
 
 [package.dependencies]
@@ -2660,13 +2660,13 @@ files = [
 
 [[package]]
 name = "mypy-boto3-ec2"
-version = "1.34.101"
-description = "Type annotations for boto3.EC2 1.34.101 service generated with mypy-boto3-builder 7.24.0"
+version = "1.34.114"
+description = "Type annotations for boto3.EC2 1.34.114 service generated with mypy-boto3-builder 7.24.0"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "mypy_boto3_ec2-1.34.101-py3-none-any.whl", hash = "sha256:17c368d5496663f05e42d314e89acd76c4c42c6722c015f54b7ce90e0377ad9f"},
-    {file = "mypy_boto3_ec2-1.34.101.tar.gz", hash = "sha256:5673e3cb6d287ca132282e8252712a721b2997d9e3fdae28e50d86ba1dc69a54"},
+    {file = "mypy_boto3_ec2-1.34.114-py3-none-any.whl", hash = "sha256:540cbf529502dce8c74c1ea4f094d33f40d8ff4db2e05305404cc13ca9da183a"},
+    {file = "mypy_boto3_ec2-1.34.114.tar.gz", hash = "sha256:402a574b8bd118e642db9fa452c172c8d0e89e40516a8a6d19df8395bf794b1f"},
 ]
 
 [package.dependencies]
@@ -3615,7 +3615,6 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
-    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -4095,18 +4094,18 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.30"
+version = "0.1.31"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.30-py3-none-any.whl", hash = "sha256:e60f7a4792b4a1506212af8a8c0536926b2ac4cc140a67b1c07e28fa98b01c0c"},
-    {file = "skillpacks-0.1.30.tar.gz", hash = "sha256:8fc5a2f2950116c74fdc9cae793ad5d9130c23b439a8c364e11ee9e65180dabc"},
+    {file = "skillpacks-0.1.31-py3-none-any.whl", hash = "sha256:a6522b6f29600057f47a7c99b5d50563e9bee17d5db7bec4ac287758b917e603"},
+    {file = "skillpacks-0.1.31.tar.gz", hash = "sha256:4d9b73550d73a7918dffbb95521686b495a3f339b2116aa4443b425bbc8723ea"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.26,<0.2.0"
-mllm = ">=0.1.30,<0.2.0"
+mllm = ">=0.1.31,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
@@ -4260,13 +4259,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.93"
+version = "0.1.96"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.93-py3-none-any.whl", hash = "sha256:0ab4290405b83b549a3ded2df689f893ad9d7fdba4745b4a8b8f903364814094"},
-    {file = "taskara-0.1.93.tar.gz", hash = "sha256:2488619e7ce3b67727f691713a74097b406553303aad58048e9394de04518b8c"},
+    {file = "taskara-0.1.96-py3-none-any.whl", hash = "sha256:8f66387fcbf79c9285b81937ea5ba8e4ad992e2e8e481b22ff33380e575ea29a"},
+    {file = "taskara-0.1.96.tar.gz", hash = "sha256:b983400801b022a83ddf814f45d21c7f6779e9fcb45a79b9cb34c36f67c1a2c3"},
 ]
 
 [package.dependencies]
@@ -4274,7 +4273,7 @@ devicebay = ">=0.1.25,<0.2.0"
 namesgenerator = ">=0.3,<0.4"
 pydantic = ">=2.6.4,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.30,<0.2.0"
+skillpacks = ">=0.1.31,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 
@@ -5267,4 +5266,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "71cd541bcb2462a318690962e93ab489ab0c3a6bef88bba2d8927103d3fa68ad"
+content-hash = "8c84a002791ef68b1f9c91658f9e28256c9e8cff803ca7e0b78ed7a276321e86"
