@@ -44,6 +44,7 @@ class AgentType(WithDB):
         runtimes: List[V1Runtime] = [],
         owner_id: Optional[str] = None,
         env_opts: List[V1EnvVarOpt] = [],
+        supports: List[str] = [],
         public: bool = False,
         icon: Optional[str] = None,
         resource_requests: V1ResourceRequests = V1ResourceRequests(),
@@ -66,6 +67,7 @@ class AgentType(WithDB):
         self.runtimes = runtimes
         self.owner_id = owner_id
         self.env_opts = env_opts
+        self.supports = supports
         self.public = public
         self.icon = icon
         self.resource_requests = resource_requests
@@ -101,6 +103,7 @@ class AgentType(WithDB):
             img_repo=self.img_repo,
             versions=self.versions,
             env_opts=self.env_opts,
+            supports=self.supports,
             runtimes=self.runtimes,
             created=self.created,
             updated=self.updated,
@@ -128,6 +131,7 @@ class AgentType(WithDB):
         obj.cmd = v1.cmd
         obj.img_repo = v1.img_repo
         obj.env_opts = v1.env_opts
+        obj.supports = v1.supports
         obj.runtimes = v1.runtimes
         obj.created = v1.created
         obj.updated = v1.updated
@@ -167,6 +171,7 @@ class AgentType(WithDB):
             img_repo=self.img_repo,
             versions=versions,
             env_opts=json.dumps([opt.model_dump() for opt in self.env_opts]),
+            supports=json.dumps(self.supports),
             runtimes=json.dumps([runtime.model_dump() for runtime in self.runtimes]),
             created=self.created,
             updated=self.updated,
@@ -211,6 +216,7 @@ class AgentType(WithDB):
         obj.img_repo = record.img_repo
         obj.versions = versions
         obj.env_opts = [V1EnvVarOpt(**opt) for opt in json.loads(str(record.env_opts))]
+        obj.supports = json.loads(str(record.supports))
         obj.runtimes = [
             V1Runtime(**runtime) for runtime in json.loads(str(record.runtimes))
         ]
@@ -350,6 +356,10 @@ class AgentType(WithDB):
 
         if self.env_opts != model.env_opts:
             self.env_opts = model.env_opts
+            updated = True
+
+        if self.supports != model.supports:
+            self.supports = model.supports
             updated = True
 
         if self.runtimes != model.runtimes:

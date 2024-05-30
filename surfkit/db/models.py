@@ -19,6 +19,7 @@ class AgentTypeRecord(Base):
     versions = Column(String, nullable=True)
     repo = Column(String, nullable=True)
     env_opts = Column(String)
+    supports = Column(String)
     runtimes = Column(String)
     owner_id = Column(String)
     public = Column(Boolean)

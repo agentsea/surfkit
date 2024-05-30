@@ -96,6 +96,7 @@ class V1AgentType(BaseModel):
     img_repo: Optional[str] = None
     versions: Optional[Dict[str, str]] = None
     env_opts: List[V1EnvVarOpt] = []
+    supports: List[str] = []
     runtimes: List[V1Runtime] = []
     created: Optional[float] = None
     updated: Optional[float] = None

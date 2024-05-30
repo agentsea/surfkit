@@ -22,7 +22,11 @@ class AgentStatus(Enum):
     CREATING = "creating"
     RUNNING = "running"
     STOPPED = "stopped"
+    DELETING = "deleting"
+    DELETED = "deleted"
     ERROR = "error"
+    FAILED = "failed"
+    RESTARTING = "restarting"
 
 
 class AgentInstance(WithDB):
@@ -64,6 +68,11 @@ class AgentInstance(WithDB):
     @property
     def status(self) -> AgentStatus:
         return self._status
+
+    @status.setter
+    def status(self, value: AgentStatus) -> None:
+        self._status = value
+        self.save()
 
     @property
     def type(self) -> AgentType:
