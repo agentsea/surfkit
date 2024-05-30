@@ -3,11 +3,11 @@ import { Typography, Avatar, Dialog } from "@material-tailwind/react";
 import { motion } from "framer-motion";
 
 const RoleThread = ({ data }) => {
-  console.log("thread data: ");
-  console.log(data);
+  // console.log("thread data: ");
+  // console.log(data);
   const messages = data?.messages || [];
   const roleMapping = data?.role_mapping || {};
-  console.log("!role mapping: ", roleMapping);
+  console.log("role mapping: ", roleMapping);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const endOfMessagesRef = useRef(null);
@@ -30,7 +30,7 @@ const RoleThread = ({ data }) => {
   }, [messages.length]);
 
   return (
-    <div className="flex flex-col gap-2 relative overflow-y-scroll border border-black-400 max-h-[480px]">
+    <div className="flex flex-col gap-2 relative overflow-y-scroll border border-black-400 max-h-[480px] min-h-[280px]">
       {messages.map((msg, index) => (
         <motion.div
           key={index}

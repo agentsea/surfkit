@@ -209,7 +209,10 @@ export default function Task({ data, addr }) {
           <Typography variant="paragraph" className="font-semibold mr-2">
             Description
           </Typography>
-          <Typography variant="paragraph">{data.description}</Typography>
+          {/* TODO: this should be handled better */}
+          <div className="max-h-[75px] overflow-y-scroll">
+            <Typography variant="paragraph">{data.description}</Typography>
+          </div>
         </div>
         <div className="flex flex-row mt-2">
           <Typography variant="paragraph" className="font-semibold mr-2">
@@ -223,7 +226,7 @@ export default function Task({ data, addr }) {
             value={data.status}
           />
         </div>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-scroll">
           <RoleThreads threads={threads} />
         </div>
       </div>

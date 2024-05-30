@@ -22,7 +22,7 @@ const RoleThreads = ({ threads = [] }) => {
   };
 
   return (
-    <div className="flex flex-col mt-4">
+    <div className="flex flex-col mt-4 overflow-y-scroll">
       <div className="flex flex-row gap-6 justify-center mb-2">
         {threads.map((thread) => (
           <Typography
