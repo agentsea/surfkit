@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from surfkit.server.models import V1AgentType, V1SolveTask
 from surfkit.types import AgentType
 
-from .base import AgentInstance, AgentRuntime
+from .base import AgentInstance, AgentRuntime, AgentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +192,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             type=agent_type,
             runtime=self,
             version=version,
-            status="running",
+            status=AgentStatus.RUNNING,
             port=port,
             owner_id=owner_id,
         )
@@ -339,7 +339,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                     type=agent_type,
                     runtime=self,
                     port=port,
-                    status="running",
+                    status=AgentStatus.RUNNING,
                     owner_id=owner_id,
                 )
                 instances.append(instance)
@@ -377,7 +377,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                     name=name,
                     type=agent_type,
                     runtime=self,
-                    status="running",
+                    status=AgentStatus.RUNNING,
                     port=port,
                     owner_id=owner_id,
                 )
@@ -523,7 +523,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                     name=container_name,
                     type=agent_type,
                     runtime=self,
-                    status="running",
+                    status=AgentStatus.RUNNING,
                     port=port,
                     owner_id=owner_id,
                 )

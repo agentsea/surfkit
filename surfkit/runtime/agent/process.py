@@ -18,7 +18,7 @@ from surfkit.server.models import V1AgentType, V1SolveTask
 from surfkit.types import AgentType
 from surfkit.util import find_open_port
 
-from .base import AgentInstance, AgentRuntime
+from .base import AgentInstance, AgentRuntime, AgentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +159,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             name=name,
             type=agent_type,
             runtime=self,
-            status="running",
+            status=AgentStatus.RUNNING,
             port=port,
             labels={"command": command},
             owner_id=owner_id,
@@ -362,7 +362,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                                 name=metadata["name"],
                                 type=standard_agent_type,
                                 runtime=self,
-                                status="running",
+                                status=AgentStatus.RUNNING,
                                 port=metadata["port"],
                             )
                             instances.append(instance)
@@ -544,7 +544,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                     name=process_name,
                     type=agent_type_instance,
                     runtime=self,
-                    status="running",
+                    status=AgentStatus.RUNNING,
                     port=metadata["port"],
                     owner_id=owner_id,
                 )

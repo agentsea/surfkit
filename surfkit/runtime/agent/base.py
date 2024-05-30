@@ -2,6 +2,7 @@ import json
 import time
 import uuid
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Dict, Generic, Iterator, List, Optional, Type, TypeVar, Union
 
 from mllm import Router
@@ -16,6 +17,14 @@ R = TypeVar("R", bound="AgentRuntime")
 C = TypeVar("C", bound="BaseModel")
 
 
+class AgentStatus(Enum):
+    DEFINED = "defined"
+    CREATING = "creating"
+    RUNNING = "running"
+    STOPPED = "stopped"
+    ERROR = "error"
+
+
 class AgentInstance(WithDB):
     """A running agent instance"""
 
@@ -24,7 +33,7 @@ class AgentInstance(WithDB):
         name: str,
         type: AgentType,
         runtime: "AgentRuntime",
-        status: str,
+        status: AgentStatus = AgentStatus.DEFINED,
         version: Optional[str] = None,
         port: int = 9090,
         tags: List[str] = [],
@@ -51,7 +60,7 @@ class AgentInstance(WithDB):
         return self._id
 
     @property
-    def status(self) -> str:
+    def status(self) -> AgentStatus:
         return self._status
 
     @property
@@ -224,7 +233,7 @@ class AgentInstance(WithDB):
             port=self._port,
             tags=self._tags,
             labels=self._labels,
-            status=self._status,
+            status=self._status.value,
             owner_id=self._owner_id,
             created=self._created,
             updated=self._updated,
@@ -244,7 +253,7 @@ class AgentInstance(WithDB):
             port=self._port,
             tags=json.dumps(self.tags),
             labels=json.dumps(self.labels),
-            status=self._status,
+            status=self._status.value,
             owner_id=self._owner_id,
             created=self._created,
             updated=self._updated,
@@ -270,7 +279,7 @@ class AgentInstance(WithDB):
         obj._type = types[0]
         obj._runtime = runtime
         obj._version = record.version
-        obj._status = record.status
+        obj._status = AgentStatus(record.status)
         obj._port = record.port
         obj._tags = json.loads(str(record.tags))
         obj._labels = json.loads(str(record.labels))

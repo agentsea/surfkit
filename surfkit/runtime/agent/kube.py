@@ -34,7 +34,7 @@ from surfkit.server.models import (
 )
 from surfkit.types import AgentType
 
-from .base import AgentInstance, AgentRuntime
+from .base import AgentInstance, AgentRuntime, AgentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -654,7 +654,11 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
 
                     instances.append(
                         AgentInstance(
-                            name, agent_type, self, status="running", port=9090
+                            name,
+                            agent_type,
+                            self,
+                            status=AgentStatus.RUNNING,
+                            port=9090,
                         )
                     )
             except ApiException as e:
@@ -687,7 +691,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 )
 
                 return AgentInstance(
-                    name, agent_type, self, status="running", port=9090
+                    name, agent_type, self, status=AgentStatus.RUNNING, port=9090
                 )
             except ApiException as e:
                 print(f"Failed to get pod '{name}': {e}")
@@ -800,7 +804,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             name=name,
             type=agent_type,
             runtime=self,
-            status="running",
+            status=AgentStatus.RUNNING,
             port=9090,
             version=version,
             owner_id=owner_id,
@@ -929,7 +933,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     name=pod_name,
                     type=agent_type,
                     runtime=self,
-                    status="running",
+                    status=AgentStatus.RUNNING,
                     port=9090,
                     owner_id=owner_id,
                 )

@@ -494,7 +494,7 @@ def list_agents(
                     agent.type.kind,
                     agent.type.name,
                     agent.runtime.name(),
-                    agent.status,
+                    agent.status.value,
                     agent.port,
                 ]
             )
