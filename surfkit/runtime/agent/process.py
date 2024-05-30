@@ -118,6 +118,11 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         if not auth_enabled:
             environment["AGENT_NO_AUTH"] = "true"
 
+        if not agent_type.llm_providers:
+            environment["MODEL_PREFERENCE"] = ",".join(
+                agent_type.llm_providers.preference
+            )
+
         process = subprocess.Popen(
             command,
             shell=True,

@@ -1,7 +1,5 @@
 import logging
 import os
-import signal
-import sys
 import time
 from typing import Dict, Iterator, List, Optional, Type, Union
 
@@ -146,6 +144,9 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         env_vars["SERVER_PORT"] = str(port)
         if not auth_enabled:
             env_vars["AGENT_NO_AUTH"] = "true"
+
+        if agent_type.llm_providers:
+            env_vars["MODEL_PREFERENCE"] = ",".join(agent_type.llm_providers.preference)
 
         img = agent_type.versions.get(version)
         if not img:

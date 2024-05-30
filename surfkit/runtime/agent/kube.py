@@ -789,6 +789,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
 
         self.check_llm_providers(agent_type, env_vars)
 
+        if agent_type.llm_providers:
+            env_vars["MODEL_PREFERENCE"] = ",".join(agent_type.llm_providers.preference)
+
         self.create(
             image=img,
             type=agent_type,
