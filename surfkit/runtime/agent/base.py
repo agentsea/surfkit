@@ -39,6 +39,7 @@ class AgentInstance(WithDB):
         tags: List[str] = [],
         labels: Dict[str, str] = {},
         owner_id: Optional[str] = None,
+        icon: Optional[str] = None,
     ) -> None:
         self._id = str(uuid.uuid4())
         self._runtime = runtime
@@ -50,6 +51,7 @@ class AgentInstance(WithDB):
         self._labels = labels
         self._status = status
         self._owner_id = owner_id
+        self._icon = icon
         self._created = time.time()
         self._updated = time.time()
 
@@ -81,7 +83,7 @@ class AgentInstance(WithDB):
 
     @property
     def port(self) -> int:
-        return self._port
+        return self._port  # type: ignore
 
     @property
     def tags(self) -> List[str]:
@@ -93,15 +95,19 @@ class AgentInstance(WithDB):
 
     @property
     def owner_id(self) -> Optional[str]:
-        return self._owner_id
+        return self._owner_id  # type: ignore
 
     @property
     def created(self) -> float:
-        return self._created
+        return self._created  # type: ignore
 
     @property
     def updated(self) -> float:
-        return self._updated
+        return self._updated  # type: ignore
+
+    @property
+    def icon(self) -> Optional[str]:
+        return self._icon
 
     def proxy(
         self,
@@ -230,13 +236,14 @@ class AgentInstance(WithDB):
                 name=self._runtime.name(), connect_config=self.runtime.connect_config()
             ),
             version=self._version,
-            port=self._port,
+            port=self._port,  # type: ignore
             tags=self._tags,
             labels=self._labels,
             status=self._status.value,
-            owner_id=self._owner_id,
-            created=self._created,
-            updated=self._updated,
+            owner_id=self._owner_id,  # type: ignore
+            icon=self._icon,
+            created=self._created,  # type: ignore
+            updated=self._updated,  # type: ignore
         )
 
     def to_record(self) -> AgentInstanceRecord:
@@ -255,6 +262,7 @@ class AgentInstance(WithDB):
             labels=json.dumps(self.labels),
             status=self._status.value,
             owner_id=self._owner_id,
+            icon=self._icon,
             created=self._created,
             updated=self._updated,
         )
@@ -278,16 +286,41 @@ class AgentInstance(WithDB):
         obj._name = str(record.name)
         obj._type = types[0]
         obj._runtime = runtime
-        obj._version = record.version
+        obj._version = str(record.version)
         obj._status = AgentStatus(record.status)
         obj._port = record.port
         obj._tags = json.loads(str(record.tags))
         obj._labels = json.loads(str(record.labels))
         obj._owner_id = record.owner_id
+        obj._icon = record.icon
         obj._created = record.created
         obj._updated = record.updated
 
         return obj
+
+    def refresh(self) -> None:
+        """
+        Refresh the agent instance's fields to reflect the current state in the database.
+        """
+        for db in self.get_db():
+            record = db.query(AgentInstanceRecord).filter_by(id=self._id).one_or_none()
+            if record:
+                self._name = str(record.name)
+                self._type = AgentType.find(name=record.type)[
+                    0
+                ]  # Assuming AgentType.find returns a list and we need the first item
+                self._version = str(record.version)
+                self._port = record.port
+                self._tags = json.loads(str(record.tags))
+                self._labels = json.loads(str(record.labels))
+                self._status = AgentStatus(record.status)
+                self._owner_id = record.owner_id
+                self._created = record.created
+                self._updated = record.updated
+            else:
+                raise ValueError(
+                    f"AgentInstance with id {self._id} not found in the database."
+                )
 
 
 class AgentRuntime(Generic[R, C], ABC):

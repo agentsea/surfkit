@@ -56,6 +56,7 @@ class AgentInstanceRecord(Base):
     tags = Column(String, nullable=True)
     labels = Column(String, nullable=True)
     port = Column(Integer)
+    icon = Column(String, nullable=True)
     owner_id = Column(String, nullable=True)
     created = Column(Float, default=time.time)
     updated = Column(Float, default=time.time)

@@ -120,6 +120,7 @@ class V1AgentInstance(BaseModel):
     tags: List[str] = []
     status: str
     owner_id: Optional[str] = None
+    icon: Optional[str] = None
     created: float
     updated: float
 
