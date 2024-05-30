@@ -110,6 +110,10 @@ class V1AgentType(BaseModel):
     labels: Dict[str, str] = {}
 
 
+class V1AgentTypes(BaseModel):
+    types: List[V1AgentType]
+
+
 class V1AgentInstance(BaseModel):
     name: str
     type: V1AgentType
@@ -125,12 +129,12 @@ class V1AgentInstance(BaseModel):
     updated: float
 
 
+class V1AgentInstances(BaseModel):
+    instances: List[V1AgentInstance]
+
+
 class V1Find(BaseModel):
     args: dict = {}
-
-
-class V1AgentTypes(BaseModel):
-    types: List[V1AgentType]
 
 
 class V1CreateAgentType(BaseModel):
