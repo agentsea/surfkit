@@ -29,6 +29,7 @@ ipykernel = "^6.29.4"
 
 black = "^24.4.2"
 isort = "^5.13.2"
+google-cloud-aiplatform = "^1.53.0"
 
 [build-system]
 requires = ["poetry-core"]
