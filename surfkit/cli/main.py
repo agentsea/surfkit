@@ -403,7 +403,7 @@ def create_agent(
         typer.echo(f"Failed to run agent: {e}")
         typer.echo(runt.logs(name))
         return
-    typer.echo(f"Successfully created agent '{name}'")
+    typer.echo(f"\nSuccessfully created agent '{name}'")
 
 
 # 'list' sub-commands
