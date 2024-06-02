@@ -109,6 +109,7 @@ class V1AgentType(BaseModel):
     meters: List[V1Meter] = []
     tags: List[str] = []
     labels: Dict[str, str] = {}
+    namespace: Optional[str] = None
 
 
 class V1AgentTypes(BaseModel):

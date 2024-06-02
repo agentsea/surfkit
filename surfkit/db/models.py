@@ -33,6 +33,7 @@ class AgentTypeRecord(Base):
     meters = Column(String, nullable=True)
     tags = Column(String, nullable=True)
     labels = Column(String, nullable=True)
+    namespace = Column(String, nullable=True)
 
 
 class AgentStatusRecord(Base):

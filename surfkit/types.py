@@ -56,6 +56,7 @@ class AgentType(WithDB):
         remote: Optional[str] = None,
         tags: List[str] = [],
         labels: Dict[str, str] = {},
+        namespace: Optional[str] = None,
     ):
         self.id = str(uuid.uuid4())
         self.name = name
@@ -81,6 +82,7 @@ class AgentType(WithDB):
         self.tags = tags
         self.labels = labels
         self.remote = remote
+        self.namespace = namespace
         self.save()
 
     @classmethod
@@ -118,6 +120,7 @@ class AgentType(WithDB):
             meters=self.meters,
             tags=self.tags,
             labels=self.labels,
+            namespace=self.namespace,
         )
 
     @classmethod
@@ -147,6 +150,7 @@ class AgentType(WithDB):
         obj.owner_id = owner_id
         obj.tags = v1.tags
         obj.labels = v1.labels
+        obj.namespace = v1.namespace
         return obj
 
     def to_record(self) -> AgentTypeRecord:
@@ -186,6 +190,7 @@ class AgentType(WithDB):
             repo=self.repo,
             tags=json.dumps(self.tags),
             labels=json.dumps(self.labels),
+            namespace=self.namespace,
         )
 
     @classmethod
@@ -241,6 +246,7 @@ class AgentType(WithDB):
         obj.repo = record.repo
         obj.tags = json.loads(str(record.tags))
         obj.labels = json.loads(str(record.labels))
+        obj.namespace = record.namespace
         return obj
 
     def save(self) -> None:
@@ -404,6 +410,10 @@ class AgentType(WithDB):
 
         if self.labels != model.labels:
             self.labels = model.labels
+            updated = True
+
+        if self.namespace != model.namespace:
+            self.namespace = model.namespace
             updated = True
 
         # If anything was updated, set the updated timestamp and save changes
