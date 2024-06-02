@@ -335,84 +335,94 @@ class AgentType(WithDB):
 
     def update(self, model: V1AgentType) -> None:
         """
-        Updates the current AgentType instance with values from an AgentTypeModel instance.
+        Updates the current AgentType instance with values from an AgentTypeModel instance,
+        ensuring that None values do not overwrite existing data.
         """
         # Track if any updates are needed
         updated = False
 
-        if self.description != model.description:
+        if model.description is not None and self.description != model.description:
             self.description = model.description
             updated = True
 
-        if self.kind != model.kind:
+        if model.kind is not None and self.kind != model.kind:
             self.kind = model.kind
             updated = True
 
-        if self.cmd != model.cmd:
+        if model.cmd is not None and self.cmd != model.cmd:
             self.cmd = model.cmd
             updated = True
 
-        if self.img_repo != model.img_repo:
+        if model.img_repo is not None and self.img_repo != model.img_repo:
             self.img_repo = model.img_repo
             updated = True
 
-        if self.versions != model.versions:
+        if model.versions is not None and self.versions != model.versions:
             self.versions = model.versions
             updated = True
 
-        if self.env_opts != model.env_opts:
+        if model.env_opts is not None and self.env_opts != model.env_opts:
             self.env_opts = model.env_opts
             updated = True
 
-        if self.supports != model.supports:
+        if model.supports is not None and self.supports != model.supports:
             self.supports = model.supports
             updated = True
 
-        if self.runtimes != model.runtimes:
+        if model.runtimes is not None and self.runtimes != model.runtimes:
             self.runtimes = model.runtimes
             updated = True
 
-        if self.public != model.public:
+        if model.public is not None and self.public != model.public:
             self.public = model.public
             updated = True
 
-        if self.icon != model.icon:
+        if model.icon is not None and self.icon != model.icon:
             self.icon = model.icon
             updated = True
 
-        if self.resource_requests != model.resource_requests:
+        if (
+            model.resource_requests is not None
+            and self.resource_requests != model.resource_requests
+        ):
             self.resource_requests = model.resource_requests
             updated = True
 
-        if self.resource_limits != model.resource_limits:
+        if (
+            model.resource_limits is not None
+            and self.resource_limits != model.resource_limits
+        ):
             self.resource_limits = model.resource_limits
             updated = True
 
-        if self.llm_providers != model.llm_providers:
+        if (
+            model.llm_providers is not None
+            and self.llm_providers != model.llm_providers
+        ):
             self.llm_providers = model.llm_providers
             updated = True
 
-        if self.devices != model.devices:
+        if model.devices is not None and self.devices != model.devices:
             self.devices = model.devices
             updated = True
 
-        if self.meters != model.meters:
+        if model.meters is not None and self.meters != model.meters:
             self.meters = model.meters
             updated = True
 
-        if self.repo != model.repo:
+        if model.repo is not None and self.repo != model.repo:
             self.repo = model.repo
             updated = True
 
-        if self.tags != model.tags:
+        if model.tags is not None and self.tags != model.tags:
             self.tags = model.tags
             updated = True
 
-        if self.labels != model.labels:
+        if model.labels is not None and self.labels != model.labels:
             self.labels = model.labels
             updated = True
 
-        if self.namespace != model.namespace:
+        if model.namespace is not None and self.namespace != model.namespace:
             self.namespace = model.namespace
             updated = True
 

@@ -1174,7 +1174,7 @@ def publish(
     agent_file: str = typer.Option(
         "./agent.yaml", "--agent-file", "-f", help="Agent file to use"
     ),
-    build: bool = typer.Option(True, "--build", "-b", help="Build the docker image"),
+    build: bool = typer.Option(False, "--build", "-b", help="Build the docker image"),
     version: str = typer.Option("latest", "--version", "-v", help="Version to build"),
 ):
     from surfkit.types import AgentType
