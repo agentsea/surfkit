@@ -10,7 +10,12 @@ from pydantic import BaseModel
 
 from surfkit.db.conn import WithDB
 from surfkit.db.models import AgentInstanceRecord
-from surfkit.server.models import V1AgentInstance, V1RuntimeConnect, V1SolveTask
+from surfkit.server.models import (
+    V1AgentInstance,
+    V1AgentType,
+    V1RuntimeConnect,
+    V1SolveTask,
+)
 from surfkit.types import AgentType
 
 R = TypeVar("R", bound="AgentRuntime")
@@ -262,7 +267,7 @@ class AgentInstance(WithDB):
         return AgentInstanceRecord(
             id=self._id,
             name=self._name,
-            type=self._type.name,
+            type=self._type.to_v1().model_dump_json(),
             runtime_name=self._runtime.name(),
             runtime_config=runtime_cfg,
             version=self._version,
@@ -278,10 +283,6 @@ class AgentInstance(WithDB):
 
     @classmethod
     def from_record(cls, record: AgentInstanceRecord) -> "AgentInstance":
-        types = AgentType.find(name=str(record.type))
-        if not types:
-            raise ValueError(f"Unknown agent type: {record.type}")
-
         from surfkit.runtime.agent.load import runtime_from_name
 
         runtype = runtime_from_name(str(record.runtime_name))
@@ -293,7 +294,7 @@ class AgentInstance(WithDB):
         obj = cls.__new__(cls)
         obj._id = str(record.id)
         obj._name = str(record.name)
-        obj._type = types[0]
+        obj._type = AgentType.from_v1(V1AgentType.model_validate_json(str(record.type)))
         obj._runtime = runtime
         obj._version = str(record.version)
         obj._status = AgentStatus(record.status)
@@ -315,9 +316,9 @@ class AgentInstance(WithDB):
             record = db.query(AgentInstanceRecord).filter_by(id=self._id).one_or_none()
             if record:
                 self._name = str(record.name)
-                self._type = AgentType.find(name=record.type)[
-                    0
-                ]  # Assuming AgentType.find returns a list and we need the first item
+                self._type = AgentType.from_v1(
+                    V1AgentType.model_validate_json(str(record.type))
+                )
                 self._version = str(record.version)
                 self._port = record.port
                 self._tags = json.loads(str(record.tags))

@@ -299,10 +299,10 @@ def create_agent(
     from .util import find_llm_keys
 
     if not runtime:
-        if file:
-            runtime = "process"
-        else:
+        if type:
             runtime = "docker"
+        else:
+            runtime = "process"
 
     if runtime == "docker":
         from surfkit.runtime.agent.docker import DockerAgentRuntime, DockerConnectConfig
@@ -336,28 +336,27 @@ def create_agent(
 
         all_types: List[AgentType] = []
 
-        types = AgentType.find()
-        all_types.extend(types)
+        type_parts = type.split("/")
 
-        try:
-            config = GlobalConfig.read()
-            if config.api_key:
-                types = AgentType.find(remote=HUB_API_URL, name=type)
-                if types:
-                    all_types.extend(types)
-        except Exception as e:
-            logger.debug(f"Failed to load global config: {e}")
-
-        if not all_types:
-            print("No types found")
-            return
-
-        types = AgentType.find(name=type)
-        if types:
-            all_types.extend(types)
+        if len(type_parts) == 1:
+            types = AgentType.find(name=type)
+            if types:
+                all_types.extend(types)
+        elif len(type_parts) == 2:
+            try:
+                config = GlobalConfig.read()
+                if config.api_key:
+                    types = AgentType.find(
+                        remote=HUB_API_URL, namespace=type_parts[0], name=type_parts[1]
+                    )
+                    if types:
+                        all_types.extend(types)
+            except Exception as e:
+                logger.debug(f"Failed to load global config: {e}")
 
         if not all_types:
             raise ValueError(f"Agent type '{type}' not found")
+
         agent_type = all_types[0]
     else:
         try:
@@ -488,11 +487,14 @@ def list_agents(
 
         agents = AgentInstance.find()
         for agent in agents:
+            type_name = agent.type.name
+            if agent.type.namespace:
+                type_name = f"{agent.type.namespace}/{agent.type.name}"
             agents_list.append(
                 [
                     agent.name,
                     agent.type.kind,
-                    agent.type.name,
+                    type_name,
                     agent.runtime.name(),
                     agent.status.value,
                     agent.port,
@@ -695,9 +697,6 @@ def list_types():
 
     all_types: List[AgentType] = []
 
-    types = AgentType.find()
-    all_types.extend(types)
-
     try:
         config = GlobalConfig.read()
         if config.api_key:
@@ -707,16 +706,34 @@ def list_types():
         pass
 
     if not all_types:
+        types = AgentType.find()
+        all_types.extend(types)
+
+    if not all_types:
         print("No types found")
         return
 
     table = []
-    for typ in types:
+    for typ in all_types:
+        name = typ.name
+        if typ.namespace:
+            name = f"{typ.namespace}/{name}"
+
+        supports = ""
+        if typ.supports:
+            supports = ", ".join(typ.supports)
+
+        tags = ""
+        if typ.tags:
+            tags = ", ".join(typ.tags)
+
         table.append(
             [
-                typ.name,
+                name,
                 typ.kind,
                 typ.description,
+                supports,
+                tags,
             ]
         )
 
@@ -727,6 +744,8 @@ def list_types():
                 "Name",
                 "Kind",
                 "Description",
+                "Supports",
+                "Tags",
             ],
         )
     )

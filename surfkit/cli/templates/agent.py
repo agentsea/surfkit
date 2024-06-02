@@ -205,6 +205,8 @@ def get_remote_task(id: str, owner_id: str, server: str) -> Task:
 
 if __name__ == "__main__":
     port = os.getenv("SERVER_PORT", "9090")
+    reload = os.getenv("SERVER_RELOAD", "false") == "true"
+    host = os.getenv("SERVER_HOST", "0.0.0.0")
     uvicorn.run(
         "{pkg_from_name(agent_name)}.server:app",
         host="0.0.0.0",

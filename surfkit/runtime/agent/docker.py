@@ -105,7 +105,6 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         port = find_open_port(9090, 10090)
         if not port:
             raise ValueError("Could not find open port")
-        print("running container")
 
         if not env_vars:
             env_vars = {}
@@ -153,16 +152,24 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             raise ValueError("img not found")
 
         self.client.images.pull(img)
-        container = self.client.containers.run(
-            img,
-            network_mode="host",
-            environment=env_vars,
-            detach=True,
-            labels=labels,
-            name=name,
-        )
+
+        print(f"running image {img}")
+        try:
+            container = self.client.containers.run(
+                img,
+                network_mode="bridge",
+                ports={port: port},
+                environment=env_vars,
+                detach=True,
+                labels=labels,
+                name=name,
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Could not run container '{name}' for agent type '{agent_type.name}' with version '{version}': {e}"
+            )
         if container and type(container) != bytes:
-            print(f"ran container '{container.id}'")  # type: ignore
+            print(f"container id '{container.id}'")  # type: ignore
 
         # Wait for the container to be in the "running" state
         for _ in range(10):
@@ -175,14 +182,15 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
 
         # Check /health endpoint
         health_url = f"http://localhost:{port}/health"
-        for _ in range(10):
+        for _ in range(30):
             try:
+                print("waiting for agent to be ready...")
                 response = requests.get(health_url)
                 if response.status_code == 200:
                     print(f"Health check passed for '{name}'")
                     break
             except requests.RequestException as e:
-                print(f"Health check failed: {e}")
+                logger.debug(f"Health check failed: {e}")
             time.sleep(1)
         else:
             container.remove(force=True)  # type: ignore

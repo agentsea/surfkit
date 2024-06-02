@@ -115,7 +115,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             self.core_api.create_namespaced_secret(
                 namespace=self.namespace, body=secret
             )
-            print(f"Secret created: {name}")
+            print(f"Secret created '{name}'")
             return secret
         except ApiException as e:
             print(f"Failed to create secret: {e}")
@@ -205,7 +205,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             created_pod: client.V1Pod = self.core_api.create_namespaced_pod(  # type: ignore
                 namespace=self.namespace, body=pod
             )
-            print(f"Pod created with name='{name}'")
+            print(f"Pod created with name '{name}'")
             # print("created pod: ", created_pod.__dict__)
             # Update secret's owner reference UID to newly created pod's UID
             if secret:
@@ -339,19 +339,21 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         Raises:
             RuntimeError: If the response is not 200 after the specified retries.
         """
-        print(
+        logger.debug(
             f"Checking HTTP 200 readiness for pod {name} on path {path} and port: {port}"
         )
+        print("Waiting for agent to be ready...")
         status_code, response_text = self.call(
             name=name, path=path, method="GET", port=port
         )
         if status_code != 200:
-            print(f"Received status code {status_code}, retrying...")
+            logger.debug(f"Received status code {status_code}, retrying...")
             raise Exception(
                 f"Pod {name} at path {path} is not ready. Status code: {status_code}"
             )
-        print(f"Pod {name} at path {path} responded with: ", response_text)
-        print(f"Pod {name} at path {path} is ready with status 200.")
+        logger.debug(f"Pod {name} at path {path} responded with: {response_text}")
+        logger.debug(f"Pod {name} at path {path} is ready with status 200.")
+        print(f"Health check passed for agent '{name}'")
 
     @retry(stop=stop_after_attempt(200), wait=wait_fixed(2))
     def wait_pod_ready(self, name: str) -> bool:
@@ -370,9 +372,8 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             if conditions:
                 for condition in conditions:
                     if condition.type == "Ready" and condition.status == "True":
-                        print("pod is ready!")
                         return True
-            print("pod is not ready yet...")
+            print("Waiting for pod to be ready...")
             raise Exception(f"Pod {name} is not ready")
         except ApiException as e:
             print(f"Failed to read pod status for '{name}': {e}")
