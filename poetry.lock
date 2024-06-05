@@ -2,13 +2,13 @@
 
 [[package]]
 name = "agentdesk"
-version = "0.2.83"
+version = "0.2.84"
 description = "A desktop for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "agentdesk-0.2.83-py3-none-any.whl", hash = "sha256:b5cac242da1e672f35fc42b20cefa097114bc4d35119bb128823444de78bc2c0"},
-    {file = "agentdesk-0.2.83.tar.gz", hash = "sha256:c01064c0f349af88addd3be156dd0b086d7516f4f0cb6e4dd0cf9fe7d6275baf"},
+    {file = "agentdesk-0.2.84-py3-none-any.whl", hash = "sha256:86c1dd89b0c6760a4ce9615814f641d9d01c170ec03f0af3996585ad7e088346"},
+    {file = "agentdesk-0.2.84.tar.gz", hash = "sha256:b498304e47658b4b36aae806449737088c0ed0b2e4258be864757683d878ddaf"},
 ]
 
 [package.dependencies]
@@ -340,17 +340,17 @@ six = "*"
 
 [[package]]
 name = "boto3"
-version = "1.34.115"
+version = "1.34.118"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.115-py3-none-any.whl", hash = "sha256:0a580de3d25364da5db26ecc7dde9438ee1be1e529a7c04cc96972b6e2258378"},
-    {file = "boto3-1.34.115.tar.gz", hash = "sha256:67f5a6d6e6eff9c15711c265173b53eb4ad8d05b756b76ef33ac792cea7958f6"},
+    {file = "boto3-1.34.118-py3-none-any.whl", hash = "sha256:e9edaf979fbe59737e158f2f0f3f0861ff1d61233f18f6be8ebb483905f24587"},
+    {file = "boto3-1.34.118.tar.gz", hash = "sha256:4eb8019421cb664a6fcbbee6152aa95a28ce8bbc1c4ee263871c09cdd58bf8ee"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.115,<1.35.0"
+botocore = ">=1.34.118,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -359,13 +359,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.34.115"
-description = "Type annotations for boto3 1.34.115 generated with mypy-boto3-builder 7.24.0"
+version = "1.34.118"
+description = "Type annotations for boto3 1.34.118 generated with mypy-boto3-builder 7.24.0"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3_stubs-1.34.115-py3-none-any.whl", hash = "sha256:fd06dc6cfb2503fcd4314e63d52eae4889f84e06ff4f92dca4a1f6cae68bfb00"},
-    {file = "boto3_stubs-1.34.115.tar.gz", hash = "sha256:1d58dde687903e9b8cd01b2680219ace3981aab72f82165b58bb0a56cff2ce3f"},
+    {file = "boto3_stubs-1.34.118-py3-none-any.whl", hash = "sha256:4d1dca9593339791ae403eb5a09f6cf43110599fc147f4429eee4d6043ad2257"},
+    {file = "boto3_stubs-1.34.118.tar.gz", hash = "sha256:e28837e42b157b5901818b4b49fe68bece26b17957a9ab10cafecc2373e8c8ba"},
 ]
 
 [package.dependencies]
@@ -417,7 +417,7 @@ bedrock-agent = ["mypy-boto3-bedrock-agent (>=1.34.0,<1.35.0)"]
 bedrock-agent-runtime = ["mypy-boto3-bedrock-agent-runtime (>=1.34.0,<1.35.0)"]
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.34.0,<1.35.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.34.0,<1.35.0)"]
-boto3 = ["boto3 (==1.34.115)", "botocore (==1.34.115)"]
+boto3 = ["boto3 (==1.34.118)", "botocore (==1.34.118)"]
 braket = ["mypy-boto3-braket (>=1.34.0,<1.35.0)"]
 budgets = ["mypy-boto3-budgets (>=1.34.0,<1.35.0)"]
 ce = ["mypy-boto3-ce (>=1.34.0,<1.35.0)"]
@@ -765,13 +765,13 @@ xray = ["mypy-boto3-xray (>=1.34.0,<1.35.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.115"
+version = "1.34.118"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.115-py3-none-any.whl", hash = "sha256:15b8ad1ee0e9cd57884fb0bcaf3a9551d2552e44a02c2ffb55ec583eebdb888e"},
-    {file = "botocore-1.34.115.tar.gz", hash = "sha256:a5d5e28b9c847b17a1ecb7660b46b83d9512b125f671e03e93d14bf6f0b274c2"},
+    {file = "botocore-1.34.118-py3-none-any.whl", hash = "sha256:e3f6c5636a4394768e81e33a16f5c6ae7f364f512415d423f9b9dc67fc638df4"},
+    {file = "botocore-1.34.118.tar.gz", hash = "sha256:0a3d1ec0186f8b516deb39474de3d226d531f77f92a0f56ad79b80219db3ae9e"},
 ]
 
 [package.dependencies]
@@ -4474,13 +4474,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.96"
+version = "0.1.99"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.96-py3-none-any.whl", hash = "sha256:8f66387fcbf79c9285b81937ea5ba8e4ad992e2e8e481b22ff33380e575ea29a"},
-    {file = "taskara-0.1.96.tar.gz", hash = "sha256:b983400801b022a83ddf814f45d21c7f6779e9fcb45a79b9cb34c36f67c1a2c3"},
+    {file = "taskara-0.1.99-py3-none-any.whl", hash = "sha256:46c827425eed3ef080a040c141d778cb8b0fdaa0f8248cd71d92de57f7dd1d2b"},
+    {file = "taskara-0.1.99.tar.gz", hash = "sha256:142a843fed658b017924f3d251d4c6348bb66ebd66c380e407b8d863bd1678a4"},
 ]
 
 [package.dependencies]
@@ -5481,4 +5481,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "7e09a4789cbf292621a3f0b1f174953ccbf5cece36704be600ca8340ca511263"
+content-hash = "c6800fc418ae150ddf5fe5226818fe8528dee316fc56b223448f44500c957452"

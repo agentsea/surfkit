@@ -268,6 +268,89 @@ def create_benchmark(
     typer.echo(f"Benchmark '{v1_benchmark.name}' created using '{trck.name}' tracker")
 
 
+@create_group.command("task")
+def create_task(
+    description: str = typer.Option(
+        ..., "--description", "-d", help="A task description"
+    ),
+    assigned_to: Optional[str] = typer.Option(
+        None, "--assigned-to", "-o", help="Agent to assign the task to"
+    ),
+    assigned_type: Optional[str] = typer.Option(
+        None, "--assigned-type", "-t", help="Agent type to assign the task to"
+    ),
+    device: Optional[str] = typer.Option(
+        None, "--device", "-e", help="Device to give the agent"
+    ),
+    device_type: Optional[str] = typer.Option(
+        None, "--device-type", "-y", help="Device type to give the agen"
+    ),
+    max_steps: int = typer.Option(
+        30, "--max-steps", "-m", help="Max steps the agent can take"
+    ),
+    tracker: Optional[str] = typer.Option(
+        None, "--tracker", help="Tracker to use. Defaults to the hub."
+    ),
+):
+    from agentdesk import Desktop
+    from devicebay import V1DeviceType
+    from taskara.runtime.base import Tracker
+    from taskara.task import Task
+
+    from surfkit.config import HUB_API_URL, GlobalConfig
+
+    _device_type = None
+    if device_type:
+        _device_type = V1DeviceType(name=device_type)
+
+    _device = None
+    if device:
+        desk_vms = Desktop.find(name=device)
+        if not desk_vms:
+            typer.echo(f"Desktop '{device}' not found")
+            raise typer.Exit()
+        _desk_vm = desk_vms[0]
+
+        _desk = Desktop.from_vm(_desk_vm)
+        _device = _desk.to_v1()
+
+    if tracker:
+        from surfkit.util import find_open_port
+
+        trackers = Tracker.find(name=tracker)
+        if not trackers:
+            typer.echo(f"Tracker '{tracker}' not found")
+            raise typer.Exit()
+        trck = trackers[0]
+
+        local_port = trck.port
+        if trck.runtime.requires_proxy():
+            local_port = find_open_port(9070, 10070)
+            if not local_port:
+                raise SystemError("No available ports found")
+            trck.proxy(local_port=local_port)
+        _remote_tracker = f"http://localhost:{local_port}"
+    else:
+        config = GlobalConfig.read()
+        if not config.api_key:
+            raise ValueError(
+                "No API key found. Please run `surfkit login` first or provide a tracker"
+            )
+        _remote_tracker = HUB_API_URL
+
+    task = Task(
+        description=description,
+        assigned_to=assigned_to,
+        assigned_type=assigned_type,
+        device=_device,
+        device_type=_device_type,
+        max_steps=max_steps,
+        remote=_remote_tracker,
+    )
+
+    typer.echo(f"Task '{task.id}' created")
+
+
 @create_group.command("agent")
 def create_agent(
     runtime: str = typer.Option(
@@ -344,13 +427,11 @@ def create_agent(
                 all_types.extend(types)
         elif len(type_parts) == 2:
             try:
-                config = GlobalConfig.read()
-                if config.api_key:
-                    types = AgentType.find(
-                        remote=HUB_API_URL, namespace=type_parts[0], name=type_parts[1]
-                    )
-                    if types:
-                        all_types.extend(types)
+                types = AgentType.find(
+                    remote=HUB_API_URL, namespace=type_parts[0], name=type_parts[1]
+                )
+                if types:
+                    all_types.extend(types)
             except Exception as e:
                 logger.debug(f"Failed to load global config: {e}")
 
@@ -692,16 +773,14 @@ def list_evals():
 def list_types():
     from typing import List
 
-    from surfkit.config import HUB_API_URL, GlobalConfig
+    from surfkit.config import HUB_API_URL
     from surfkit.types import AgentType
 
     all_types: List[AgentType] = []
 
     try:
-        config = GlobalConfig.read()
-        if config.api_key:
-            types = AgentType.find(remote=HUB_API_URL)
-            all_types.extend(types)
+        types = AgentType.find(remote=HUB_API_URL)
+        all_types.extend(types)
     except Exception as e:
         pass
 
@@ -1228,7 +1307,7 @@ def publish(
     headers = {"Authorization": f"Bearer {config.api_key}"}
     resp = requests.post(url, json=typ.to_v1().model_dump(), headers=headers)
     resp.raise_for_status()
-    typer.echo(f"Agent published!")
+    typer.echo(f"Agent '{typ.name}' published")
 
 
 @app.command(help="Create a new agent repo")
@@ -1413,39 +1492,47 @@ def solve(
         _remote_task_svr = tracker_remote
 
     else:
-        trackers = Tracker.find()
-        if not trackers:
-            create = typer.confirm("No trackers found. Would you like to create one?")
-            if create:
-                from taskara.runtime.docker import DockerTrackerRuntime
+        from surfkit.config import HUB_API_URL, GlobalConfig
 
-                task_runt = DockerTrackerRuntime()
-
-                name = get_random_name(sep="-")
-                if not name:
-                    raise SystemError("Name is required for tracker")
-
-                task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
-                typer.echo(
-                    f"Tracker '{name}' created using '{task_runt.name()}' runtime"
-                )
-            else:
-                raise ValueError(
-                    "`tracker`, `tracker_runtime`, or `tracker_remote` flag must be provided. Or a tracker must be running"
-                )
+        config = GlobalConfig.read()
+        if config.api_key:
+            _remote_task_svr = HUB_API_URL
         else:
-            task_svr = trackers[0]
-            typer.echo(
-                f"Using tracker '{task_svr.name}' running on '{task_svr.runtime.name()}'"
-            )
+            trackers = Tracker.find()
+            if not trackers:
+                create = typer.confirm(
+                    "No trackers found. Would you like to create one?"
+                )
+                if create:
+                    from taskara.runtime.docker import DockerTrackerRuntime
 
-        local_port = task_svr.port
-        if task_svr.runtime.requires_proxy():
-            local_port = find_open_port(9070, 10070)
-            if not local_port:
-                raise SystemError("No available ports found")
-            task_svr.proxy(local_port=local_port)
-        _remote_task_svr = f"http://localhost:{local_port}"
+                    task_runt = DockerTrackerRuntime()
+
+                    name = get_random_name(sep="-")
+                    if not name:
+                        raise SystemError("Name is required for tracker")
+
+                    task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
+                    typer.echo(
+                        f"Tracker '{name}' created using '{task_runt.name()}' runtime"
+                    )
+                else:
+                    raise ValueError(
+                        "`tracker`, `tracker_runtime`, or `tracker_remote` flag must be provided. Or a tracker must be running"
+                    )
+            else:
+                task_svr = trackers[0]
+                typer.echo(
+                    f"Using tracker '{task_svr.name}' running on '{task_svr.runtime.name()}'"
+                )
+
+            local_port = task_svr.port
+            if task_svr.runtime.requires_proxy():
+                local_port = find_open_port(9070, 10070)
+                if not local_port:
+                    raise SystemError("No available ports found")
+                task_svr.proxy(local_port=local_port)
+            _remote_task_svr = f"http://localhost:{local_port}"
 
     if not agent_runtime:
         if agent_file:
@@ -1541,28 +1628,27 @@ def solve(
 
         all_types: List[AgentType] = []
 
-        types = AgentType.find()
-        all_types.extend(types)
+        type_parts = agent_type.split("/")
 
-        try:
-            config = GlobalConfig.read()
-            if config.api_key:
-                types = AgentType.find(remote=HUB_API_URL, name=type)
-                if types:
-                    all_types.extend(types)
-        except Exception as e:
-            pass
-
-        if not all_types:
-            print("No types found")
-            return
-
-        types = AgentType.find(name=type)
-        if types:
-            all_types.extend(types)
+        if len(type_parts) == 1:
+            types = AgentType.find(name=agent_type)
+            if types:
+                all_types.extend(types)
+        elif len(type_parts) == 2:
+            try:
+                config = GlobalConfig.read()
+                if config.api_key:
+                    types = AgentType.find(
+                        remote=HUB_API_URL, namespace=type_parts[0], name=type_parts[1]
+                    )
+                    if types:
+                        all_types.extend(types)
+            except Exception as e:
+                logger.debug(f"Failed to load global config: {e}")
 
         if not all_types:
-            raise ValueError(f"Agent type '{type}' not found")
+            raise ValueError(f"Agent type '{agent_type}' not found")
+
         typ = all_types[0]
         if not agent:
             agent = get_random_name("-")
@@ -1636,7 +1722,6 @@ def solve(
         assigned_to=agent,
         assigned_type=agent_type,
         remote=_remote_task_svr,
-        owner_id="local",
     )
 
     if _device and view:

@@ -14,11 +14,11 @@ import time
 import os
 
 from devicebay import Device
-from agentdesk.device import Desktop
+from agentdesk import Desktop
 from toolfuse.util import AgentUtils
 from pydantic import BaseModel
 from surfkit.agent import TaskAgent
-from taskara import Task
+from taskara import Task, TaskStatus
 from mllm import Router
 from skillpacks.server.models import V1ActionSelection
 from threadmem import RoleThread, RoleMessage
@@ -121,7 +121,7 @@ class {agent_name}(TaskAgent):
                 thread, done = self.take_action(device, task, thread)
             except Exception as e:
                 console.print(f"Error: {{e}}", style="red")
-                task.status = "failed"
+                task.status = TaskStatus.FAILED
                 task.error = str(e)
                 task.save()
                 task.post_message("assistant", f"❗ Error taking action: {{e}}")
@@ -135,7 +135,7 @@ class {agent_name}(TaskAgent):
 
             time.sleep(2)
 
-        task.status = "failed"
+        task.status = TaskStatus.FAILED
         task.save()
         task.post_message("assistant", "❗ Max steps reached without solving task")
         console.print("Reached max steps without solving task", style="red")
@@ -166,10 +166,10 @@ class {agent_name}(TaskAgent):
             # Check to see if the task has been cancelled
             if task.remote:
                 task.refresh()
-            if task.status == "cancelling" or task.status == "cancelled":
+            if task.status == TaskStatus.CANCELING or task.status == TaskStatus.CANCELED:
                 console.print(f"task is {{task.status}}", style="red")
-                if task.status == "cancelling":
-                    task.status = "cancelled"
+                if task.status == TaskStatus.CANCELING:
+                    task.status = TaskStatus.CANCELED
                     task.save()
                 return thread, True
 
@@ -236,7 +236,7 @@ class {agent_name}(TaskAgent):
                     "assistant",
                     f"✅ I think the task is done, please review the result: {{selection.action.parameters['value']}}",
                 )
-                task.status = "review"
+                task.status = TaskStatus.REVIEW
                 task.save()
                 return _thread, True
 
@@ -261,7 +261,7 @@ class {agent_name}(TaskAgent):
 
             # Record the action for feedback and tuning
             task.record_action(
-                prompt=response.prompt_id,
+                prompt=response.prompt,
                 action=selection.action,
                 tool=desktop.ref(),
                 result=action_response,
