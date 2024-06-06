@@ -182,7 +182,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
 
         # Check /health endpoint
         health_url = f"http://localhost:{port}/health"
-        for _ in range(30):
+        for _ in range(60):
             try:
                 print("waiting for agent to be ready...")
                 response = requests.get(health_url)

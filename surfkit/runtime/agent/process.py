@@ -144,7 +144,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 print(stdout)
 
         # Health check logic
-        max_retries = 30
+        max_retries = 40
         retry_delay = 1
         health_url = f"http://localhost:{port}/health"
 
