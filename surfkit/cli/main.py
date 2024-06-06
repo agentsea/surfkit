@@ -1449,6 +1449,7 @@ def solve(
     from surfkit.types import AgentType
     from surfkit.util import find_open_port
 
+    _task_token = None
     if tracker:
         trackers = Tracker.find(name=tracker)
         if not trackers:
@@ -1503,6 +1504,7 @@ def solve(
         config = GlobalConfig.read()
         if config.api_key:
             _remote_task_svr = HUB_API_URL
+            _task_token = config.api_key
         else:
             trackers = Tracker.find()
             if not trackers:
@@ -1736,6 +1738,7 @@ def solve(
         assigned_type=agent_type,
         remote=_remote_task_svr,
         owner_id=owner,
+        auth_token=_task_token,
     )
 
     if _device and view:
