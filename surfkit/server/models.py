@@ -65,6 +65,7 @@ class V1Agent(BaseModel):
 class V1SolveTask(BaseModel):
     task: V1Task
     agent: Optional[V1Agent] = None
+    token: Optional[str] = None
 
 
 class V1CreateTask(BaseModel):

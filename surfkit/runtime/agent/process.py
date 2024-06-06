@@ -118,7 +118,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         if not auth_enabled:
             environment["AGENT_NO_AUTH"] = "true"
 
-        if not agent_type.llm_providers:
+        if agent_type.llm_providers:
             environment["MODEL_PREFERENCE"] = ",".join(
                 agent_type.llm_providers.preference
             )
@@ -207,6 +207,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 logger.info("Task successfully posted to the agent.")
                 if follow_logs:
                     _task = Task.from_v1(task.task)
+                    print("following logs with attach: ", attach)
                     self._follow_logs(name, _task, attach)
 
             else:
@@ -219,7 +220,11 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         except requests.exceptions.RequestException as e:
             logger.error("Error while sending the POST request:", str(e))
         except Exception as e:
-            logger.error(f"An unexpected error occurred: {str(e)}")
+            import traceback
+
+            logger.error(
+                f"An unexpected error occurred solving task with runtime {self.name()}: {str(e)} \n{traceback.print_exc()}"
+            )
 
     def _signal_handler(self, agent_name: str):
         def handle_signal(signum, frame):

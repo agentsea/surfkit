@@ -97,7 +97,7 @@ class DockerRuntime(ContainerRuntime):
             print(f"Container '{name}' does not exist.")
             raise
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            print(f"An unexpected error occurred calling docker container: {e}")
             raise
 
         url = f"http://localhost:{port}{path}"

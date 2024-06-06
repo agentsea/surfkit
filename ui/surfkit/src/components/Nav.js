@@ -4,7 +4,6 @@ import {
   Collapse,
   Typography,
   IconButton,
-  Avatar,
 } from "@material-tailwind/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -31,7 +30,7 @@ function NavList() {
         className="p-1 font-medium"
       >
         <a
-          href="https://github.com/agentsea/surfkit"
+          href="https://kentaurosai.mintlify.app/introduction"
           className="flex items-center hover:text-blue-500 transition-colors"
         >
           Docs
@@ -56,10 +55,10 @@ export function Nav() {
   }, []);
 
   return (
-    <Navbar className="mx-auto max-w-screen-xl px-6 py-3 w-full min-w-screen-xl">
-      <div className="flex items-center justify-between text-blue-gray-900">
+    <Navbar className="mx-auto max-w-screen-xl p-2 lg:rounded-full mt-4 lg:pl-6">
+      <div className="relative mx-auto flex items-center justify-between text-blue-gray-900">
         <img
-          className="h-10 w-10 rounded-full object-contain object-center rounded-full border border-blue-gray-100 p-1 shadow-xl"
+          className="h-9 w-9 rounded-full object-contain object-center rounded-full"
           src="https://storage.googleapis.com/guisurfer-assets/logo_black.png"
           alt="logo"
         />

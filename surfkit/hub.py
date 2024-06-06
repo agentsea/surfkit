@@ -8,8 +8,8 @@ from .server.models import V1UserProfile
 class Hub:
     """The Agentsea Hub"""
 
-    def __init__(self, hub_url: str = "https://hub.agentsea.ai") -> None:
-        self.hub_url = os.getenv("AGENTSEA_HUB_URL", hub_url)
+    def __init__(self, hub_url: str = "https://api.hub.agentlabs.xyz") -> None:
+        self.hub_url = os.getenv("AGENTSEA_HUB_API_URL", hub_url)
 
     def get_api_key(self, token: str) -> str:
         """Get the api key from the hub"""

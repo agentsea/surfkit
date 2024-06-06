@@ -848,6 +848,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
         import typer
 
+        print("following logs for agent...")
         try:
             log_lines = self.logs(name=agent_name, follow=True)
 
