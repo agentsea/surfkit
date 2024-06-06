@@ -1758,15 +1758,9 @@ def solve(
             task_id=task.id,
         )
 
-    import traceback
-
-    try:
-        typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
-        solve_v1 = V1SolveTask(task=task.to_v1())
-        runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
-    except:
-        print("An error occurred:")
-        traceback.print_exc()
+    typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
+    solve_v1 = V1SolveTask(task=task.to_v1())
+    runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
 
     if kill and not follow:
         typer.echo(f"Killing agent {agent}...")
