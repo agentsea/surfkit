@@ -60,9 +60,14 @@ def version():
 
 
 # Root command callback
-@app.callback(invoke_without_command=True)
-def default(ctx: typer.Context):
-    show_help(ctx, "root")
+def default(
+    ctx: typer.Context,
+    debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug mode"),
+):
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
 
 
 # 'create' command group callback
@@ -1439,6 +1444,7 @@ def solve(
     from taskara import Task
     from taskara.runtime.base import Tracker
 
+    from surfkit.config import HUB_API_URL, GlobalConfig
     from surfkit.server.models import V1SolveTask
     from surfkit.types import AgentType
     from surfkit.util import find_open_port
@@ -1624,8 +1630,6 @@ def solve(
     if agent_type:
         from typing import List
 
-        from surfkit.config import HUB_API_URL, GlobalConfig
-
         all_types: List[AgentType] = []
 
         type_parts = agent_type.split("/")
@@ -1714,6 +1718,15 @@ def solve(
     if starting_url:
         params["site"] = starting_url
 
+    owner = "tom@myspace.com"
+    config = GlobalConfig.read()
+    if config.api_key:
+        from surfkit.hub import Hub
+
+        hub = Hub()
+        user_info = hub.get_user_info(config.api_key)
+        owner = user_info.email
+
     task = Task(
         description=description,
         parameters=params,
@@ -1722,6 +1735,7 @@ def solve(
         assigned_to=agent,
         assigned_type=agent_type,
         remote=_remote_task_svr,
+        owner_id=owner,
     )
 
     if _device and view:
@@ -1744,9 +1758,15 @@ def solve(
             task_id=task.id,
         )
 
-    typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
-    solve_v1 = V1SolveTask(task=task.to_v1())
-    runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
+    import traceback
+
+    try:
+        typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
+        solve_v1 = V1SolveTask(task=task.to_v1())
+        runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
+    except:
+        print("An error occurred:")
+        traceback.print_exc()
 
     if kill and not follow:
         typer.echo(f"Killing agent {agent}...")
