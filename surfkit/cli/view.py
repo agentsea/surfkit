@@ -25,6 +25,7 @@ def view(
     tracker_addr: str,
     task_id: str,
     background: bool = False,
+    auth_token: Optional[str] = None,
 ) -> None:
     """Opens the desktop in a browser window"""
 
@@ -99,6 +100,11 @@ def view(
 
     # Construct the URL with the encoded parameters
     url = f"http://localhost:{host_port}/?agentAddr={encoded_agent_addr}&vncAddr={encoded_vnc_addr}&taskAddr={encoded_task_addr}&taskID={encoded_task_id}"
+
+    if auth_token:
+        encoded_auth_token = urllib.parse.quote(auth_token)
+        url += f"&authToken={encoded_auth_token}"
+
     webbrowser.open(url)
 
     if background:

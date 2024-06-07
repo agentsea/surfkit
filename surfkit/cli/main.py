@@ -1759,6 +1759,7 @@ def solve(
             tracker_addr=_remote_task_svr,
             background=True,
             task_id=task.id,
+            auth_token=_task_token,
         )
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
