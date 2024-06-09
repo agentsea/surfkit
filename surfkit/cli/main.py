@@ -376,15 +376,15 @@ def create_agent(
     auth_enabled: bool = typer.Option(
         False, "--auth-enabled", "-e", help="Whether to enable auth for the agent."
     ),
-    llm_providers_local: bool = typer.Option(
-        False, "--llm-local", "-l", help="Use local LLM provider keys."
+    local_keys: bool = typer.Option(
+        False, "--local-keys", "-l", help="Use local API keys."
     ),
 ):
 
     from surfkit.server.models import V1AgentType
     from surfkit.types import AgentType
 
-    from .util import find_llm_keys
+    from ..env_opts import find_envs
 
     if not runtime:
         if type:
@@ -466,7 +466,7 @@ def create_agent(
 
         name = instance_name(agent_type)
 
-    env_vars = find_llm_keys(agent_type, llm_providers_local)
+    env_vars = find_envs(agent_type, use_local=local_keys)
     if type:
         typer.echo(
             f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
@@ -481,7 +481,6 @@ def create_agent(
             agent_type,
             name,
             auth_enabled=auth_enabled,
-            llm_providers_local=llm_providers_local,
             env_vars=env_vars,
         )
     except Exception as e:
@@ -1436,8 +1435,8 @@ def solve(
         "-e",
         help="Whether to enable auth for the agent.",
     ),
-    llm_providers_local: bool = typer.Option(
-        False, "--llm-local", "-l", help="Use local LLM provider keys."
+    local_keys: bool = typer.Option(
+        False, "--local-keys", "-l", help="Use local API keys."
     ),
 ):
     from agentdesk import Desktop
@@ -1661,9 +1660,9 @@ def solve(
             if not agent:
                 raise ValueError("could not generate agent name")
 
-        from .util import find_llm_keys
+        from ..env_opts import find_envs
 
-        env_vars = find_llm_keys(typ, llm_providers_local)
+        env_vars = find_envs(typ, local_keys)
 
         typer.echo(f"creating agent {agent}...")
         try:
@@ -1672,7 +1671,6 @@ def solve(
                 name=agent,
                 version=agent_version,
                 auth_enabled=auth_enabled,
-                llm_providers_local=llm_providers_local,
                 env_vars=env_vars,
             )
         except Exception as e:
@@ -1695,9 +1693,9 @@ def solve(
         else:
             typ.save()
 
-        from .util import find_llm_keys
+        from ..env_opts import find_envs
 
-        env_vars = find_llm_keys(typ, llm_providers_local)
+        env_vars = find_envs(typ, local_keys)
 
         typer.echo(f"creating agent {agent} from file {agent_file}...")
         try:

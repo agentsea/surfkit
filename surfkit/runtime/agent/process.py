@@ -115,6 +115,10 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         print(f"running agent on port {port}")
 
         environment = os.environ.copy()
+
+        if not env_vars:
+            environment.update(env_vars)  # type: ignore
+
         if not auth_enabled:
             environment["AGENT_NO_AUTH"] = "true"
 
