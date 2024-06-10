@@ -82,7 +82,9 @@ def view(
 
     if not ui_container:
         print("creating UI container...")
-        host_port = random.randint(1024, 65535)
+        host_port = find_open_port(9614, 9618)
+        if not host_port:
+            raise ValueError("Could not find an open port for the UI")
 
         client.images.pull(UI_IMG)
         ui_container = client.containers.run(  # type: ignore

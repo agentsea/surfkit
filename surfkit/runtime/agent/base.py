@@ -545,6 +545,6 @@ class AgentRuntime(Generic[R, C], ABC):
                 raise ValueError(
                     (
                         "No API keys found for any of the LLM providers required for this agent type."
-                        f" Options are {','.join(key_opts)}"
+                        f" Options are {', '.join(set(key_opts))}"
                     )
                 )

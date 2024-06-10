@@ -42,8 +42,11 @@ def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
 
         if llm_providers_local:
             found = find_local_llm_keys(typ)
+
             if found is None:
                 found = {}
+            else:
+                env_vars = found
 
         if not found:
             typer.echo("\nThis agent requires one of the following LLM API keys:")
@@ -56,6 +59,9 @@ def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
                 api_key_env = Router.provider_api_keys.get(provider_name)
                 if not api_key_env:
                     raise ValueError(f"no api key env for provider {provider_name}")
+
+                if found.get(api_key_env):
+                    continue
 
                 key = os.getenv(api_key_env)
                 if not key:
