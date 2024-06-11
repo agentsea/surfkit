@@ -383,6 +383,7 @@ class AgentRuntime(Generic[R, C], ABC):
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
         auth_enabled: bool = True,
+        debug: bool = False,
     ) -> AgentInstance:
         """Run the agent
 
@@ -396,6 +397,7 @@ class AgentRuntime(Generic[R, C], ABC):
             tags (Optional[List[str]], optional): Tags for the agent. Defaults to None.
             labels (Optional[Dict[str, str]], optional): Labels for the agent. Defaults to None.
             auth_enabled (bool, optional): Whether to enable auth. Defaults to True.
+            debug (bool, optional): Whether to run in debug mode. Defaults to False.
 
         Returns:
             AgentInstance: An agent instance

@@ -86,6 +86,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
         auth_enabled: bool = True,
+        debug: bool = False,
     ) -> AgentInstance:
         """
         Run a Docker container for the specified agent type.
@@ -100,6 +101,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             tags (Optional[List[str]], optional): Tags for the container. Defaults to None.
             labels (Optional[Dict[str, str]], optional): Labels for the container. Defaults to None.
             auth_enabled (bool, optional): Whether authentication is enabled. Defaults to True.
+            debug (bool, optional): Whether to run in debug mode. Defaults to False.
 
         Returns:
             AgentInstance: An instance of the running agent.
@@ -117,6 +119,9 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
 
         if not env_vars:
             env_vars = {}
+
+        if debug:
+            env_vars["DEBUG"] = "true"
         if llm_providers_local:
             if not agent_type.llm_providers:
                 raise ValueError(
@@ -287,6 +292,8 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                             instances = AgentInstance.find(name=agent_name)
                             if instances:
                                 instances[0].delete(force=True)
+                            else:
+                                print(f"No instances found for name '{agent_name}'")
                         except:
                             pass
                     return
@@ -304,6 +311,8 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                     instances = AgentInstance.find(name=agent_name)
                     if instances:
                         instances[0].delete(force=True)
+                    else:
+                        print(f"No instances found for name '{agent_name}'")
             except:
                 pass
         except Exception as e:

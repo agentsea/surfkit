@@ -30,7 +30,7 @@ function NavList() {
         className="p-1 font-medium mr-6"
       >
         <a
-          href="https://kentaurosai.mintlify.app/introduction"
+          href="https://docs.hub.agentsea.ai/introduction"
           className="flex items-center hover:text-blue-500 transition-colors"
         >
           Docs
