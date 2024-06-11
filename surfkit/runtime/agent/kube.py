@@ -766,6 +766,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
         auth_enabled: bool = True,
+        debug: bool = False,
     ) -> AgentInstance:
         logger.debug("creating agent with type: ", agent_type.__dict__)
         if not agent_type.versions:
@@ -777,6 +778,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             raise ValueError("img not found")
         if not env_vars:
             env_vars = {}
+
+        if debug:
+            env_vars["DEBUG"] = "true"
         if llm_providers_local:
             if not agent_type.llm_providers:
                 raise ValueError(

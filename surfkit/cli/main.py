@@ -384,6 +384,7 @@ def create_agent(
     local_keys: bool = typer.Option(
         False, "--local-keys", "-l", help="Use local API keys."
     ),
+    debug: bool = typer.Option(False, help="Run the agent with debug logging"),
 ):
 
     from surfkit.server.models import V1AgentType
@@ -487,6 +488,7 @@ def create_agent(
             name,
             auth_enabled=auth_enabled,
             env_vars=env_vars,
+            debug=debug,
         )
     except Exception as e:
         typer.echo(f"Failed to run agent: {e}")
@@ -1443,6 +1445,7 @@ def solve(
     local_keys: bool = typer.Option(
         False, "--local-keys", "-l", help="Use local API keys."
     ),
+    debug: bool = typer.Option(False, help="Run the agent with debug logging"),
 ):
     from agentdesk import Desktop
     from taskara import Task
@@ -1685,6 +1688,7 @@ def solve(
                 version=agent_version,
                 auth_enabled=auth_enabled,
                 env_vars=env_vars,
+                debug=debug,
             )
         except Exception as e:
             typer.echo(f"Failed to run agent: {e}")
@@ -1717,6 +1721,8 @@ def solve(
                 name=agent,
                 version=agent_version,
                 auth_enabled=auth_enabled,
+                env_vars=env_vars,
+                debug=debug,
             )
         except Exception as e:
             typer.echo(f"Failed to run agent: {e}")

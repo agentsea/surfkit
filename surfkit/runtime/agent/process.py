@@ -55,6 +55,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         tags: Optional[List[str]] = None,
         labels: Optional[Dict[str, str]] = None,
         auth_enabled: bool = True,
+        debug: bool = False,
     ) -> AgentInstance:
 
         port = find_open_port(9090, 10090)
@@ -126,6 +127,9 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             environment["MODEL_PREFERENCE"] = ",".join(
                 agent_type.llm_providers.preference
             )
+
+        if debug:
+            environment["DEBUG"] = "true"
 
         process = subprocess.Popen(
             command,

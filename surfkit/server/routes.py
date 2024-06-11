@@ -13,6 +13,9 @@ from surfkit.auth.transport import get_user_dependency
 from surfkit.env import HUB_API_KEY_ENV
 from surfkit.server.models import V1SolveTask, V1UserProfile
 
+DEBUG_ENV_VAR = os.getenv("DEBUG", "false").lower() == "true"
+log_level = logging.DEBUG if DEBUG_ENV_VAR else logging.INFO
+logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
 
 
@@ -75,7 +78,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             device = None
             for Device in Agent.supported_devices():
                 if Device.type() == task_model.task.device.type:
-                    logger.info(f"found device: {task_model.task.device.model_dump()}")
+                    logger.debug(f"found device: {task_model.task.device.model_dump()}")
 
                     config = Device.connect_config_type()(
                         **task_model.task.device.config
@@ -145,12 +148,10 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
         if not tasks:
             raise Exception(f"Task {id} not found")
         task = tasks[0]
-        print("updating task...")
         if data.status:
             task.status = TaskStatus(data.status)
-            print("updated task status to: ", task.status)
+            logging.info("updated task status to: ", task.status)
         task.save()
-        print("saved task...")
         return task.to_v1()
 
     return api_router
