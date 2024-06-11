@@ -1,5 +1,10 @@
 import subprocess
 import sys
+from typing import Optional
+
+from taskara.runtime.base import Tracker, TrackerRuntime
+
+from surfkit.util import find_open_port
 
 
 def get_git_global_user_config():
@@ -136,3 +141,54 @@ def build_docker_image(
         )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+
+def tracker_addr_agent(
+    tracker: Tracker,
+    agent_runtime: str,
+) -> str:
+    if agent_runtime == "process":
+        if tracker.runtime.name() == "process":
+            return tracker.runtime.runtime_local_addr(tracker.name, tracker.owner_id)
+        elif tracker.runtime.name() == "docker":
+            return f"http://localhost:{tracker.port}"
+        elif tracker.runtime.name() == "kube":
+            port = find_open_port(9070, 9090)
+            if not port:
+                raise Exception("No open port found for tracker")
+            tracker.proxy(port)
+            return f"http://localhost:{port}"
+        else:
+            raise ValueError(f"Unknown agent runtime: {agent_runtime}")
+    elif agent_runtime == "docker":
+        if tracker.runtime.name() == "process":
+            raise ValueError("Cannot use Docker agent with a process tracker")
+        elif tracker.runtime.name() == "docker":
+            return tracker.runtime.runtime_local_addr(tracker.name, tracker.owner_id)
+        elif tracker.runtime.name() == "kube":
+            raise ValueError("Cannot use Docker agent with a Kubernetes tracker")
+        else:
+            raise ValueError(f"Unknown agent runtime: {agent_runtime}")
+    elif agent_runtime == "kube":
+        if tracker.runtime.name() == "process":
+            raise ValueError("Cannot use Kubernetes agent with a process tracker")
+        elif tracker.runtime.name() == "docker":
+            raise ValueError("Cannot use Kubernetes agent with a Docker tracker")
+        elif tracker.runtime.name() == "kube":
+            return tracker.runtime.runtime_local_addr(tracker.name, tracker.owner_id)
+        else:
+            raise ValueError(f"Unknown agent runtime: {agent_runtime}")
+    else:
+        raise ValueError(f"Unknown agent runtime: {agent_runtime}")
+
+
+def tracker_addr_local(
+    tracker: Tracker,
+) -> str:
+    local_port = tracker.port
+    if tracker.runtime.requires_proxy():
+        local_port = find_open_port(9070, 10070)
+        if not local_port:
+            raise SystemError("No available ports found")
+        tracker.proxy(local_port=local_port)
+    return f"http://localhost:{local_port}"

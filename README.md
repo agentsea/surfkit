@@ -188,19 +188,19 @@ Add the following function to your `~/.zshrc` (or similar)
 
 ```sh
 function sk() {
-    local project_dir="/path/to/surfkit/repo"
-    local venv_dir="$project_dir/.venv"
+  local project_dir="/path/to/surfkit/repo"
+  local venv_dir="$project_dir/.venv"
+  local ssh_auth_sock="$SSH_AUTH_SOCK"
+  local ssh_agent_pid="$SSH_AGENT_PID"
 
-    local ssh_auth_sock="$SSH_AUTH_SOCK"
-    local ssh_agent_pid="$SSH_AGENT_PID"
+  export SSH_AUTH_SOCK="$ssh_auth_sock"
+  export SSH_AGENT_PID="$ssh_agent_pid"
 
-    source "$venv_dir/bin/activate"
+  # Add the Poetry environment's bin directory to the PATH
+  export PATH="$venv_dir/bin:$PATH"
 
-    export SSH_AUTH_SOCK="$ssh_auth_sock"
-    export SSH_AGENT_PID="$ssh_agent_pid"
-
-    python -m surfkit.cli.main "$@"
-    deactivate
+  # Execute the surfkit.cli.main module using python -m
+  surfkit "$@"
 }
 ```
 

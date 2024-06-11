@@ -527,6 +527,13 @@ class AgentRuntime(Generic[R, C], ABC):
         """
         pass
 
+    @abstractmethod
+    def runtime_local_addr(self, name: str, owner_id: Optional[str] = None) -> str:
+        """
+        Returns the local address of the agent with respect to the runtime
+        """
+        pass
+
     def check_llm_providers(self, agent_type: AgentType, environment: dict) -> None:
         if agent_type.llm_providers:
             found = 0
