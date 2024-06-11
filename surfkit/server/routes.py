@@ -75,7 +75,8 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             device = None
             for Device in Agent.supported_devices():
                 if Device.type() == task_model.task.device.type:
-                    logger.debug(f"found device: {task_model.task.device.model_dump()}")
+                    logger.info(f"found device: {task_model.task.device.model_dump()}")
+
                     config = Device.connect_config_type()(
                         **task_model.task.device.config
                     )
