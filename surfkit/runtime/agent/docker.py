@@ -66,6 +66,15 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
     def connect(cls, cfg: DockerConnectConfig) -> "DockerAgentRuntime":
         return cls(cfg)
 
+    def ensure_network(self, network_name: str) -> None:
+        """Ensure that the specified Docker network exists, creating it if necessary."""
+        try:
+            self.client.networks.get(network_name)
+            print(f"Network '{network_name}' already exists.")
+        except NotFound:
+            self.client.networks.create(network_name)
+            print(f"Network '{network_name}' created.")
+
     def run(
         self,
         agent_type: AgentType,
@@ -154,10 +163,11 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         self.client.images.pull(img)
 
         print(f"running image {img}")
+        self.ensure_network("agentsea")
         try:
             container = self.client.containers.run(
                 img,
-                network_mode="bridge",
+                network="agentsea",
                 ports={port: port},
                 environment=env_vars,
                 detach=True,
@@ -245,6 +255,17 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         if follow_logs:
             print(f"Following logs for '{name}':")
             self._handle_logs_with_attach(name, attach)
+
+    def runtime_local_addr(self, name: str, owner_id: Optional[str] = None) -> str:
+        """
+        Returns the local address of the agent with respect to the runtime
+        """
+        instances = AgentInstance.find(name=name, owner_id=owner_id)
+        if not instances:
+            raise ValueError(f"No instances found for name '{name}'")
+        instance = instances[0]
+
+        return f"http://{name}:{instance.port}"
 
     def _handle_logs_with_attach(self, agent_name: str, attach: bool):
         import typer

@@ -60,6 +60,7 @@ def version():
 
 
 # Root command callback
+@app.callback(invoke_without_command=True)
 def default(
     ctx: typer.Context,
     debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug mode"),
@@ -68,6 +69,10 @@ def default(
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+        raise typer.Exit()
 
 
 # 'create' command group callback
@@ -1446,24 +1451,28 @@ def solve(
     from surfkit.config import HUB_API_URL, GlobalConfig
     from surfkit.server.models import V1SolveTask
     from surfkit.types import AgentType
-    from surfkit.util import find_open_port
+
+    if not agent_runtime:
+        if agent_file:
+            agent_runtime = "process"
+        elif agent_type:
+            agent_runtime = "docker"
+        else:
+            agent_runtime = "docker"
 
     _task_token = None
     if tracker:
+        from .util import tracker_addr_agent, tracker_addr_local
+
         trackers = Tracker.find(name=tracker)
         if not trackers:
             raise ValueError(f"Expected tracker with name '{tracker}'")
-        task_svr = trackers[0]
-
-        local_port = task_svr.port
-        if task_svr.runtime.requires_proxy():
-            local_port = find_open_port(9070, 10070)
-            if not local_port:
-                raise SystemError("No available ports found")
-            task_svr.proxy(local_port=local_port)
-        _remote_task_svr = f"http://localhost:{local_port}"
+        _tracker = trackers[0]
+        _tracker_agent_addr = tracker_addr_agent(_tracker, agent_runtime)
+        _tracker_local_addr = tracker_addr_local(_tracker)
 
     elif tracker_runtime:
+        from .util import tracker_addr_agent, tracker_addr_local
 
         if tracker_runtime == "docker":
             from taskara.runtime.docker import DockerTrackerRuntime
@@ -1483,37 +1492,43 @@ def solve(
         if not name:
             raise SystemError("Name is required for tracker")
 
-        task_svr = task_runt.run(name=name, auth_enabled=auth_enabled)
+        _tracker = task_runt.run(name=name, auth_enabled=auth_enabled)
         typer.echo(f"Tracker '{name}' created using '{tracker_runtime}' runtime")
 
-        local_port = task_svr.port
-        if task_svr.runtime.requires_proxy():
-            local_port = find_open_port(9070, 10070)
-            if not local_port:
-                raise SystemError("No available ports found")
-            task_svr.proxy(local_port=local_port)
-        _remote_task_svr = f"http://localhost:{local_port}"
+        _tracker_agent_addr = tracker_addr_agent(_tracker, agent_runtime)
+        _tracker_local_addr = tracker_addr_local(_tracker)
 
     elif tracker_remote:
-        _remote_task_svr = tracker_remote
+        _tracker_agent_addr = tracker_remote
+        _tracker_local_addr = tracker_remote
 
     else:
         from surfkit.config import HUB_API_URL, GlobalConfig
 
+        from .util import tracker_addr_agent, tracker_addr_local
+
         config = GlobalConfig.read()
         if config.api_key:
-            _remote_task_svr = HUB_API_URL
+            _tracker_agent_addr = HUB_API_URL
+            _tracker_local_addr = HUB_API_URL
             _task_token = config.api_key
         else:
-            trackers = Tracker.find()
+            trackers = Tracker.find(runtime_name=agent_runtime)
             if not trackers:
                 create = typer.confirm(
                     "No trackers found. Would you like to create one?"
                 )
                 if create:
                     from taskara.runtime.docker import DockerTrackerRuntime
+                    from taskara.runtime.kube import KubeTrackerRuntime
 
-                    task_runt = DockerTrackerRuntime()
+                    if agent_runtime == "docker" or agent_runtime == "process":
+                        task_runt = DockerTrackerRuntime()
+                    elif agent_runtime == "kube":
+                        task_runt = KubeTrackerRuntime()
+                    else:
+                        typer.echo(f"Invalid runtime: {agent_runtime}")
+                        raise typer.Exit()
 
                     name = get_random_name(sep="-")
                     if not name:
@@ -1533,21 +1548,8 @@ def solve(
                     f"Using tracker '{task_svr.name}' running on '{task_svr.runtime.name()}'"
                 )
 
-            local_port = task_svr.port
-            if task_svr.runtime.requires_proxy():
-                local_port = find_open_port(9070, 10070)
-                if not local_port:
-                    raise SystemError("No available ports found")
-                task_svr.proxy(local_port=local_port)
-            _remote_task_svr = f"http://localhost:{local_port}"
-
-    if not agent_runtime:
-        if agent_file:
-            agent_runtime = "process"
-        elif agent_type:
-            agent_runtime = "docker"
-        else:
-            agent_runtime = "docker"
+            _tracker_agent_addr = tracker_addr_agent(task_svr, agent_runtime)
+            _tracker_local_addr = tracker_addr_local(task_svr)
 
     runt = None
     if agent:
@@ -1601,6 +1603,11 @@ def solve(
             from agentdesk.server.models import V1ProviderData
             from agentdesk.vm.load import load_provider
 
+            if device_provider == "qemu" and agent_runtime != "process":
+                raise ValueError(
+                    f"QEMU provider is only supported for the agent 'process' runtime"
+                )
+
             data = V1ProviderData(type=device_provider)
             _provider = load_provider(data)
 
@@ -1624,6 +1631,12 @@ def solve(
         if not vms:
             raise ValueError(f"Device '{device}' not found")
         vm = vms[0]
+
+        if vm.provider and vm.provider.type == "qemu":
+            if agent_runtime != "process":
+                raise ValueError(
+                    "Qemu desktop can only be used with the agent 'process' runtime"
+                )
         _device = Desktop.from_vm(vm)
         v1device = _device.to_v1()
         typer.echo(f"found device '{device}'...")
@@ -1734,7 +1747,7 @@ def solve(
         device=v1device,
         assigned_to=agent,
         assigned_type=agent_type,
-        remote=_remote_task_svr,
+        remote=_tracker_local_addr,
         owner_id=owner,
         auth_token=_task_token,
     )
@@ -1754,13 +1767,14 @@ def solve(
         _view(
             desk=vm,
             agent=instance,
-            tracker_addr=_remote_task_svr,
+            tracker_addr=_tracker_local_addr,
             background=True,
             task_id=task.id,
             auth_token=_task_token,
         )
 
     typer.echo(f"Solving task '{task.description}' with agent '{agent}'...")
+    task._remote = _tracker_agent_addr
     solve_v1 = V1SolveTask(task=task.to_v1())
     runt.solve_task(agent, solve_v1, follow_logs=follow, attach=kill)
 

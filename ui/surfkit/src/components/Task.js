@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { updateTask } from "../api/Tasks";
 import RoleThreads from "./RoleThreads";
 
-export default function Task({ data, addr }) {
+export default function Task({ data, addr, token }) {
   const endOfMessagesRef = useRef(null);
   const prevMessagesLength = useRef(data?.thread?.messages.length || 0);
   const [message, setMessage] = useState(null);
@@ -22,17 +22,17 @@ export default function Task({ data, addr }) {
 
   const handleCancelTask = () => {
     console.log("cancelling task...");
-    updateTask(addr, data.id, { status: "canceling" });
+    updateTask(addr, data.id, { status: "canceling" }, token);
   };
 
   const handleFailTask = () => {
     console.log("failing task...");
-    updateTask(addr, data.id, { status: "failed" });
+    updateTask(addr, data.id, { status: "failed" }, token);
   };
 
   const handleCompleteTask = (stat) => {
     console.log("completing task...");
-    updateTask(addr, data.id, { status: "completed" });
+    updateTask(addr, data.id, { status: "completed" }, token);
   };
 
   const handleKeyDown = async (event) => {

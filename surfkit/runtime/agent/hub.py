@@ -80,3 +80,13 @@ class HubAgentRuntime(AgentRuntime):
             str: The logs from the pod.
         """
         pass
+
+    def runtime_local_addr(self, name: str, owner_id: Optional[str] = None) -> str:
+        """
+        Returns the local address of the agent with respect to the runtime
+        """
+        instances = AgentInstance.find(name=name, owner_id=owner_id)
+        if not instances:
+            raise ValueError(f"No instances found for name '{name}'")
+        instance = instances[0]
+        pass

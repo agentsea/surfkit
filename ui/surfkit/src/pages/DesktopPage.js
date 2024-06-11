@@ -13,6 +13,7 @@ export default function DesktopPage() {
   const taskAddr = queryParams.get("taskAddr") || "http://localhost:9070";
   const vncAddr = queryParams.get("vncAddr") || "ws://localhost:6080";
   const taskID = queryParams.get("taskID");
+  const token = queryParams.get("authToken");
 
   const [agentTask, setAgentTask] = useState(null);
 
@@ -21,7 +22,7 @@ export default function DesktopPage() {
   useEffect(() => {
     const handleStart = async () => {
       console.log("Starting fetch at:", new Date().toISOString());
-      const task = await getTask(taskAddr, taskID);
+      const task = await getTask(taskAddr, taskID, token);
       if (!task) {
         return;
       }
@@ -39,7 +40,7 @@ export default function DesktopPage() {
         clearTimeout(timeoutRef.current); // Clear the timeout if the component unmounts
       }
     };
-  }, [taskAddr, taskID]);
+  }, [taskAddr, taskID, token]);
   const ref = useRef();
 
   return (
@@ -47,7 +48,7 @@ export default function DesktopPage() {
       <div className="flex flex-row mt-16 gap-6">
         <div className="min-w-[400px] h-screen">
           {agentTask ? (
-            <Task data={agentTask} addr={taskAddr} />
+            <Task data={agentTask} addr={taskAddr} token={token} />
           ) : (
             <div className="border border-black flex flex-row p-12 items-center justify-center rounded-xl bg-white">
               <Typography variant="h5">No tasks</Typography>
