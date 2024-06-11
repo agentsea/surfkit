@@ -886,6 +886,8 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                             instances = AgentInstance.find(name=agent_name)
                             if instances:
                                 instances[0].delete(force=True)
+                            else:
+                                print(f"No instances found for name '{agent_name}'")
                         except:
                             pass
                     return
@@ -903,6 +905,8 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     instances = AgentInstance.find(name=agent_name)
                     if instances:
                         instances[0].delete(force=True)
+                    else:
+                        print(f"No instances found for name '{agent_name}'")
             except:
                 pass
         except ApiException as e:

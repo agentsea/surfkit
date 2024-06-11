@@ -34,7 +34,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
 
     @api_router.get("/")
     async def root():
-        return {"message": "Agent in the shell"}
+        return {"message": f"{Agent.name()} in the shell"}
 
     @api_router.get("/health")
     async def health():

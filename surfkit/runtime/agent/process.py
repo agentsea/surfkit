@@ -7,6 +7,7 @@ import sys
 import time
 from typing import Dict, Iterator, List, Optional, Type, Union
 
+import psutil
 import requests
 from agentdesk.util import find_open_port
 from mllm import Router
@@ -63,14 +64,8 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             raise ValueError("Could not find open port")
         logger.debug("running process")
 
-        metadata = {
-            "name": name,
-            "agent_type": agent_type.to_v1().model_dump(),
-            "port": port,
-            "env_vars": env_vars if env_vars else {},
-            "version": version,
-            "owner_id": owner_id,
-        }
+        if not env_vars:
+            env_vars = {}
 
         if llm_providers_local:
             if not agent_type.llm_providers:
@@ -99,18 +94,12 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                 raise ValueError(
                     "No API keys found locally for any of the providers in the agent type"
                 )
-            metadata["env_vars"].update(found)
 
-        self.check_llm_providers(agent_type, metadata["env_vars"])
+            env_vars.update(found)
+
+        self.check_llm_providers(agent_type, env_vars)
 
         command = f"SERVER_PORT={port} nohup {agent_type.cmd} SURFER={name} SERVER_PORT={port} > {os.path.join(config.AGENTSEA_LOG_DIR, name.lower())}.log 2>&1 &"
-        metadata["command"] = command
-
-        # Create metadata directory if it does not exist
-        os.makedirs(config.AGENTSEA_PROC_DIR, exist_ok=True)
-        # Write metadata to a file
-        with open(os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json"), "w") as f:
-            json.dump(metadata, f, indent=4)
 
         os.makedirs(config.AGENTSEA_LOG_DIR, exist_ok=True)
         print(f"running agent on port {port}")
@@ -119,6 +108,10 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
 
         if not env_vars:
             environment.update(env_vars)  # type: ignore
+
+        environment["AGENT_TYPE"] = agent_type.to_v1().model_dump_json()
+        environment["AGENT_NAME"] = name
+        environment["SERVER_PORT"] = str(port)
 
         if not auth_enabled:
             environment["AGENT_NO_AUTH"] = "true"
@@ -251,6 +244,8 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             instances = AgentInstance.find(name=agent_name)
             if instances:
                 instances[0].delete(force=True)
+            else:
+                print(f"No instances found for name '{agent_name}'")
             sys.exit(1)
 
         return handle_signal
@@ -288,6 +283,8 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                                 instances = AgentInstance.find(name=agent_name)
                                 if instances:
                                     instances[0].delete(force=True)
+                                else:
+                                    print(f"No instances found for name '{agent_name}'")
                             except:
                                 pass
                         return
@@ -306,6 +303,8 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
                         instances = AgentInstance.find(name=agent_name)
                         if instances:
                             instances[0].delete(force=True)
+                        else:
+                            print(f"No instances found for name '{agent_name}'")
                     except:
                         pass
                 raise
@@ -368,44 +367,36 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             List[AgentInstance]: A list of agent instances
         """
         instances = []
+
         if source:
-            metadata_dir = config.AGENTSEA_PROC_DIR
-            all_processes = subprocess.check_output(
-                "ps ax -o pid,command", shell=True, text=True
-            )
+            try:
+                # Iterate through all running processes
+                for proc in psutil.process_iter(["pid", "cmdline", "environ"]):
+                    env_vars = proc.info["environ"]
+                    if env_vars and "AGENT_NAME" in env_vars:
+                        name = env_vars.get("AGENT_NAME")
+                        port = env_vars.get("SERVER_PORT")
+                        agent_type_json = env_vars.get("AGENT_TYPE")
 
-            for filename in os.listdir(metadata_dir):
-                if filename.endswith(".json"):
-                    try:
-                        with open(os.path.join(metadata_dir, filename), "r") as file:
-                            metadata = json.load(file)
-
-                        # Check if process is still running
-                        process_info = f"SURFER={metadata['name']} "
-                        if process_info in all_processes:
-                            agent_type = V1AgentType.model_validate(
-                                metadata["agent_type"]
+                        if name and port and agent_type_json:
+                            agent_type_data = json.loads(agent_type_json)
+                            agent_type = AgentType.from_v1(
+                                V1AgentType.model_validate(agent_type_data)
                             )
-                            standard_agent_type = AgentType.from_v1(agent_type)
+
                             instance = AgentInstance(
-                                name=metadata["name"],
-                                type=standard_agent_type,
+                                name=name,
+                                type=agent_type,
                                 runtime=self,
                                 status=AgentStatus.RUNNING,
-                                port=metadata["port"],
+                                port=int(port),
                             )
                             instances.append(instance)
-                        else:
-                            # Process is not running, delete the metadata file
-                            os.remove(os.path.join(metadata_dir, filename))
-                            logger.info(
-                                f"Deleted metadata for non-existing process {metadata['name']}."
-                            )
 
-                    except Exception as e:
-                        logger.error(f"Error processing {filename}: {str(e)}")
+            except Exception as e:
+                logger.error(f"Error processing processes: {str(e)}")
         else:
-            return AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
+            instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
 
         return instances
 
@@ -429,11 +420,10 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             else:
                 raise SystemError(f"No running process found with the name {name}.")
 
-            # Delete the metadata file whether or not the process was found
-            metadata_file = os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json")
-            if os.path.exists(metadata_file):
-                os.remove(metadata_file)
-                logger.info(f"Deleted metadata file for {name}.")
+            log_file = os.path.join(config.AGENTSEA_LOG_DIR, f"{name}.log")
+            if os.path.exists(log_file):
+                os.remove(log_file)
+                logger.info(f"Deleted log file for {name}.")
 
         except subprocess.CalledProcessError as e:
             raise SystemError(f"Error while attempting to delete the process: {str(e)}")
