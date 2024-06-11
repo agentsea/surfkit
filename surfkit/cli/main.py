@@ -842,6 +842,11 @@ def list_types():
     print("")
 
 
+@app.command("find")
+def find():
+    list_types()
+
+
 @list_group.command("tasks")
 def list_tasks(
     remote: Optional[str] = typer.Option(
@@ -1394,9 +1399,7 @@ def build(
 
 @app.command(help="Use an agent to solve a task")
 def solve(
-    description: str = typer.Option(
-        ..., "--description", "-d", help="Description of the task."
-    ),
+    description: str = typer.Argument(..., help="Description of the task."),
     agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Name of the agent to use."
     ),
