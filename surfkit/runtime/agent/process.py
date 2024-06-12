@@ -328,22 +328,28 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
     ) -> AgentInstance:
         if source:
             try:
-                # Read the metadata file
-                with open(
-                    os.path.join(config.AGENTSEA_PROC_DIR, f"{name}.json", "r")
-                ) as f:
-                    metadata = json.load(f)
+                # Iterate through all running processes to find the required agent
+                for proc in psutil.process_iter(["pid", "environ"]):
+                    env_vars = proc.info["environ"]
+                    if env_vars and env_vars.get("AGENT_NAME") == name:
+                        port = env_vars.get("SERVER_PORT")
+                        agent_type_json = env_vars.get("AGENT_TYPE")
 
-                agent_type = V1AgentType.model_validate(metadata["agent_type"])
-                return AgentInstance(
-                    metadata["name"],
-                    AgentType.from_v1(agent_type),
-                    self,
-                    metadata["port"],
-                )
-            except FileNotFoundError:
-                raise ValueError(f"No metadata found for agent {name}")
-
+                        if port and agent_type_json:
+                            agent_type_data = json.loads(agent_type_json)
+                            agent_type = AgentType.from_v1(
+                                V1AgentType.model_validate(agent_type_data)
+                            )
+                            return AgentInstance(
+                                name=name,
+                                type=agent_type,
+                                runtime=self,
+                                status=AgentStatus.RUNNING,
+                                port=int(port),
+                            )
+                raise ValueError(f"No running process found for agent {name}")
+            except Exception as e:
+                raise ValueError(f"Error finding process for agent {name}: {str(e)}")
         else:
             instances = AgentInstance.find(
                 name=name, owner_id=owner_id, runtime_name=self.name()
@@ -519,55 +525,46 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
             owner_id (Optional[str]): The ID of the owner to filter instances.
         """
         # Fetch the running processes
-        all_processes = subprocess.check_output(
-            "ps ax -o pid,command", shell=True, text=True
-        )
+        running_processes_map = {}
+        for proc in psutil.process_iter(["pid", "environ"]):
+            try:
+                env_vars = proc.info["environ"]
+                if env_vars and "AGENT_NAME" in env_vars:
+                    process_name = env_vars["AGENT_NAME"]
+                    running_processes_map[process_name] = env_vars
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                continue
 
         # Fetch the agent instances from the database
         db_instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
-
-        # Create a mapping of process names to processes
-        running_processes_map = {}
-        for line in all_processes.strip().split("\n"):
-            if "SURFER=" in line:
-                parts = line.split()
-                pid = parts[0]
-                for part in parts:
-                    if part.startswith("SURFER="):
-                        process_name = part.split("=")[1]
-                        running_processes_map[process_name] = pid
-                        break
 
         # Create a mapping of instance names to instances
         db_instances_map = {instance.name: instance for instance in db_instances}
 
         # Check for processes that are running but not in the database
-        for process_name, pid in running_processes_map.items():
+        for process_name, env_vars in running_processes_map.items():
             if process_name not in db_instances_map:
                 print(
                     f"Process '{process_name}' is running but not in the database. Creating new instance."
                 )
-                metadata_file = os.path.join(
-                    config.AGENTSEA_PROC_DIR, f"{process_name}.json"
-                )
-                if not os.path.exists(metadata_file):
-                    print(f"Skipping process '{process_name}' as it lacks metadata.")
-                    continue
 
-                with open(metadata_file, "r") as f:
-                    metadata = json.load(f)
+                port = env_vars.get("SERVER_PORT")
+                agent_type_json = env_vars.get("AGENT_TYPE")
 
-                agent_type = V1AgentType.model_validate(metadata["agent_type"])
-                agent_type_instance = AgentType.from_v1(agent_type)
-                new_instance = AgentInstance(
-                    name=process_name,
-                    type=agent_type_instance,
-                    runtime=self,
-                    status=AgentStatus.RUNNING,
-                    port=metadata["port"],
-                    owner_id=owner_id,
-                )
-                new_instance.save()
+                if port and agent_type_json:
+                    agent_type_data = json.loads(agent_type_json)
+                    agent_type = AgentType.from_v1(
+                        V1AgentType.model_validate(agent_type_data)
+                    )
+                    new_instance = AgentInstance(
+                        name=process_name,
+                        type=agent_type,
+                        runtime=self,
+                        status=AgentStatus.RUNNING,
+                        port=int(port),
+                        owner_id=owner_id,
+                    )
+                    new_instance.save()
 
         # Check for instances in the database that are not running as processes
         for instance_name, instance in db_instances_map.items():

@@ -13,7 +13,7 @@ from surfkit.config import GlobalConfig
 
 from .db.conn import WithDB
 from .db.models import AgentTypeRecord
-from .env import HUB_API_KEY_ENV, HUB_SERVER_API_ENV
+from .env import AGENTESEA_HUB_API_KEY_ENV
 from .server.models import (
     V1AgentType,
     V1AgentTypes,
@@ -443,7 +443,7 @@ class AgentType(WithDB):
         url = f"{addr}{endpoint}"
         headers = {}
         if not auth_token:
-            auth_token = os.getenv(HUB_API_KEY_ENV)
+            auth_token = os.getenv(AGENTESEA_HUB_API_KEY_ENV)
             if not auth_token:
                 config = GlobalConfig.read()
                 if config.api_key:

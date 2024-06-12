@@ -13,7 +13,7 @@ from taskara import Benchmark, Eval, Task, V1Benchmark, V1Tasks
 from taskara.runtime.base import Tracker
 from taskara.task import Task
 
-from surfkit.config import HUB_API_URL, GlobalConfig
+from surfkit.config import AGENTSEA_HUB_API_URL, GlobalConfig
 from surfkit.env_opts import find_envs
 from surfkit.runtime.agent.base import AgentInstance
 from surfkit.runtime.agent.docker import DockerAgentRuntime, DockerConnectConfig
@@ -189,7 +189,7 @@ class Client:
                 raise ValueError(
                     "No API key found. Please run `surfkit login` first or provide a tracker"
                 )
-            _remote_tracker = HUB_API_URL
+            _remote_tracker = AGENTSEA_HUB_API_URL
 
         task = Task(
             description=description,
@@ -260,7 +260,9 @@ class Client:
             elif len(type_parts) == 2:
                 try:
                     types = AgentType.find(
-                        remote=HUB_API_URL, namespace=type_parts[0], name=type_parts[1]
+                        remote=AGENTSEA_HUB_API_URL,
+                        namespace=type_parts[0],
+                        name=type_parts[1],
                     )
                     if types:
                         all_types.extend(types)
@@ -406,7 +408,7 @@ class Client:
         all_types: List[AgentType] = []
 
         try:
-            types = AgentType.find(remote=HUB_API_URL)
+            types = AgentType.find(remote=AGENTSEA_HUB_API_URL)
             all_types.extend(types)
         except Exception as e:
             pass
@@ -456,7 +458,7 @@ class Client:
             config = GlobalConfig.read()
             if config.api_key:
                 try:
-                    tasks_list = Task.find(remote=HUB_API_URL)
+                    tasks_list = Task.find(remote=AGENTSEA_HUB_API_URL)
                 except:
                     pass
 
@@ -507,7 +509,7 @@ class Client:
         return desktop
 
     def get_type(self, name: str) -> AgentType:
-        types = AgentType.find(remote=HUB_API_URL, name=name)
+        types = AgentType.find(remote=AGENTSEA_HUB_API_URL, name=name)
         if not types:
             raise ValueError(f"Agent type '{name}' not found")
         agent_type = types[0]
@@ -519,15 +521,15 @@ class Client:
         if not config.api_key:
             raise ValueError("No API key found. Please run `surfkit login` first.")
 
-        from surfkit.env import HUB_API_KEY_ENV
+        from surfkit.env import AGENTESEA_HUB_API_KEY_ENV
 
-        os.environ[HUB_API_KEY_ENV] = config.api_key
+        os.environ[AGENTESEA_HUB_API_KEY_ENV] = config.api_key
 
         all_tasks: List[Task] = []
 
         if remote:
             try:
-                tasks = Task.find(remote=HUB_API_URL, id=id)
+                tasks = Task.find(remote=AGENTSEA_HUB_API_URL, id=id)
                 all_tasks.extend(tasks)
             except:
                 pass
@@ -602,7 +604,7 @@ class Client:
         logger.info("Tracker deleted")
 
     def delete_type(self, name: str) -> None:
-        types = AgentType.find(remote=HUB_API_URL, name=name)
+        types = AgentType.find(remote=AGENTSEA_HUB_API_URL, name=name)
         if not types:
             raise ValueError(f"Agent type '{name}' not found")
         agent_type = types[0]
@@ -648,7 +650,7 @@ class Client:
         from taskara.runtime.base import Tracker
 
         from surfkit.cli.util import tracker_addr_agent, tracker_addr_local
-        from surfkit.config import HUB_API_URL, GlobalConfig
+        from surfkit.config import AGENTSEA_HUB_API_URL, GlobalConfig
         from surfkit.server.models import V1SolveTask
         from surfkit.types import AgentType
 
@@ -700,8 +702,8 @@ class Client:
         else:
             config = GlobalConfig.read()
             if config.api_key:
-                _tracker_agent_addr = HUB_API_URL
-                _tracker_local_addr = HUB_API_URL
+                _tracker_agent_addr = AGENTSEA_HUB_API_URL
+                _tracker_local_addr = AGENTSEA_HUB_API_URL
                 _task_token = config.api_key
             else:
                 trackers = Tracker.find(runtime_name=agent_runtime)
@@ -814,7 +816,9 @@ class Client:
                 config = GlobalConfig.read()
                 if config.api_key:
                     types = AgentType.find(
-                        remote=HUB_API_URL, namespace=type_parts[0], name=type_parts[1]
+                        remote=AGENTSEA_HUB_API_URL,
+                        namespace=type_parts[0],
+                        name=type_parts[1],
                     )
                     if types:
                         all_types.extend(types)

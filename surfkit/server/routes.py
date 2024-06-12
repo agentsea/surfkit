@@ -10,7 +10,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from surfkit.agent import TaskAgent
 from surfkit.auth.transport import get_user_dependency
-from surfkit.env import HUB_API_KEY_ENV
+from surfkit.env import AGENTESEA_HUB_API_KEY_ENV
 from surfkit.server.models import V1SolveTask, V1UserProfile
 
 DEBUG_ENV_VAR = os.getenv("DEBUG", "false").lower() == "true"
@@ -159,9 +159,9 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(10))
 def get_remote_task(id: str, owner_id: str, server: str) -> Task:
-    HUB_API_KEY = os.environ.get(HUB_API_KEY_ENV)
+    HUB_API_KEY = os.environ.get(AGENTESEA_HUB_API_KEY_ENV)
     if not HUB_API_KEY:
-        raise Exception(f"${HUB_API_KEY_ENV} not set")
+        raise Exception(f"${AGENTESEA_HUB_API_KEY_ENV} not set")
 
     logger.debug(f"connecting to remote task: {id} key: {HUB_API_KEY}")
     try:
