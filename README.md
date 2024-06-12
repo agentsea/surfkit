@@ -10,7 +10,7 @@
   <p align="center">
     A toolkit for building AI agents that use devices
     <br />
-    <a href="https://github.com/agentsea/surfkit"><strong>Explore the docs »</strong></a>
+    <a href="https://docs.hub.agentsea.ai/introduction"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/agentsea/surfkit">View Demo</a>
@@ -181,6 +181,19 @@ Run a published agent
 ```sh
 surfkit create agent --type SurfPizza --runtime kube
 ```
+
+## Integrations
+
+Skillpacks is integrated with:
+
+- [MLLM](https://github.com/agentsea/mllm) A prompt management, routing, and schema validation library for multimodal LLMs
+- [Taskara](https://github.com/agentsea/taskara) A task management library for AI agents
+- [Skillpacks](https://github.com/agentsea/skillpacks) A library to fine tune AI agents on tasks.
+- [Threadmem](https://github.com/agentsea/threadmem) A thread management library for AI agents
+
+## Community
+
+Come join us on [Slack](https://agentsea.slack.com/join/signup)
 
 ## Developing
 
