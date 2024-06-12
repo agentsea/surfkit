@@ -1787,13 +1787,13 @@ protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4
 
 [[package]]
 name = "google-cloud-storage"
-version = "2.16.0"
+version = "2.17.0"
 description = "Google Cloud Storage API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-cloud-storage-2.16.0.tar.gz", hash = "sha256:dda485fa503710a828d01246bd16ce9db0823dc51bbca742ce96a6817d58669f"},
-    {file = "google_cloud_storage-2.16.0-py2.py3-none-any.whl", hash = "sha256:91a06b96fb79cf9cdfb4e759f178ce11ea885c79938f89590344d079305f5852"},
+    {file = "google-cloud-storage-2.17.0.tar.gz", hash = "sha256:49378abff54ef656b52dca5ef0f2eba9aa83dc2b2c72c78714b03a1a95fe9388"},
+    {file = "google_cloud_storage-2.17.0-py2.py3-none-any.whl", hash = "sha256:5b393bc766b7a3bc6f5407b9e665b2450d36282614b7945e570b3480a456d1e1"},
 ]
 
 [package.dependencies]
@@ -2658,19 +2658,19 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.31"
+version = "0.1.32"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.31-py3-none-any.whl", hash = "sha256:cdf9af247a83600829f6997c12f9835456a88d8f35c98c336ec11a8a08732922"},
-    {file = "mllm-0.1.31.tar.gz", hash = "sha256:bb308a6f490e4d6ccd9504e4bfbe1e5326e2d4a5246b5fcb1e3c184b68f46813"},
+    {file = "mllm-0.1.32-py3-none-any.whl", hash = "sha256:99602efaef5a405c5def3d7c41e6c0bc162935d1e9145aa99312bd8f6e84bc53"},
+    {file = "mllm-0.1.32.tar.gz", hash = "sha256:8f2727ae7e597539e32a904ef4233b580e32f3da3771f1f41db415bd89aeb9fa"},
 ]
 
 [package.dependencies]
 litellm = ">=1.37.19,<2.0.0"
 tenacity = ">=8.2.3,<9.0.0"
-threadmem = ">=0.2.28,<0.3.0"
+threadmem = ">=0.2.29,<0.3.0"
 
 [[package]]
 name = "multidict"
@@ -4309,18 +4309,18 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.31"
+version = "0.1.32"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.31-py3-none-any.whl", hash = "sha256:a6522b6f29600057f47a7c99b5d50563e9bee17d5db7bec4ac287758b917e603"},
-    {file = "skillpacks-0.1.31.tar.gz", hash = "sha256:4d9b73550d73a7918dffbb95521686b495a3f339b2116aa4443b425bbc8723ea"},
+    {file = "skillpacks-0.1.32-py3-none-any.whl", hash = "sha256:241d686b12127c558c536b68c41d4893cef78e8aea950e67a84f3acbe1a16c3f"},
+    {file = "skillpacks-0.1.32.tar.gz", hash = "sha256:011ee5d01d3e6287d6b0b1f97d087373ede7f887ac5cfdfdfe3263b355a10294"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.26,<0.2.0"
-mllm = ">=0.1.31,<0.2.0"
+mllm = ">=0.1.32,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
@@ -4474,13 +4474,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.109"
+version = "0.1.110"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.109-py3-none-any.whl", hash = "sha256:6c47631ffbda7e63908fe953f1a550880f700fea0ee49a20560c6f8b1542e515"},
-    {file = "taskara-0.1.109.tar.gz", hash = "sha256:321a0e8e2e946a8f72884a45af843a40bb6596e2d5ae2609e748e505d621d495"},
+    {file = "taskara-0.1.110-py3-none-any.whl", hash = "sha256:37fbd5395f7520f421dd7267c89a265f675a60947ad1bb52d5455bec4310ba6e"},
+    {file = "taskara-0.1.110.tar.gz", hash = "sha256:c162f7f88a190ac8257400e84f749ffd208890d4101c842a6e0039e02be2aeb3"},
 ]
 
 [package.dependencies]
@@ -4488,7 +4488,7 @@ devicebay = ">=0.1.25,<0.2.0"
 namesgenerator = ">=0.3,<0.4"
 pydantic = ">=2.6.4,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.31,<0.2.0"
+skillpacks = ">=0.1.32,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 
@@ -4528,17 +4528,19 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.28"
+version = "0.2.29"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.28-py3-none-any.whl", hash = "sha256:2a76b6769c53967576c8c0d0526974b3bdf6913db3787f57e529fe18629bd039"},
-    {file = "threadmem-0.2.28.tar.gz", hash = "sha256:eecf9944a0dec4da0bdaf78c88084f633d563a604c7290392e2565d3a3e2ed39"},
+    {file = "threadmem-0.2.29-py3-none-any.whl", hash = "sha256:cf0220288245b9058cdfd095b6e323e344285917ec5e538f5d96891ccfa9a14d"},
+    {file = "threadmem-0.2.29.tar.gz", hash = "sha256:6c6bcd88af8f4da527c1909fd83ab9c16bb7258b83ae59e134437466b020139a"},
 ]
 
 [package.dependencies]
 fastapi = {version = ">=0.109,<0.110", extras = ["all"]}
+google-cloud-storage = ">=2.17.0,<3.0.0"
+pillow = ">=10.3.0,<11.0.0"
 pydantic = ">=2.6.3,<3.0.0"
 requests = ">=2.31.0,<3.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
@@ -5481,4 +5483,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "d1e0149554cedcc160b651f856e000638c77e07fdf2fd3cca8d94a26ee002c78"
+content-hash = "810a9b414899076f8b162845385cf54af0d50b253c9578776ead6e06674d6e26"
