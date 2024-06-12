@@ -4474,13 +4474,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.111"
+version = "0.1.112"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.111-py3-none-any.whl", hash = "sha256:a6c8dbd61e31a3f55d0c034d20878ddef472ad8e11c6b48c25039f719757ebde"},
-    {file = "taskara-0.1.111.tar.gz", hash = "sha256:ad6275ae2e69a0934c1109bad4c5ab295895a34a16bc7a56a632b3c4ab3e7963"},
+    {file = "taskara-0.1.112-py3-none-any.whl", hash = "sha256:84dac682a7f4095824727898af3b79f4cd71fc5ff82faaac928444cd15cf7812"},
+    {file = "taskara-0.1.112.tar.gz", hash = "sha256:901dce64f88d81f5709539c6e6e50866c158c49e5ef6b1098851945b5630e69e"},
 ]
 
 [package.dependencies]
@@ -5483,4 +5483,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "9a5bd184fc64a16c468c5417a0d39ef4d2f967e657241e0f7458c1f857ba410b"
+content-hash = "e75325fa26085a5ac4ebd5b00275eb19cacb891cc4effe0564745179716f19ae"
