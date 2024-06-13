@@ -2658,19 +2658,22 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.32"
+version = "0.1.34"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.32-py3-none-any.whl", hash = "sha256:99602efaef5a405c5def3d7c41e6c0bc162935d1e9145aa99312bd8f6e84bc53"},
-    {file = "mllm-0.1.32.tar.gz", hash = "sha256:8f2727ae7e597539e32a904ef4233b580e32f3da3771f1f41db415bd89aeb9fa"},
+    {file = "mllm-0.1.34-py3-none-any.whl", hash = "sha256:06ca195aaf505e7c3b972fca59b52616d25e025dc8968fc1953fc8323b5dc143"},
+    {file = "mllm-0.1.34.tar.gz", hash = "sha256:506b53022ecfcf0896cf0646a0ad85fa906285c86409abb8e2a7de6bbfcb463a"},
 ]
 
 [package.dependencies]
 litellm = ">=1.37.19,<2.0.0"
 tenacity = ">=8.2.3,<9.0.0"
 threadmem = ">=0.2.29,<0.3.0"
+
+[package.extras]
+gemini = ["google-generativeai (>=0.6.0,<0.7.0)"]
 
 [[package]]
 name = "multidict"
@@ -4474,13 +4477,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.112"
+version = "0.1.113"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.112-py3-none-any.whl", hash = "sha256:84dac682a7f4095824727898af3b79f4cd71fc5ff82faaac928444cd15cf7812"},
-    {file = "taskara-0.1.112.tar.gz", hash = "sha256:901dce64f88d81f5709539c6e6e50866c158c49e5ef6b1098851945b5630e69e"},
+    {file = "taskara-0.1.113-py3-none-any.whl", hash = "sha256:52661eae2870b860b4701b5fd1f6169b556f5ca5321842ab59d40c0c456a0b6b"},
+    {file = "taskara-0.1.113.tar.gz", hash = "sha256:c37429e89c02e49ac51ccdaed98474bf68d0d70cd81bf3918626a29e27e2f9a5"},
 ]
 
 [package.dependencies]
@@ -4491,6 +4494,7 @@ shortuuid = ">=1.0.13,<2.0.0"
 skillpacks = ">=0.1.32,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
+tqdm = ">=4.66.4,<5.0.0"
 
 [package.extras]
 all = ["docker (>=7.0.0,<8.0.0)", "google-auth (>=2.29.0,<3.0.0)", "google-cloud-container (>=2.45.0,<3.0.0)", "kubernetes (>=29.0.0,<30.0.0)", "tabulate (>=0.9.0,<0.10.0)", "typer (>=0.12.3,<0.13.0)"]
@@ -5483,4 +5487,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e75325fa26085a5ac4ebd5b00275eb19cacb891cc4effe0564745179716f19ae"
+content-hash = "71d21fd6916f0c38c3dc98425c8e861e356d6c67aeb49ae34f9fa82eadf8e254"

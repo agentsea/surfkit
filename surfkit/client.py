@@ -892,9 +892,9 @@ class Client:
         owner = "tom@myspace.com"
         config = GlobalConfig.read()
         if config.api_key:
-            from surfkit.hub import Hub
+            from surfkit.hub import HubAuth
 
-            hub = Hub()
+            hub = HubAuth()
             user_info = hub.get_user_info(config.api_key)
             owner = user_info.email
 

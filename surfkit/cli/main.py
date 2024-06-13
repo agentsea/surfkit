@@ -789,45 +789,58 @@ def list_types():
     from surfkit.config import AGENTSEA_HUB_API_URL
     from surfkit.types import AgentType
 
-    all_types: List[AgentType] = []
+    table = []
 
     try:
         types = AgentType.find(remote=AGENTSEA_HUB_API_URL)
-        all_types.extend(types)
+        for typ in types:
+            name = typ.name
+            if typ.namespace:
+                name = f"{typ.namespace}/{name}"
+
+            supports = ""
+            if typ.supports:
+                supports = ", ".join(typ.supports)
+
+            tags = ""
+            if typ.tags:
+                tags = ", ".join(typ.tags)
+
+            table.append(
+                [name, typ.kind, typ.description, supports, tags, AGENTSEA_HUB_API_URL]
+            )
     except Exception as e:
         pass
 
-    if not all_types:
+    if not table:
         types = AgentType.find()
-        all_types.extend(types)
+        for typ in types:
+            name = typ.name
+            if typ.namespace:
+                name = f"{typ.namespace}/{name}"
 
-    if not all_types:
+            supports = ""
+            if typ.supports:
+                supports = ", ".join(typ.supports)
+
+            tags = ""
+            if typ.tags:
+                tags = ", ".join(typ.tags)
+
+            table.append(
+                [
+                    name,
+                    typ.kind,
+                    typ.description,
+                    supports,
+                    tags,
+                    "local",
+                ]
+            )
+
+    if not table:
         print("No types found")
         return
-
-    table = []
-    for typ in all_types:
-        name = typ.name
-        if typ.namespace:
-            name = f"{typ.namespace}/{name}"
-
-        supports = ""
-        if typ.supports:
-            supports = ", ".join(typ.supports)
-
-        tags = ""
-        if typ.tags:
-            tags = ", ".join(typ.tags)
-
-        table.append(
-            [
-                name,
-                typ.kind,
-                typ.description,
-                supports,
-                tags,
-            ]
-        )
 
     print(
         tabulate(
@@ -838,6 +851,7 @@ def list_types():
                 "Description",
                 "Supports",
                 "Tags",
+                "Source",
             ],
         )
     )
@@ -1747,9 +1761,9 @@ def solve(
     owner = "tom@myspace.com"
     config = GlobalConfig.read()
     if config.api_key:
-        from surfkit.hub import Hub
+        from surfkit.hub import HubAuth
 
-        hub = Hub()
+        hub = HubAuth()
         user_info = hub.get_user_info(config.api_key)
         owner = user_info.email
 
@@ -1999,6 +2013,26 @@ def get_tracker_logs(
         except KeyboardInterrupt:
             typer.echo("Stopped following logs.")
 
+
+@app.command("config")
+def config():
+    """
+    Retrieve tracker logs
+    """
+    from surfkit.config import (
+        AGENTSEA_AUTH_URL,
+        AGENTSEA_HUB_API_URL,
+        AGENTSEA_HUB_URL,
+        GlobalConfig,
+    )
+
+    typer.echo(f"Hub URL: {AGENTSEA_HUB_URL}")
+    typer.echo(f"Hub API URL: {AGENTSEA_HUB_API_URL}")
+    typer.echo(f"Auth URL: {AGENTSEA_AUTH_URL}")
+
+    config = GlobalConfig.read()
+    if config.api_key:
+        typer.echo(f"API key: {config.api_key}")
 
 if __name__ == "__main__":
     app()

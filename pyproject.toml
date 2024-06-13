@@ -21,7 +21,8 @@ litellm = "^1.35.8"
 tiktoken = "^0.6.0"
 rich = "^13.7.1"
 agentdesk = "^0.2.85"
-taskara = "^0.1.112"
+tqdm = "^4.66.4"
+taskara = "^0.1.113"
 
 
 [tool.poetry.group.dev.dependencies]

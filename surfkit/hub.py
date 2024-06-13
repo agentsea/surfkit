@@ -2,19 +2,20 @@ import os
 
 import requests
 
+from .config import AGENTSEA_AUTH_URL
 from .server.models import V1UserProfile
 
 
-class Hub:
-    """The Agentsea Hub"""
+class HubAuth:
+    """The Agentsea Hub Auth"""
 
-    def __init__(self, hub_url: str = "https://api.hub.agentlabs.xyz") -> None:
-        self.hub_url = os.getenv("AGENTSEA_HUB_API_URL", hub_url)
+    def __init__(self, hub_auth_url: str = AGENTSEA_AUTH_URL) -> None:
+        self.hub_auth_url = os.getenv("AGENTSEA_HUB_API_URL", hub_auth_url)
 
     def get_api_key(self, token: str) -> str:
         """Get the api key from the hub"""
 
-        hub_key_url = f"{self.hub_url}/v1/users/me/keys"
+        hub_key_url = f"{self.hub_auth_url}/v1/users/me/keys"
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(hub_key_url, headers=headers)
         response.raise_for_status()
@@ -25,7 +26,7 @@ class Hub:
     def get_user_info(self, token: str) -> V1UserProfile:
         """Get user info from the hub"""
 
-        hub_user_url = f"{self.hub_url}/v1/users/me"
+        hub_user_url = f"{self.hub_auth_url}/v1/users/me"
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(hub_user_url, headers=headers)
         response.raise_for_status()
