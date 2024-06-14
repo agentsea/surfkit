@@ -96,27 +96,67 @@ def build_docker_image(
     platforms: str = "linux/amd64,linux/arm64",
 ):
     try:
+        # Check Docker version
+        result = subprocess.run(
+            ["docker", "--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode != 0:
+            raise RuntimeError("Docker is not installed or not running.")
+        print(result.stdout.decode().strip())
+
         # Ensure using the correct Docker context
-        subprocess.run(
+        result = subprocess.run(
             ["docker", "context", "use", "default"],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Error setting Docker context: {result.stderr.decode()}"
+            )
 
-        # Create or use an existing buildx builder that supports multi-arch
+        # Check if the buildx builder exists
         result = subprocess.run(
-            ["docker", "buildx", "create", "--name", builder, "--use", "--append"],
+            ["docker", "buildx", "inspect", builder],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         if result.returncode != 0:
-            # If creation failed because it already exists, just use it
-            subprocess.run(
+            print(f"Builder '{builder}' not found. Creating a new builder.")
+            result = subprocess.run(
+                ["docker", "buildx", "create", "--name", builder, "--use"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"Error creating buildx builder: {result.stderr.decode()}"
+                )
+        else:
+            # Use the existing builder
+            result = subprocess.run(
                 ["docker", "buildx", "use", builder],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"Error using buildx builder: {result.stderr.decode()}"
+                )
+
+        # Ensure the builder is bootstrapped
+        result = subprocess.run(
+            ["docker", "buildx", "inspect", "--bootstrap"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Error bootstrapping buildx builder: {result.stderr.decode()}"
             )
 
         # Prepare the command for building the image
@@ -131,16 +171,24 @@ def build_docker_image(
         result = subprocess.run(
             command, check=True, stdout=sys.stdout, stderr=subprocess.STDOUT
         )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Error building the Docker image: {result.stderr.decode()}"
+            )
+
         print(
             f"Docker image tagged as {tag} has been successfully built{' and pushed' if push else ''} for platforms {platforms}."
         )
 
     except subprocess.CalledProcessError as e:
-        print(
-            f"An error occurred while building {'and pushing ' if push else ''}the Docker image for platforms {platforms}: {e.stderr.decode() if e.stderr else None}"
-        )
+        print(f"Subprocess error: {e.stderr.decode() if e.stderr else str(e)}")
+        raise
+    except RuntimeError as e:
+        print(f"Runtime error: {e}")
+        raise
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        raise
 
 
 def tracker_addr_agent(

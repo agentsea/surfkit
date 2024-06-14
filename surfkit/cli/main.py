@@ -1482,6 +1482,53 @@ def solve(
         else:
             agent_runtime = "docker"
 
+    runt = None
+    if agent:
+        active_runtimes = AgentInstance.active_runtimes()
+        for runtm in active_runtimes:
+            runtm.refresh()
+
+        instances = AgentInstance.find(name=agent)
+        if not instances:
+            raise ValueError(f"Expected instances of '{agent}'")
+        typer.echo(f"Found agent instance '{agent}'")
+        instance = instances[0]
+        runt = instance.runtime
+
+    else:
+        if agent_runtime == "docker":
+            from surfkit.runtime.agent.docker import (
+                DockerAgentRuntime,
+                DockerConnectConfig,
+            )
+
+            dconf = DockerConnectConfig()
+            runt = DockerAgentRuntime.connect(cfg=dconf)
+
+        elif agent_runtime == "kube":
+            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
+
+            kconf = KubeConnectConfig()
+            runt = KubeAgentRuntime.connect(cfg=kconf)
+
+        elif agent_runtime == "process":
+            from surfkit.runtime.agent.process import (
+                ProcessAgentRuntime,
+                ProcessConnectConfig,
+            )
+
+            pconf = ProcessConnectConfig()
+            runt = ProcessAgentRuntime.connect(cfg=pconf)
+
+        else:
+            if agent_file or agent_type:
+                raise ValueError(f"Unknown runtime '{agent_runtime}'")
+
+    if not runt:
+        raise ValueError(f"Unknown runtime '{agent_runtime}'")
+
+    agent_runtime = runt.name()
+
     _task_token = None
     if tracker:
         from .util import tracker_addr_agent, tracker_addr_local
@@ -1562,7 +1609,7 @@ def solve(
                     )
                 else:
                     raise ValueError(
-                        "`tracker`, `tracker_runtime`, or `tracker_remote` flag must be provided. Or a tracker must be running"
+                        "`tracker`, `tracker_runtime`, or `tracker_remote` flag must be provided. Or a tracker must be running, or a hub API key must be present"
                     )
             else:
                 task_svr = trackers[0]
@@ -1572,51 +1619,6 @@ def solve(
 
             _tracker_agent_addr = tracker_addr_agent(task_svr, agent_runtime)
             _tracker_local_addr = tracker_addr_local(task_svr)
-
-    runt = None
-    if agent:
-        active_runtimes = AgentInstance.active_runtimes()
-        for runtm in active_runtimes:
-            runtm.refresh()
-
-        instances = AgentInstance.find(name=agent)
-        if not instances:
-            raise ValueError(f"Expected instances of '{agent}'")
-        typer.echo(f"Found agent instance '{agent}'")
-        instance = instances[0]
-        runt = instance.runtime
-
-    else:
-        if agent_runtime == "docker":
-            from surfkit.runtime.agent.docker import (
-                DockerAgentRuntime,
-                DockerConnectConfig,
-            )
-
-            dconf = DockerConnectConfig()
-            runt = DockerAgentRuntime.connect(cfg=dconf)
-
-        elif agent_runtime == "kube":
-            from surfkit.runtime.agent.kube import KubeAgentRuntime, KubeConnectConfig
-
-            kconf = KubeConnectConfig()
-            runt = KubeAgentRuntime.connect(cfg=kconf)
-
-        elif agent_runtime == "process":
-            from surfkit.runtime.agent.process import (
-                ProcessAgentRuntime,
-                ProcessConnectConfig,
-            )
-
-            pconf = ProcessConnectConfig()
-            runt = ProcessAgentRuntime.connect(cfg=pconf)
-
-        else:
-            if agent_file or agent_type:
-                raise ValueError(f"Unknown runtime '{agent_runtime}'")
-
-    if not runt:
-        raise ValueError(f"Unknown runtime '{agent_runtime}'")
 
     v1device = None
     _device = None
@@ -2033,6 +2035,7 @@ def config():
     config = GlobalConfig.read()
     if config.api_key:
         typer.echo(f"API key: {config.api_key}")
+
 
 if __name__ == "__main__":
     app()

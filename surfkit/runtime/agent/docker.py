@@ -16,6 +16,7 @@ from surfkit.server.models import V1AgentType, V1SolveTask
 from surfkit.types import AgentType
 
 from .base import AgentInstance, AgentRuntime, AgentStatus
+from .util import pull_image
 
 logger = logging.getLogger(__name__)
 
@@ -585,47 +586,3 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         logger.debug(
             "Refresh complete. State synchronized between Docker and the database."
         )
-
-
-def pull_image(img: str, api_client: APIClient):
-    """
-    Pulls a Docker image with progress bars for each layer.
-
-    Args:
-        img (str): The Docker image to pull.
-        api_client (APIClient): The Docker API client.
-    """
-
-    print(f"Pulling Docker image '{img}'...")
-
-    progress_bars = {}
-    layers = {}
-
-    for line in api_client.pull(img, stream=True, decode=True):
-        if "id" in line and "progressDetail" in line:
-            layer_id = line["id"]
-            progress_detail = line["progressDetail"]
-            current = progress_detail.get("current", 0)
-            total = progress_detail.get("total", 0)
-
-            if total:
-                if layer_id not in layers:
-                    progress_bars[layer_id] = tqdm(
-                        total=total,
-                        desc=f"Layer {layer_id}",
-                        leave=False,
-                        ncols=100,
-                    )
-                    layers[layer_id] = 0
-
-                layers[layer_id] = current
-                progress_bars[layer_id].n = current
-                progress_bars[layer_id].refresh()
-
-    # Close all progress bars
-    for bar in progress_bars.values():
-        bar.n = bar.total  # Ensure the progress bar is full before closing
-        bar.refresh()
-        bar.close()
-
-    print("")

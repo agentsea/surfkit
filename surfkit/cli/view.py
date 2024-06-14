@@ -12,9 +12,11 @@ from agentdesk.key import SSHKeyPair
 from agentdesk.proxy import cleanup_proxy, ensure_ssh_proxy
 from agentdesk.util import check_command_availability, find_open_port, get_docker_host
 from agentdesk.vm.base import DesktopVM
+from docker.api.client import APIClient
 from docker.models.containers import Container
 
 from surfkit.runtime.agent.base import AgentInstance
+from surfkit.runtime.agent.util import pull_image
 
 UI_IMG = "us-central1-docker.pkg.dev/agentsea-dev/guisurfer/surfkit-ui:latest"
 
@@ -86,7 +88,8 @@ def view(
         if not host_port:
             raise ValueError("Could not find an open port for the UI")
 
-        client.images.pull(UI_IMG)
+        api_client = APIClient()
+        pull_image(UI_IMG, api_client)
         ui_container = client.containers.run(  # type: ignore
             UI_IMG,
             ports={"3000/tcp": host_port},
