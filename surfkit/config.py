@@ -11,18 +11,11 @@ import yaml
 
 from .env import AGENTSEA_AUTH_URL_ENV, AGENTSEA_HUB_API_URL_ENV, AGENTSEA_HUB_URL_ENV
 
-# AGENTSEA_HUB_URL = os.getenv(AGENTSEA_HUB_URL_ENV, "https://hub.agentsea.ai")
-# AGENTSEA_HUB_API_URL = os.getenv(
-#     AGENTSEA_HUB_API_URL_ENV, "https://api.hub.agentsea.ai"
-# )
-# AGENTSEA_AUTH_URL = os.getenv(AGENTSEA_AUTH_URL_ENV, "https://auth.hub.agentsea.ai")
-
-AGENTSEA_HUB_URL = os.getenv(AGENTSEA_HUB_URL_ENV, "https://hub.agentlabs.xyz")
+AGENTSEA_HUB_URL = os.getenv(AGENTSEA_HUB_URL_ENV, "https://hub.agentsea.ai")
 AGENTSEA_HUB_API_URL = os.getenv(
-    AGENTSEA_HUB_API_URL_ENV, "https://api.hub.agentlabs.xyz"
+    AGENTSEA_HUB_API_URL_ENV, "https://api.hub.agentsea.ai"
 )
-AGENTSEA_AUTH_URL = os.getenv(AGENTSEA_AUTH_URL_ENV, "https://auth.hub.agentlabs.xyz")
-
+AGENTSEA_AUTH_URL = os.getenv(AGENTSEA_AUTH_URL_ENV, "https://auth.hub.agentsea.ai")
 
 AGENTSEA_HOME = os.path.expanduser(os.environ.get("AGENTSEA_HOME", "~/.agentsea"))
 AGENTSEA_DB_DIR = os.path.expanduser(
