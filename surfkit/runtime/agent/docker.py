@@ -257,6 +257,23 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             raise ValueError(f"No instances found for name '{name}'")
         instance = instances[0]
 
+        # TODO: This is a hack to make the qemu desktops work with docker agents, should likely be reworked
+        if task.task.device and task.task.device.type.lower() == "desktop":
+            cfg = task.task.device.config
+            if hasattr(cfg, "agentd_url"):
+                agentd_url: str = cfg.agentd_url  # type: ignore
+                if agentd_url.startswith("http://localhost"):
+                    agentd_url = agentd_url.replace(
+                        "http://localhost", "http://host.docker.internal"
+                    )
+                    task.task.device.config.agentd_url = agentd_url  # type: ignore
+                    logging.debug(f"replaced agentd url: {task.task.device.config}")
+
+                elif agentd_url.startswith("localhost"):
+                    agentd_url = agentd_url.replace("localhost", "host.docker.internal")
+                    task.task.device.config.agentd_url = agentd_url  # type: ignore
+                    logging.debug(f"replaced agentd url: {task.task.device.config}")
+
         print(f"Container '{name}' found.")
         response = requests.post(
             f"http://localhost:{instance.port}/v1/tasks",
