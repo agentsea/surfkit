@@ -859,7 +859,8 @@ def list_types():
 
 
 @app.command("find")
-def find():
+def find(help="Find an agent"):
+    """Find an agent"""
     list_types()
 
 
@@ -1657,9 +1658,9 @@ def solve(
         vm = vms[0]
 
         if vm.provider and vm.provider.type == "qemu":
-            if agent_runtime != "process":
+            if agent_runtime != "process" and agent_runtime != "docker":
                 raise ValueError(
-                    "Qemu desktop can only be used with the agent 'process' runtime"
+                    "Qemu desktop can only be used with the agent 'process' or 'docker' runtime"
                 )
         _device = Desktop.from_vm(vm)
         v1device = _device.to_v1()
@@ -1818,7 +1819,7 @@ def solve(
             pass
 
 
-@app.command("eval", help="Evaluate an agent on a benchmark")
+# @app.command("eval", help="Evaluate an agent on a benchmark")  # TODO
 def eval(
     benchmark: str = typer.Argument(
         help="Benchmark name",
