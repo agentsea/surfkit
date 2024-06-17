@@ -106,7 +106,7 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
 
         environment = os.environ.copy()
 
-        if not env_vars:
+        if env_vars:
             environment.update(env_vars)  # type: ignore
 
         environment["AGENT_TYPE"] = agent_type.to_v1().model_dump_json()
