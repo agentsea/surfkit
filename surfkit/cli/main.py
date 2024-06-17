@@ -443,6 +443,10 @@ def create_agent(
                     namespace=type_parts[0],
                     name=type_parts[1],
                 )
+                print("found types: ")
+                for typ in types:
+                    print("")
+                    print(typ.to_v1().model_dump())
                 if types:
                     all_types.extend(types)
             except Exception as e:

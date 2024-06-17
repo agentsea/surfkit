@@ -289,7 +289,7 @@ class AgentType(WithDB):
 
     @classmethod
     def find_for_user(
-        cls, user_id: str, name: Optional[str] = None
+        cls, user_id: str, name: Optional[str] = None, namespace: Optional[str] = None
     ) -> List["AgentType"]:
         for session in cls.get_db():
             # Base query
@@ -303,6 +303,9 @@ class AgentType(WithDB):
             # Conditionally add name filter if name is provided
             if name is not None:
                 query = query.filter(AgentTypeRecord.name == name)
+
+            if namespace is not None:
+                query = query.filter(AgentTypeRecord.namespace == namespace)
 
             records = query.all()
             return [cls.from_record(record) for record in records]
@@ -442,6 +445,8 @@ class AgentType(WithDB):
     ) -> Any:
         url = f"{addr}{endpoint}"
         headers = {}
+        params = None
+
         if not auth_token:
             auth_token = os.getenv(AGENTESEA_HUB_API_KEY_ENV)
             if not auth_token:
@@ -452,11 +457,15 @@ class AgentType(WithDB):
 
         if auth_token:
             headers["Authorization"] = f"Bearer {auth_token}"
+
+        if method.upper() == "GET" and json_data:
+            params = json_data
+
         try:
             if method.upper() == "GET":
                 logger.debug("\ncalling remote task GET with url: ", url)
                 logger.debug("\ncalling remote task GET with headers: ", headers)
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, params=params)
             elif method.upper() == "POST":
                 logger.debug("\ncalling remote task POST with: ", url)
                 logger.debug("\ncalling remote task POST with headers: ", headers)
