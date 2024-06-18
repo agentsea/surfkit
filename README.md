@@ -8,7 +8,7 @@
   <h1 align="center">Surfkit</h1>
 
   <p align="center">
-    A toolkit for building AI agents that use devices
+    A toolkit for building multimodal AI agents
     <br />
     <a href="https://docs.hub.agentsea.ai/introduction"><strong>Explore the docs »</strong></a>
     <br />
@@ -28,6 +28,63 @@
 pip install surfkit
 ```
 
+## Quickstart
+
+### Prerequisites
+
+- Docker
+- Python >= 3.10
+- MacOS or Linux
+- [Qemu](https://www.qemu.org/download/#macos)
+
+### Create an Agent
+
+**Find available agents on the Hub**
+
+```
+surfkit find
+```
+
+**Create a new agent**
+
+```
+surfkit create agent -t pbarker/SurfPizza -n agent01
+```
+
+**List running agents**
+
+```
+surfkit list agents
+```
+
+### Create a Device
+
+Create an Ubuntu desktop for our agent to use.
+
+```
+surfkit create device --provider qemu -n desktop01
+```
+
+**List running devices**
+
+```
+surfkit list devices
+```
+
+### Solve a task
+
+**Use the agent to solve a task on the device**
+
+```
+surfkit solve "Search for the most common variety of french duck" \
+  --agent agent01 \
+  --device desktop01
+```
+
+## Documentation
+
+View our [documentation](https://docs.hub.agentsea.ai) for more in depth information.
+
 ## Usage
 
 ### Building Agents
@@ -35,7 +92,7 @@ pip install surfkit
 Initialize a new project
 
 ```sh
-surfkit new [NAME]
+surfkit new
 ```
 
 Build a docker container for the agent
@@ -49,13 +106,13 @@ surfkit build
 Create an agent locally
 
 ```sh
-surfkit create agent --name foo
+surfkit create agent --name foo -t pbarker/SurfPizza
 ```
 
 Create an agent on kubernetes
 
 ```sh
-surfkit create agent --runtime kube
+surfkit create agent --runtime kube -t pbarker/SurfPizza
 ```
 
 List running agents
@@ -67,19 +124,19 @@ surfkit list agents
 Get details about a specific agent
 
 ```sh
-surfkit get agent --name foo
+surfkit get agent foo
 ```
 
 Fetch logs for a specific agent
 
 ```sh
-surfkit logs --name foo
+surfkit logs foo
 ```
 
 Delete an agent
 
 ```sh
-surfkit delete agent --name foo
+surfkit delete agent foo
 ```
 
 ### Managing Devices
@@ -99,13 +156,13 @@ surfkit list devices
 View device in UI
 
 ```sh
-surfkit view --name bar
+surfkit view bar
 ```
 
 Delete a device
 
 ```sh
-surfkit delete device --name bar
+surfkit delete device bar
 ```
 
 ### Tracking Tasks
@@ -125,7 +182,7 @@ surfkit list trackers
 Delete a tracker
 
 ```sh
-surfkit delete tracker -n foo
+surfkit delete tracker foo
 ```
 
 ### Solving Tasks
@@ -133,21 +190,14 @@ surfkit delete tracker -n foo
 Solve a task with an existing setup
 
 ```sh
-surfkit solve --description "search for common french ducks" --agent foo --device bar
+surfkit solve "search for common french ducks" --agent foo --device bar
 ```
 
 Solve a task creating the agent ad hoc
 
 ```sh
-surfkit solve --description "search for alpaca sweaters" \
+surfkit solve "search for alpaca sweaters" \
 --device bar --agent-file ./agent.yaml
-```
-
-Solve a task and kill the agent post-execution
-
-```sh
-surfkit solve --description "search for the meaning of life" \
---device bar --agent-file ./agent.yaml --kill
 ```
 
 List tasks
@@ -173,13 +223,7 @@ surfkit publish
 List published agent types
 
 ```sh
-surfkit list types
-```
-
-Run a published agent
-
-```sh
-surfkit create agent --type SurfPizza --runtime kube
+surfkit find
 ```
 
 ## Integrations
