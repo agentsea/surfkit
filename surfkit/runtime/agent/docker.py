@@ -527,7 +527,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             container = self.client.containers.get(name)
             if follow:
                 log_stream = container.logs(stream=True, follow=True)  # type: ignore
-                return (line.decode("utf-8").strip() for line in log_stream)
+                return (line.decode("utf-8").strip() for line in log_stream)  # type: ignore
             else:
                 return container.logs().decode("utf-8")  # type: ignore
         except NotFound:

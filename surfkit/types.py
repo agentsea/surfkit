@@ -262,11 +262,18 @@ class AgentType(WithDB):
             logger.debug(
                 "finding remote agent_types for: ", remote, kwargs.get("owner_id")
             )
+
+            json_data = {}
+            if kwargs.get("name"):
+                json_data["name"] = kwargs.get("name")
+            if kwargs.get("namespace"):
+                json_data["namespace"] = kwargs.get("namespace")
+
             remote_response = cls._remote_request(
                 remote,
                 "GET",
                 "/v1/agenttypes",
-                json_data=V1Find(args=kwargs).model_dump(),
+                json_data=json_data,
             )
             agent_types = V1AgentTypes(**remote_response)
             if remote_response is not None:
