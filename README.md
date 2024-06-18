@@ -36,6 +36,10 @@ pip install surfkit
 - **Manage** agent tasks at scale
 - **Track** and observe agent actions
 
+## Demo
+
+https://github.com/agentsea/surfkit/assets/5533189/1f9633bc-05cb-43f6-bbe7-26fe1cb8655d
+
 ## Quickstart
 
 ### Prerequisites
