@@ -1,7 +1,10 @@
 import random
 import string
+import subprocess
+import sys
 
 from docker.api.client import APIClient
+from docker.errors import APIError
 from namesgenerator import get_random_name
 from tqdm import tqdm
 
@@ -35,31 +38,41 @@ def pull_image(img: str, api_client: APIClient):
     progress_bars = {}
     layers = {}
 
-    for line in api_client.pull(img, stream=True, decode=True):
-        if "id" in line and "progressDetail" in line:
-            layer_id = line["id"]
-            progress_detail = line["progressDetail"]
-            current = progress_detail.get("current", 0)
-            total = progress_detail.get("total", 0)
+    try:
+        for line in api_client.pull(img, stream=True, decode=True):
+            if "id" in line and "progressDetail" in line:
+                layer_id = line["id"]
+                progress_detail = line["progressDetail"]
+                current = progress_detail.get("current", 0)
+                total = progress_detail.get("total", 0)
 
-            if total:
-                if layer_id not in layers:
-                    progress_bars[layer_id] = tqdm(
-                        total=total,
-                        desc=f"Layer {layer_id}",
-                        leave=False,
-                        ncols=100,
-                    )
-                    layers[layer_id] = 0
+                if total:
+                    if layer_id not in layers:
+                        progress_bars[layer_id] = tqdm(
+                            total=total,
+                            desc=f"Layer {layer_id}",
+                            leave=False,
+                            ncols=100,
+                        )
+                        layers[layer_id] = 0
 
-                layers[layer_id] = current
-                progress_bars[layer_id].n = current
-                progress_bars[layer_id].refresh()
+                    layers[layer_id] = current
+                    progress_bars[layer_id].n = current
+                    progress_bars[layer_id].refresh()
+            elif "status" in line and "id" in line:
+                print(f"Status update for {line['id']}: {line['status']}")
+            elif "error" in line:
+                raise APIError(line["error"])
 
-    # Close all progress bars
-    for bar in progress_bars.values():
-        bar.n = bar.total  # Ensure the progress bar is full before closing
-        bar.refresh()
-        bar.close()
+    except APIError as e:
+        print(f"Error pulling Docker image: {e.explanation}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+    finally:
+        # Close all progress bars
+        for bar in progress_bars.values():
+            bar.n = bar.total  # Ensure the progress bar is full before closing
+            bar.refresh()
+            bar.close()
 
-    print("")
+        print("")
