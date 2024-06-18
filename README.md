@@ -32,7 +32,7 @@
 
 ## Demo
 
-https://github.com/agentsea/surfkit/assets/5533189/c93d7a74-d00b-44e3-894d-f3654108938c
+https://github.com/agentsea/surfkit/assets/5533189/98b7714d-9692-4369-8fbf-88aff61e741c
 
 ## Installation
 
