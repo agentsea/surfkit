@@ -8,7 +8,7 @@
   <h1 align="center">Surfkit</h1>
 
   <p align="center">
-    A toolkit for building multimodal AI agents
+    A toolkit for building and sharing AI agents
     <br />
     <a href="https://docs.hub.agentsea.ai/introduction"><strong>Explore the docs »</strong></a>
     <br />
@@ -39,19 +39,19 @@ pip install surfkit
 
 ### Create an Agent
 
-**Find available agents on the Hub**
+Find available agents on the Hub
 
 ```
 surfkit find
 ```
 
-**Create a new agent**
+Create a new agent
 
 ```
 surfkit create agent -t pbarker/SurfPizza -n agent01
 ```
 
-**List running agents**
+List running agents
 
 ```
 surfkit list agents
@@ -65,7 +65,7 @@ Create an Ubuntu desktop for our agent to use.
 surfkit create device --provider qemu -n desktop01
 ```
 
-**List running devices**
+List running devices
 
 ```
 surfkit list devices
@@ -73,7 +73,7 @@ surfkit list devices
 
 ### Solve a task
 
-**Use the agent to solve a task on the device**
+Use the agent to solve a task on the device
 
 ```
 surfkit solve "Search for the most common variety of french duck" \
