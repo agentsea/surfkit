@@ -22,12 +22,6 @@
   <br>
 </p>
 
-## Installation
-
-```sh
-pip install surfkit
-```
-
 ## Features
 
 - **Build** multimodal agents that can operate on devices
@@ -39,6 +33,12 @@ pip install surfkit
 ## Demo
 
 https://github.com/agentsea/surfkit/assets/5533189/1f9633bc-05cb-43f6-bbe7-26fe1cb8655d
+
+## Installation
+
+```sh
+pip install surfkit
+```
 
 ## Quickstart
 
@@ -96,10 +96,6 @@ surfkit solve "Search for the most common variety of french duck" \
 ## Documentation
 
 View our [documentation](https://docs.hub.agentsea.ai) for more in depth information.
-
-## Demo
-
-https://youtu.be/exoOUUwFRB8
 
 ## Usage
 
