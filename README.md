@@ -60,7 +60,7 @@ surfkit find
 Create a new agent
 
 ```
-surfkit create agent -t pbarker/SurfPizza -n agent01
+surfkit create agent -t mariyadavydova/SurfSlicer -n agent01
 ```
 
 List running agents
