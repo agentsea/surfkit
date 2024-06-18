@@ -8,7 +8,7 @@
   <h1 align="center">Surfkit</h1>
 
   <p align="center">
-    A toolkit for building and sharing AI agents
+    A toolkit for building and sharing AI agents that operate on devices
     <br />
     <a href="https://docs.hub.agentsea.ai/introduction"><strong>Explore the docs »</strong></a>
     <br />
@@ -19,10 +19,6 @@
     ·
     <a href="https://github.com/agentsea/surfkit/issues">Request Feature</a>
   </p>
-  <video width="320" height="240" align="center" controls>
-  <source src="https://youtu.be/exoOUUwFRB8" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
   <br>
 </p>
 
@@ -31,6 +27,14 @@
 ```sh
 pip install surfkit
 ```
+
+## Features
+
+- **Build** multimodal agents that can operate on devices
+- **Share** agents with the community
+- **Run** agents and devices locally or in the cloud
+- **Manage** agent tasks at scale
+- **Track** and observe agent actions
 
 ## Quickstart
 
@@ -88,6 +92,10 @@ surfkit solve "Search for the most common variety of french duck" \
 ## Documentation
 
 View our [documentation](https://docs.hub.agentsea.ai) for more in depth information.
+
+## Demo
+
+https://youtu.be/exoOUUwFRB8
 
 ## Usage
 
