@@ -25,9 +25,12 @@ tqdm = "^4.66.4"
 taskara = "^0.1.114"
 
 
+[tool.poetry.extras]
+func = ["replicate"]
+
+
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.4"
-
 black = "^24.4.2"
 isort = "^5.13.2"
 google-cloud-aiplatform = "^1.53.0"

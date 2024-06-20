@@ -1414,6 +1414,40 @@ def build(
     build_docker_image("./Dockerfile", ver, push)
 
 
+@app.command(help="Learn a URI")
+def learn(
+    uri: str = typer.Argument(..., help="URI to learn"),
+    device: str = typer.Option(
+        ..., "--device", "-d", help="Device to use for the agent."
+    ),
+    agent_file: str = typer.Option(
+        "./agent.yaml", "--agent-file", "-f", help="Agent file to use"
+    ),
+    agent_version: str = typer.Option("latest", help="Version of agent to use."),
+    task_file: str = typer.Option(
+        "./task.yaml", "--task-file", "-t", help="Task file to use"
+    ),
+    task_version: str = typer.Option("latest", help="Version of task to use."),
+    agent_runtime: str = typer.Option(
+        "docker", "--agent-runtime", "-r", help="Runtime environment for the agent."
+    ),
+):
+    from agentdesk import Desktop
+
+    from surfkit.learn.domain import App, UserFlow
+
+    vms = Desktop.find(name=device)
+    if not vms:
+        raise ValueError(f"No devices found with name '{device}'")
+    vm = vms[0]
+
+    desktop = Desktop.from_vm(vm)
+
+
+
+    pass
+
+
 @app.command(help="Use an agent to solve a task")
 def solve(
     description: str = typer.Argument(..., help="Description of the task."),
