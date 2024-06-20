@@ -4,6 +4,7 @@ from agentdesk import Desktop
 from mllm import RoleThread, Router
 from PIL import Image, ImageDraw
 from pydantic import BaseModel, Field
+from taskara import Task
 
 from surfkit.func.img import b64_to_image, crop_box_around, image_to_b64, upscale_image
 
@@ -92,7 +93,7 @@ class AppExplorer:
         pass
 
 
-def describe_location(desktop: Desktop, router: Router) -> ClickTarget:
+def describe_location(desktop: Desktop, router: Router, task: Task) -> ClickTarget:
     """Describe the current location of the mouse"""
 
     thread = RoleThread()
@@ -113,7 +114,8 @@ def describe_location(desktop: Desktop, router: Router) -> ClickTarget:
         images=[image_to_b64(img), image_to_b64(cropped)],
     )
 
-    resp = router.chat(thread, expect=ClickTarget)
+    resp = router.chat(thread, expect=ClickTarget, namespace="describe_location")
+    task.add_prompt(resp.prompt)
 
     if not resp.parsed:
         raise ValueError("No click area found")
@@ -121,7 +123,7 @@ def describe_location(desktop: Desktop, router: Router) -> ClickTarget:
     return resp.parsed
 
 
-def get_targets(desktop: Desktop, router: Router) -> ClickTargets:
+def get_targets(desktop: Desktop, router: Router, task: Task) -> ClickTargets:
     """Generate targets from a desktop screenshot"""
 
     thread = RoleThread()
@@ -137,7 +139,8 @@ def get_targets(desktop: Desktop, router: Router) -> ClickTargets:
     """,
         images=[image_to_b64(img)],
     )
-    resp = router.chat(thread, expect=ClickTargets)
+    resp = router.chat(thread, expect=ClickTargets, namespace="get_targets")
+    task.add_prompt(resp.prompt)
 
     if not resp.parsed:
         raise ValueError("No click area found")
@@ -152,6 +155,9 @@ class MoveDirection(BaseModel):
     reason: str = Field(
         description="Why the move was made e.g. 'The mouse cursor is in the center of the image but the target is in the top left, I need to move up and to the left'"
     )
+    calculation: str = Field(
+        description="A description of how the move was calculated e.g. 'Given that the cropped image is 200x200, the target is near the top left and the mouse is in the center, I need to move 70 pixels to the left and 80 pixels up.'"
+    )
     x: int = Field(
         description="Amount to move in the x direction. Positive values move right, negative values move left. 1 is equal to 1 pixel."
     )
@@ -161,7 +167,7 @@ class MoveDirection(BaseModel):
 
 
 def get_move_direction(
-    desktop: Desktop, target: ClickTarget, router: Router
+    desktop: Desktop, target: ClickTarget, router: Router, task: Task
 ) -> MoveDirection:
     """Generate the next direction to move the mouse (Δx, Δy)"""
 
@@ -180,8 +186,8 @@ def get_move_direction(
     Your goal is to navigate to '{target.description}' located in '{target.location}'. The screen size is {img.size} and the current coordinates are {coords}. 
     Please tell me which direction to move the mouse to get there. Please return a JSON object which conforms to the schema {MoveDirection.model_json_schema()}.
     Please return raw json. For example, if I want to move 12 pixels to the left, and 3 pixels up, I would return: 
-    {{"reason": "The mouse is slightly below the current object and a bit to the right. I need to move the mouse up and to the left", "x": -12, "y": -3}}. You must move the mouse, 
-    either 'x' or 'y' must be non-zero. The very tip of the cursor must directly over the center your desired target, if unsure, move the mouse slightly.
+    {{"curent_location": "The mouse is currently above an image of a house in the center", "reason": "The mouse is slightly below the current target and a bit to the right. I need to move the mouse up and to the left", "calculation": "The cropped box is 200x200 and I need to move slightly up and to the left, I should move -12 in the X direction and -3 in the Y direction", "x": -12, "y": -3}}. 
+    You must move the mouse, either 'x' or 'y' must be non-zero. The very tip of the cursor must directly over the center your desired target, if unsure, move the mouse slightly.
     YOU MUST MOVE THE MOUSE, it has already been determined that you are not in the correct location, double check that you are directly over the target, not just near it.
     The cursor will likely change to a pointer if you are over it.
     """,
@@ -189,7 +195,9 @@ def get_move_direction(
     )
     img.save("./.run/screenshot_move.png")
     cropped.save("./.run/cropped_move.png")
-    resp = router.chat(thread, expect=MoveDirection)
+    resp = router.chat(thread, expect=MoveDirection, namespace="move_direction")
+
+    task.add_prompt(resp.prompt)
 
     if not resp.parsed:
         raise ValueError("No click area found")
@@ -258,7 +266,7 @@ class CursorType(BaseModel):
     type: str = Field(description="Can be 'default', 'text', or 'pointer'")
 
 
-def det_cursor_type(desktop: Desktop, router: Router) -> CursorType:
+def det_cursor_type(desktop: Desktop, router: Router, task: Task) -> CursorType:
     """Detect the cursor type"""
 
     thread = RoleThread()
@@ -281,7 +289,9 @@ def det_cursor_type(desktop: Desktop, router: Router) -> CursorType:
     """,
         images=[image_to_b64(cropped), image_to_b64(composite)],
     )
-    resp = router.chat(thread, expect=CursorType)
+    resp = router.chat(thread, expect=CursorType, namespace="cursor_type")
+
+    task.add_prompt(resp.prompt)
 
     if not resp.parsed:
         raise ValueError("No click area found")
@@ -302,7 +312,9 @@ class CheckGoal(BaseModel):
     done: bool = Field(description="Whether the cursor is over the correct location")
 
 
-def is_finished(desktop: Desktop, target: ClickTarget, router: Router) -> bool:
+def is_finished(
+    desktop: Desktop, target: ClickTarget, router: Router, task: Task
+) -> bool:
     """Check if the target has been reached"""
 
     thread = RoleThread()
@@ -326,8 +338,9 @@ def is_finished(desktop: Desktop, target: ClickTarget, router: Router) -> bool:
     """,
         images=[image_to_b64(img), upscaled],
     )
-    resp = router.chat(thread, expect=CheckGoal)
+    resp = router.chat(thread, expect=CheckGoal, namespace="check_goal")
 
+    task.add_prompt(resp.prompt)
     if not resp.parsed:
         raise ValueError("No click area found")
 
