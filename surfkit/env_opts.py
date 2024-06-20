@@ -2,6 +2,7 @@ import os
 from typing import Optional
 
 import typer
+import openai
 from mllm import Router
 
 from surfkit.types import AgentType
@@ -35,7 +36,6 @@ def find_local_llm_keys(typ: AgentType) -> Optional[dict]:
 
 
 def is_api_key_valid(api_key: str) -> bool:
-    import openai
     client = openai.OpenAI(api_key=api_key)
     try:
         client.models.list()
@@ -99,7 +99,9 @@ def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
                                 found[api_key_env] = response
                                 break
                             else:
-                                typer.echo(f"The API Key is not valid for '{provider_name}'. Please try again.")
+                                typer.echo(
+                                    f"The API Key is not valid for '{provider_name}'. Please try again."
+                                )
                         else:
                             break
 
