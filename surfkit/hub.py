@@ -10,7 +10,7 @@ class HubAuth:
     """The Agentsea Hub Auth"""
 
     def __init__(self, hub_auth_url: str = AGENTSEA_AUTH_URL) -> None:
-        self.hub_auth_url = os.getenv("AGENTSEA_HUB_API_URL", hub_auth_url)
+        self.hub_auth_url = hub_auth_url
 
     def get_api_key(self, token: str) -> str:
         """Get the api key from the hub"""
