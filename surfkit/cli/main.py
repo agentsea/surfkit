@@ -143,7 +143,8 @@ def create_device(
         None, help="The image to use for the desktop. Defaults to Ubuntu Jammy."
     ),
     region: Optional[str] = typer.Option(
-        "us-east-1", help=f"AWS region. Defaults to 'us-east-1'. Options: {', '.join(EC2Provider.AVAILABLE_REGIONS)}"
+        "us-east-1",
+        help=f"AWS region. Defaults to 'us-east-1'. Options: {', '.join(EC2Provider.AVAILABLE_REGIONS)}",
     ),
     memory: int = typer.Option(4, help="The amount of memory (in GB) for the desktop."),
     cpu: int = typer.Option(2, help="The number of CPU cores for the desktop."),
