@@ -11,6 +11,7 @@ import typer
 import yaml
 from namesgenerator import get_random_name
 from tabulate import tabulate
+from agentdesk.vm.ec2 import EC2Provider
 
 from surfkit.runtime.agent.base import AgentInstance
 
@@ -142,7 +143,7 @@ def create_device(
         None, help="The image to use for the desktop. Defaults to Ubuntu Jammy."
     ),
     region: Optional[str] = typer.Option(
-        "us-east-1", help="AWS region. Defaults to 'us-east-1'."
+        "us-east-1", help=f"AWS region. Defaults to 'us-east-1'. Options: {', '.join(EC2Provider.AVAILABLE_REGIONS)}"
     ),
     memory: int = typer.Option(4, help="The amount of memory (in GB) for the desktop."),
     cpu: int = typer.Option(2, help="The number of CPU cores for the desktop."),
