@@ -38,6 +38,7 @@ class Client:
         type: Optional[str] = "desktop",
         provider: str = "qemu",
         image: Optional[str] = None,
+        region: Optional[str] = "us-east-1",
         memory: int = 4,
         cpu: int = 2,
         disk: str = "30gb",
@@ -55,7 +56,7 @@ class Client:
             name = get_random_name(sep="-")
 
         if provider == "ec2":
-            data = V1ProviderData(type=provider, args={"region": "us-east-1"})
+            data = V1ProviderData(type=provider, args={"region": region})
             _provider = load_provider(data)
         else:
             data = V1ProviderData(type=provider)
