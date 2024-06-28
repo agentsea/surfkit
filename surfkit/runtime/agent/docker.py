@@ -1,5 +1,7 @@
 import logging
 import os
+import platform
+import socket
 import time
 from typing import Dict, Iterator, List, Optional, Type, Union
 
@@ -10,7 +12,6 @@ from docker.api.client import APIClient
 from docker.errors import NotFound
 from mllm import Router
 from pydantic import BaseModel
-from tqdm import tqdm
 
 from surfkit.server.models import V1AgentType, V1SolveTask
 from surfkit.types import AgentType
@@ -257,6 +258,13 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             raise ValueError(f"No instances found for name '{name}'")
         instance = instances[0]
 
+        # Determine the appropriate host address based on the platform
+        host_address = (
+            "host.docker.internal"
+            if platform.system() != "Linux"
+            else self._get_host_ip()
+        )
+
         # TODO: This is a hack to make the qemu desktops work with docker agents, should likely be reworked
         if task.task.device and task.task.device.type.lower() == "desktop":
             cfg = task.task.device.config
@@ -264,13 +272,13 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
                 agentd_url: str = cfg.agentd_url  # type: ignore
                 if agentd_url.startswith("http://localhost"):
                     agentd_url = agentd_url.replace(
-                        "http://localhost", "http://host.docker.internal"
+                        "http://localhost", f"http://{host_address}"
                     )
                     task.task.device.config.agentd_url = agentd_url  # type: ignore
                     logging.debug(f"replaced agentd url: {task.task.device.config}")
 
                 elif agentd_url.startswith("localhost"):
-                    agentd_url = agentd_url.replace("localhost", "host.docker.internal")
+                    agentd_url = agentd_url.replace("localhost", host_address)
                     task.task.device.config.agentd_url = agentd_url  # type: ignore
                     logging.debug(f"replaced agentd url: {task.task.device.config}")
 
@@ -284,6 +292,18 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         if follow_logs:
             print(f"Following logs for '{name}':")
             self._handle_logs_with_attach(name, attach)
+
+    def _get_host_ip(self) -> str:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # Doesn't even have to be reachable
+            s.connect(("10.254.254.254", 1))
+            ip = s.getsockname()[0]
+        except Exception:
+            ip = "127.0.0.1"
+        finally:
+            s.close()
+        return ip
 
     def runtime_local_addr(self, name: str, owner_id: Optional[str] = None) -> str:
         """
