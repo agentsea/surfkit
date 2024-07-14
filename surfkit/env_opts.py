@@ -95,6 +95,10 @@ def find_llm_keys(typ: AgentType, llm_providers_local: bool) -> Optional[dict]:
                             if not api_key_env:
                                 continue
                             response = typer.prompt(api_key_env)
+                            # TODO: validate other providers
+                            if api_key_env != "OPENAI_API_KEY":
+                                found[api_key_env] = response
+                                break
                             if is_api_key_valid(response):
                                 found[api_key_env] = response
                                 break
