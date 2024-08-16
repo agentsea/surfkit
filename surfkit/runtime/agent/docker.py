@@ -177,16 +177,23 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
 
         print(f"running image {img}")
         self.ensure_network("agentsea")
+
+        container_params = {
+            "image": img,
+            "network": "agentsea",
+            "ports": {port: port},
+            "environment": env_vars,
+            "detach": True,
+            "labels": labels,
+            "name": name,
+        }
+
+        # Add extra_hosts only for Linux
+        if platform.system() == "Linux":
+            container_params["extra_hosts"] = {"host.docker.internal": "host-gateway"}
+
         try:
-            container = self.client.containers.run(
-                img,
-                network="agentsea",
-                ports={port: port},
-                environment=env_vars,
-                detach=True,
-                labels=labels,
-                name=name,
-            )
+            container = self.client.containers.run(**container_params)
         except Exception as e:
             raise RuntimeError(
                 f"Could not run container '{name}' for agent type '{agent_type.name}' with version '{version}': {e}"
@@ -259,11 +266,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         instance = instances[0]
 
         # Determine the appropriate host address based on the platform
-        host_address = (
-            "host.docker.internal"
-            if platform.system() != "Linux"
-            else self._get_host_ip()
-        )
+        host_address = "host.docker.internal"
 
         # TODO: This is a hack to make the qemu desktops work with docker agents, should likely be reworked
         if task.task.device and task.task.device.type.lower() == "desktop":
