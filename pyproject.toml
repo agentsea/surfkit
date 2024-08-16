@@ -22,7 +22,7 @@ tiktoken = "^0.6.0"
 rich = "^13.7.1"
 tqdm = "^4.66.4"
 taskara = "^0.1.121"
-agentdesk = "^0.2.92"
+agentdesk = "^0.2.93"
 
 
 [tool.poetry.group.dev.dependencies]
