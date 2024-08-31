@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import dataclass
-from enum import Enum
 from typing import Optional
 
 import rootpath
