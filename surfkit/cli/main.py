@@ -797,7 +797,9 @@ def list_types():
     table = []
 
     try:
+        print("hub api url: ", AGENTSEA_HUB_API_URL)
         types = AgentType.find(remote=AGENTSEA_HUB_API_URL)
+        print("found types: ", len(types))
         for typ in types:
             name = typ.name
             if typ.namespace:
@@ -1075,9 +1077,11 @@ def get_type(name: str = typer.Argument(..., help="The name of the type to retri
     typer.echo(f"Getting type: {name}")
     from surfkit.config import AGENTSEA_HUB_API_URL
 
+    print("hub api url: ", AGENTSEA_HUB_API_URL)
+
     types = AgentType.find(remote=AGENTSEA_HUB_API_URL, name=name)
     if not types:
-        raise ValueError(f"Agent type '{type}' not found")
+        raise ValueError(f"Agent type '{name}' not found")
     agent_type = types[0]
 
     rich.print_json(agent_type.to_v1().model_dump_json())

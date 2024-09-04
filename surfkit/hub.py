@@ -21,7 +21,7 @@ class HubAuth:
         response.raise_for_status()
         key_data = response.json()
 
-        return key_data["key"]
+        return key_data["keys"][0]["key"]
 
     def get_user_info(self, token: str) -> V1UserProfile:
         """Get user info from the hub"""
@@ -32,4 +32,4 @@ class HubAuth:
         response.raise_for_status()
         user_data = response.json()
 
-        return V1UserProfile(**user_data)
+        return V1UserProfile.model_validate(user_data)
