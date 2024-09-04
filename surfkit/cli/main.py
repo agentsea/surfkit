@@ -1077,7 +1077,7 @@ def get_type(name: str = typer.Argument(..., help="The name of the type to retri
 
     types = AgentType.find(remote=AGENTSEA_HUB_API_URL, name=name)
     if not types:
-        raise ValueError(f"Agent type '{type}' not found")
+        raise ValueError(f"Agent type '{name}' not found")
     agent_type = types[0]
 
     rich.print_json(agent_type.to_v1().model_dump_json())

@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from surfkit.agent import TaskAgent
 from taskara import Task, TaskStatus
 from mllm import Router
-from skillpacks.server.models import V1ActionSelection
+from skillpacks.server.models import V1ActionSelection, V1EnvState
 from threadmem import RoleThread, RoleMessage
 from tenacity import (
     retry,
@@ -261,6 +261,7 @@ class {agent_name}(TaskAgent):
 
             # Record the action for feedback and tuning
             task.record_action(
+                state=V1EnvState(image=f"data:image/png;base64,{{screenshot_b64}}"),
                 prompt=response.prompt,
                 action=selection.action,
                 tool=desktop.ref(),
