@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Dict
 
 from agentdesk import Desktop
 from namesgenerator import get_random_name
@@ -418,3 +418,12 @@ def solve(
         except:
             pass
     return task
+
+
+def learn(
+    description: str,
+    parameters: Dict[str, str] = {},
+    device_type: str = "desktop",
+    starting_url: Optional[str] = None,
+):
+    pass

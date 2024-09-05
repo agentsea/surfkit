@@ -6,3 +6,4 @@ warnings.filterwarnings(
 )
 
 from surfkit.client import solve
+from taskara import Task, TaskStatus

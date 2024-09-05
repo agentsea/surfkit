@@ -49,7 +49,27 @@ pip install surfkit
 - MacOS or Linux
 - [Qemu](https://www.qemu.org/download/#macos)
 
-### Create an Agent
+### Python
+
+Use an agent to solve a task
+
+```python
+from surfkit import solve
+
+task = solve(
+    "Search for the most common variety of french duck",
+    agent_type="mariyadavydova/SurfSlicer",
+    device_type="desktop",
+  )
+
+task.wait_for_done()
+
+result = task.result
+```
+
+### CLI
+
+#### Create an Agent
 
 Find available agents on the Hub
 
@@ -69,7 +89,7 @@ List running agents
 surfkit list agents
 ```
 
-### Create a Device
+#### Create a Device
 
 Create an Ubuntu desktop for our agent to use.
 
@@ -83,7 +103,7 @@ List running devices
 surfkit list devices
 ```
 
-### Solve a task
+#### Solve a task
 
 Use the agent to solve a task on the device
 
