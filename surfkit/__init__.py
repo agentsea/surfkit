@@ -4,3 +4,5 @@ import warnings
 warnings.filterwarnings(
     "ignore", category=UserWarning, module="pydantic._internal._fields"
 )
+
+from surfkit.client import solve
