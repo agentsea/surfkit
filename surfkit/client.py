@@ -7,6 +7,7 @@ from taskara import Task
 from taskara.runtime.base import Tracker
 import typer
 
+from surfkit.config import AGENTSEA_HUB_API_URL, GlobalConfig
 from surfkit.server.models import V1SolveTask
 from surfkit.types import AgentType
 from surfkit.runtime.agent.base import AgentInstance
@@ -168,8 +169,6 @@ def solve(
         _tracker_local_addr = tracker_remote
 
     else:
-        from surfkit.config import AGENTSEA_HUB_API_URL, GlobalConfig
-
         from surfkit.cli.util import tracker_addr_agent, tracker_addr_local
 
         config = GlobalConfig.read()
