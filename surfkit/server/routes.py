@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Annotated, Type
+import time
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from mllm import Router
@@ -71,6 +72,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
 
         logger.info("Saving remote tasks status to running...")
         task.status = TaskStatus.IN_PROGRESS
+        task.started = time.time()
         task.save()
 
         if task_model.task.device:
@@ -110,6 +112,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             logger.error(f"error running agent: {e}")
             task.status = TaskStatus.FAILED
             task.error = str(e)
+            task.completed = time.time()
             task.save()
             task.post_message(
                 "assistant", f"Failed to run task '{task.description}': {e}"
@@ -120,6 +123,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             print(f"► task run ended '{task.id}'", flush=True)
 
         if final_task:
+            final_task.completed = time.time()
             final_task.save()
 
     @api_router.get("/v1/tasks", response_model=V1Tasks)
