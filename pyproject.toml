@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "surfkit"
-version = "0.1.242"
+version = "0.1.243"
 description = "A toolkit for building AI agents that use devices"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>"]
 license = "MIT"
@@ -22,7 +22,7 @@ rich = "^13.7.1"
 tqdm = "^4.66.4"
 agentdesk = "^0.2.93"
 kubernetes = "^30.1.0"
-taskara = "^0.1.128"
+taskara = "^0.1.129"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -31,6 +31,7 @@ ipykernel = "^6.29.4"
 black = "^24.4.2"
 isort = "^5.13.2"
 google-cloud-aiplatform = "^1.53.0"
+ruff = "^0.6.5"
 
 [build-system]
 requires = ["poetry-core"]
