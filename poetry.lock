@@ -2660,19 +2660,19 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.37"
+version = "0.1.38"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.37-py3-none-any.whl", hash = "sha256:8789a526b414c0705494c6a0bcc24f875e5a5598f0cc1d165e605c6e1d54c9fd"},
-    {file = "mllm-0.1.37.tar.gz", hash = "sha256:00cc697cbacef65284f67c182e53e225a4ca9e13662c0ea0be6faf7757de03bc"},
+    {file = "mllm-0.1.38-py3-none-any.whl", hash = "sha256:d051c974d5763a543fb986ba2483e394e26cad9498291702e71804a7d8301f3f"},
+    {file = "mllm-0.1.38.tar.gz", hash = "sha256:ea4b1341ea7cfa409549c00a70edaa2379969318d1ee66890594332193feee90"},
 ]
 
 [package.dependencies]
 litellm = ">=1.37.19,<2.0.0"
 tenacity = ">=8.2.3,<9.0.0"
-threadmem = ">=0.2.29,<0.3.0"
+threadmem = ">=0.2.31,<0.3.0"
 
 [package.extras]
 gemini = ["google-generativeai (>=0.6.0,<0.7.0)"]
@@ -4218,6 +4218,33 @@ files = [
 pyasn1 = ">=0.1.3"
 
 [[package]]
+name = "ruff"
+version = "0.6.5"
+description = "An extremely fast Python linter and code formatter, written in Rust."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "ruff-0.6.5-py3-none-linux_armv6l.whl", hash = "sha256:7e4e308f16e07c95fc7753fc1aaac690a323b2bb9f4ec5e844a97bb7fbebd748"},
+    {file = "ruff-0.6.5-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:932cd69eefe4daf8c7d92bd6689f7e8182571cb934ea720af218929da7bd7d69"},
+    {file = "ruff-0.6.5-py3-none-macosx_11_0_arm64.whl", hash = "sha256:3a8d42d11fff8d3143ff4da41742a98f8f233bf8890e9fe23077826818f8d680"},
+    {file = "ruff-0.6.5-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a50af6e828ee692fb10ff2dfe53f05caecf077f4210fae9677e06a808275754f"},
+    {file = "ruff-0.6.5-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:794ada3400a0d0b89e3015f1a7e01f4c97320ac665b7bc3ade24b50b54cb2972"},
+    {file = "ruff-0.6.5-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:381413ec47f71ce1d1c614f7779d88886f406f1fd53d289c77e4e533dc6ea200"},
+    {file = "ruff-0.6.5-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:52e75a82bbc9b42e63c08d22ad0ac525117e72aee9729a069d7c4f235fc4d276"},
+    {file = "ruff-0.6.5-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:09c72a833fd3551135ceddcba5ebdb68ff89225d30758027280968c9acdc7810"},
+    {file = "ruff-0.6.5-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:800c50371bdcb99b3c1551d5691e14d16d6f07063a518770254227f7f6e8c178"},
+    {file = "ruff-0.6.5-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8e25ddd9cd63ba1f3bd51c1f09903904a6adf8429df34f17d728a8fa11174253"},
+    {file = "ruff-0.6.5-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:7291e64d7129f24d1b0c947ec3ec4c0076e958d1475c61202497c6aced35dd19"},
+    {file = "ruff-0.6.5-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:9ad7dfbd138d09d9a7e6931e6a7e797651ce29becd688be8a0d4d5f8177b4b0c"},
+    {file = "ruff-0.6.5-py3-none-musllinux_1_2_i686.whl", hash = "sha256:005256d977021790cc52aa23d78f06bb5090dc0bfbd42de46d49c201533982ae"},
+    {file = "ruff-0.6.5-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:482c1e6bfeb615eafc5899127b805d28e387bd87db38b2c0c41d271f5e58d8cc"},
+    {file = "ruff-0.6.5-py3-none-win32.whl", hash = "sha256:cf4d3fa53644137f6a4a27a2b397381d16454a1566ae5335855c187fbf67e4f5"},
+    {file = "ruff-0.6.5-py3-none-win_amd64.whl", hash = "sha256:3e42a57b58e3612051a636bc1ac4e6b838679530235520e8f095f7c44f706ff9"},
+    {file = "ruff-0.6.5-py3-none-win_arm64.whl", hash = "sha256:51935067740773afdf97493ba9b8231279e9beef0f2a8079188c4776c25688e0"},
+    {file = "ruff-0.6.5.tar.gz", hash = "sha256:4d32d87fab433c0cf285c3683dd4dae63be05fd7a1d65b3f5bf7cdd05a6b96fb"},
+]
+
+[[package]]
 name = "s3transfer"
 version = "0.10.2"
 description = "An Amazon S3 Transfer Manager"
@@ -4315,19 +4342,20 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.42"
+version = "0.1.46"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.42-py3-none-any.whl", hash = "sha256:8dcb44cb3e97d71e7c5388651c2043bc4e68f3b9c42efeaafc99d6c6cce2afa4"},
-    {file = "skillpacks-0.1.42.tar.gz", hash = "sha256:97ad5d737461c245dd633b73994cc4d8eeeabc1e4d6724fad95b92e7f646d223"},
+    {file = "skillpacks-0.1.46-py3-none-any.whl", hash = "sha256:0c118cfe4e52ec67aa12fb5c0ff1fc53ebd4aff529b3ff9b7496d7f55c912fb1"},
+    {file = "skillpacks-0.1.46.tar.gz", hash = "sha256:8cb09a1b2c18c5c873682d02bb2f90791a6304ae4d5efaa5ce52621bd1010fb6"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.26,<0.2.0"
-mllm = ">=0.1.37,<0.2.0"
+mllm = ">=0.1.38,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
+shortuuid = ">=1.0.13,<2.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
 [[package]]
@@ -4480,13 +4508,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.128"
+version = "0.1.129"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.128-py3-none-any.whl", hash = "sha256:8460b1c14d5c2e813178c3735db681e880fbe4daae78b09ef92f804f1f041128"},
-    {file = "taskara-0.1.128.tar.gz", hash = "sha256:031f192a7b0a664fba95162baf2ccee3e14f7276fa99134d21e05b9f891e9c9d"},
+    {file = "taskara-0.1.129-py3-none-any.whl", hash = "sha256:201cf77b8b377cfbb66a5e990e70d149f8f953c550adf701a76f1f158ec058c6"},
+    {file = "taskara-0.1.129.tar.gz", hash = "sha256:d643477387d77b734665fca6215db90f4eb90b320f551acffeff740dee0a2136"},
 ]
 
 [package.dependencies]
@@ -4494,7 +4522,7 @@ devicebay = ">=0.1.25,<0.2.0"
 namesgenerator = ">=0.3,<0.4"
 pydantic = ">=2.6.4,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.42,<0.2.0"
+skillpacks = ">=0.1.46,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 tqdm = ">=4.66.4,<5.0.0"
@@ -4535,13 +4563,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.29"
+version = "0.2.31"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.29-py3-none-any.whl", hash = "sha256:cf0220288245b9058cdfd095b6e323e344285917ec5e538f5d96891ccfa9a14d"},
-    {file = "threadmem-0.2.29.tar.gz", hash = "sha256:6c6bcd88af8f4da527c1909fd83ab9c16bb7258b83ae59e134437466b020139a"},
+    {file = "threadmem-0.2.31-py3-none-any.whl", hash = "sha256:3955fa9923de40d3e636e8ec9cee264e0d82b44d84a00364d978de44b0d9d3b8"},
+    {file = "threadmem-0.2.31.tar.gz", hash = "sha256:9ece3eb1890759505f028162cc9615efe62f663f172d79c58e3c56d95faed6d4"},
 ]
 
 [package.dependencies]
@@ -5490,4 +5518,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5f03f7b29f9543737da888f506ab4c64c5bc3aa4a9eebbaa617ea31a655f1b4d"
+content-hash = "5e4c8442800aa3bac54aaaca20aa1175b9cf6641d8cbc1eda108f412e675f7f3"
