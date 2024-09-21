@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "surfkit"
-version = "0.1.250"
+version = "0.1.251"
 description = "A toolkit for building AI agents that use devices"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>"]
 license = "MIT"
@@ -22,7 +22,7 @@ rich = "^13.7.1"
 tqdm = "^4.66.4"
 agentdesk = "^0.2.93"
 kubernetes = "^30.1.0"
-taskara = "^0.1.139"
+taskara = "^0.1.140"
 
 
 [tool.poetry.group.dev.dependencies]
