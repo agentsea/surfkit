@@ -1,7 +1,5 @@
 import random
 import string
-import subprocess
-import sys
 
 from docker.api.client import APIClient
 from docker.errors import APIError
