@@ -11,7 +11,6 @@ from surfkit.config import AGENTSEA_HUB_API_URL, GlobalConfig
 from surfkit.server.models import V1SolveTask
 from surfkit.types import AgentType
 from surfkit.runtime.agent.base import AgentInstance
-from surfkit.types import AgentType
 
 logger = logging.getLogger(__name__)
 

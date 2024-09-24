@@ -75,6 +75,12 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
         task.started = time.time()
         task.save()
 
+        print("start episode id: ", task.episode.id, flush=True)
+        print_out = []
+        for action in task.episode.actions:
+            print_out.append(action.id)
+        print("start current actions: ", print_out, flush=True)
+
         if task_model.task.device:
             logger.info(f"connecting to device {task_model.task.device.name}...")
             device = None
@@ -107,9 +113,20 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             final_task = agent.solve_task(
                 task=task, device=device, max_steps=task.max_steps
             )
+            print("final episode id: ", final_task.episode.id, flush=True)
+            print_out = []
+            for action in final_task.episode.actions:
+                print_out.append(action.id)
+            print("final current actions: ", print_out, flush=True)
 
         except Exception as e:
             logger.error(f"error running agent: {e}")
+            print("error episode id: ", task.episode.id, flush=True)
+            print_out = []
+            for action in task.episode.actions:
+                print_out.append(action.id)
+            print("error current actions: ", print_out, flush=True)
+
             task.refresh()
             task.status = TaskStatus.FAILED
             task.error = str(e)
@@ -124,6 +141,12 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             print(f"► task run ended '{task.id}'", flush=True)
 
         if final_task:
+            print("final final episode id: ", final_task.episode.id, flush=True)
+            print_out = []
+            for action in final_task.episode.actions:
+                print_out.append(action.id)
+            print("final final current actions: ", print_out, flush=True)
+
             final_task.refresh()
             final_task.completed = time.time()
             final_task.save()

@@ -19,7 +19,6 @@ from .server.models import (
     V1AgentTypes,
     V1DeviceConfig,
     V1EnvVarOpt,
-    V1Find,
     V1LLMProviders,
     V1Meter,
     V1ResourceLimits,
@@ -166,6 +165,7 @@ class AgentType(WithDB):
         devices = None
         if self.devices:
             devices = json.dumps(self.devices)
+
         return AgentTypeRecord(
             id=self.id,
             name=self.name,
