@@ -110,6 +110,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
 
         except Exception as e:
             logger.error(f"error running agent: {e}")
+            task.refresh()
             task.status = TaskStatus.FAILED
             task.error = str(e)
             task.completed = time.time()
@@ -123,6 +124,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             print(f"► task run ended '{task.id}'", flush=True)
 
         if final_task:
+            final_task.refresh()
             final_task.completed = time.time()
             final_task.save()
 
