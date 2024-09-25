@@ -2640,13 +2640,13 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.41"
+version = "0.1.42"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.41-py3-none-any.whl", hash = "sha256:71f0e2a40b1c75c3e7e49816ed27c4ae73a0f62caca211c0813b149170cd0df1"},
-    {file = "mllm-0.1.41.tar.gz", hash = "sha256:0c2001f73d2a56d3df539cffaabe1030aefb963e5291cdb0ac062bdc0efc7d98"},
+    {file = "mllm-0.1.42-py3-none-any.whl", hash = "sha256:c48295fa1c46cf1c55622eb3d051890e88c77734258357d265cfff4d3fe903b0"},
+    {file = "mllm-0.1.42.tar.gz", hash = "sha256:76aed9470c294fde907672efe48e44f69c47376a8eef15c13eaaf93edb1e3018"},
 ]
 
 [package.dependencies]
@@ -4246,18 +4246,18 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.56"
+version = "0.1.57"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.56-py3-none-any.whl", hash = "sha256:7a1578f291ef0a2f143c2e46a94f91d708bffd51bd13d134e89cab7092489026"},
-    {file = "skillpacks-0.1.56.tar.gz", hash = "sha256:3be0d50bc04c8493c36e837861da379e206cf12cde82183e9bd8fa50f233ecfd"},
+    {file = "skillpacks-0.1.57-py3-none-any.whl", hash = "sha256:ae515a524f190ae08f403b69fe855f91407ce905b36c506b5eb25f5ffee4bd5b"},
+    {file = "skillpacks-0.1.57.tar.gz", hash = "sha256:cfe6084b0a817aa8a7c63f5a71740e6ee54b5a232391011e8744c8d5e3ecf15b"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.28,<0.2.0"
-mllm = ">=0.1.41,<0.2.0"
+mllm = ">=0.1.42,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
@@ -4412,13 +4412,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.149"
+version = "0.1.150"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.149-py3-none-any.whl", hash = "sha256:cbd97766f30bb0ee10b5542db488f7fa99b7e86d6ffe516da9ce644b18a72cff"},
-    {file = "taskara-0.1.149.tar.gz", hash = "sha256:646b146aecd2bcd0489681ae440be6f851626503f4f61a6e2545b73e08ca0219"},
+    {file = "taskara-0.1.150-py3-none-any.whl", hash = "sha256:f921e60c781f071f91dc73afcc33a7d435dff895bd4b16acb064489313c1a6a1"},
+    {file = "taskara-0.1.150.tar.gz", hash = "sha256:02da2944f3bd89e8b5a0742b75b11ac176896fc1a5fc9d4c22862208178d4fb8"},
 ]
 
 [package.dependencies]
@@ -4426,7 +4426,7 @@ cryptography = ">=43.0.1,<44.0.0"
 namesgenerator = ">=0.3,<0.4"
 pydantic = ">=2.6.4,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.56,<0.2.0"
+skillpacks = ">=0.1.57,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 tqdm = ">=4.66.4,<5.0.0"
@@ -5343,4 +5343,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e771e9a7a6ad6dda991512bad24a9a5b98fb652103f6d3ab5283e531a2553179"
+content-hash = "1a15321318e1ccd37503400547aa1e954bc26eed5166df8acb48edf55f0c61f8"
