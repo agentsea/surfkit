@@ -223,7 +223,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     )
                 ]
                 self.core_api.patch_namespaced_secret(
-                    name=secret.metadata.name, namespace=self.namespace, body=secret  # type: ignore
+                    name=secret.metadata.name,
+                    namespace=self.namespace,
+                    body=secret,  # type: ignore
                 )
                 print("secret refs updated")
         except ApiException as e:
@@ -389,7 +391,6 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         data: Optional[dict] = None,
         headers: Optional[dict] = None,
     ) -> Tuple[int, str]:
-
         c = Configuration.get_default_copy()
         c.assert_hostname = False  # type: ignore
         Configuration.set_default(c)
