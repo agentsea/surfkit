@@ -55,10 +55,11 @@ export default function ContainerDesktopPage() {
           )}
         </div>
         <div className="border border-black flex w-fit h-fit shadow-2xl">
-            <iframe
-                className="vnc"
-                src={`${vncAddr}?autoconnect=1&resize=remote&clipboard_up=true&clipboard_down=true&clipboard_seamless=true&show_control_bar=true`}>
-            </iframe>
+        <iframe
+            className="vnc"
+            src={`${vncAddr}?autoconnect=1&resize=remote&clipboard_up=true&clipboard_down=true&clipboard_seamless=true&show_control_bar=true`}
+            style={{ width: "1024px", height: "768px" }}
+          ></iframe>
         </div>
       </div>
     </Layout>

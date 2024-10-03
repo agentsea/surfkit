@@ -48,6 +48,10 @@ def view(
         desk_url = f"http://localhost:{desk_port}"
         is_container = True
 
+    elif desk.provider and desk.provider.type == "docker":
+        desk_url = f"http://localhost:{desk.vnc_port}"
+        is_container = True
+
     elif desk.requires_proxy:
         keys = SSHKeyPair.find(name=desk.key_pair_name)
         if not keys:

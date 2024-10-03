@@ -2,9 +2,7 @@ from .base import AgentTemplate
 
 
 class Surf4v(AgentTemplate):
-
     def template(self, agent_name: str) -> str:
-
         return f"""
 from typing import List, Type, Tuple, Optional
 import logging
@@ -14,7 +12,7 @@ import time
 import os
 
 from devicebay import Device
-from agentdesk import Desktop
+from agentdesk.device_v1 import Desktop
 from toolfuse.util import AgentUtils
 from pydantic import BaseModel
 from surfkit.agent import TaskAgent
