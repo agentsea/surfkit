@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Dict
 
-from agentdesk import Desktop
+from agentdesk.device_v1 import Desktop
 from namesgenerator import get_random_name
 from taskara import Task
 from taskara.runtime.base import Tracker
@@ -221,7 +221,7 @@ def solve(
     if device_type:
         if device_type == "desktop":
             from agentdesk.server.models import V1ProviderData
-            from agentdesk.vm.load import load_provider
+            from agentdesk.runtime.load import load_provider
 
             if device_provider == "qemu" and agent_runtime != "process":
                 raise ValueError(
@@ -238,7 +238,7 @@ def solve(
                 vm = _provider.create(
                     name=agent,
                 )
-                _device = Desktop.from_vm(vm)
+                _device = Desktop.from_instance(vm)
                 v1device = _device.to_v1()
             except KeyboardInterrupt:
                 print("Keyboard interrupt received, exiting...")
@@ -259,7 +259,7 @@ def solve(
                 raise ValueError(
                     "Qemu desktop can only be used with the agent 'process' or 'docker' runtime"
                 )
-        _device = Desktop.from_vm(vm)
+        _device = Desktop.from_instance(vm)
         v1device = _device.to_v1()
         logger.info(f"found device '{device}'...")
 
