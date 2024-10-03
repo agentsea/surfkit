@@ -2654,19 +2654,19 @@ files = [
 
 [[package]]
 name = "mllm"
-version = "0.1.42"
+version = "0.1.44"
 description = "Multimodal Large Language Models"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "mllm-0.1.42-py3-none-any.whl", hash = "sha256:c48295fa1c46cf1c55622eb3d051890e88c77734258357d265cfff4d3fe903b0"},
-    {file = "mllm-0.1.42.tar.gz", hash = "sha256:76aed9470c294fde907672efe48e44f69c47376a8eef15c13eaaf93edb1e3018"},
+    {file = "mllm-0.1.44-py3-none-any.whl", hash = "sha256:7017d01ed45b9dbb1c51d1b7a0abd8872932a2040deaaa1c56a393576598c038"},
+    {file = "mllm-0.1.44.tar.gz", hash = "sha256:e4e757e4b24caaa2c84a724fb861797850773181ec3873008f6959ce4fee44e2"},
 ]
 
 [package.dependencies]
 litellm = ">=1.37.19,<2.0.0"
 tenacity = ">=8.2.3,<9.0.0"
-threadmem = ">=0.2.31,<0.3.0"
+threadmem = ">=0.2.33,<0.3.0"
 
 [package.extras]
 gemini = ["google-generativeai (>=0.6.0,<0.7.0)"]
@@ -4260,18 +4260,18 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.64"
+version = "0.1.65"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.64-py3-none-any.whl", hash = "sha256:5d9c209c6b22eaecfc0a332420dfb5d62ae91ac1f1395d2860d66a337c97b711"},
-    {file = "skillpacks-0.1.64.tar.gz", hash = "sha256:8cf63c2a7d1b2563f5abe1ba3a46ddc6b158a5aefbf2f2af828298b72adf3eb0"},
+    {file = "skillpacks-0.1.65-py3-none-any.whl", hash = "sha256:e92af89ee306ae007ab239033daa1b1212243a80f861421d93a56d4d98891a2c"},
+    {file = "skillpacks-0.1.65.tar.gz", hash = "sha256:93b2a163845d24ba8fd4b450cd063b160efbb3a4d563aaa2743a983ac0617079"},
 ]
 
 [package.dependencies]
 devicebay = ">=0.1.28,<0.2.0"
-mllm = ">=0.1.42,<0.2.0"
+mllm = ">=0.1.44,<0.2.0"
 pydantic = ">=2.6.1,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
@@ -4426,13 +4426,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.153"
+version = "0.1.154"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.153-py3-none-any.whl", hash = "sha256:3e7a61497c79c1f1228ff60c04143c6a6538dbe257a7190d08bd97070ce2aecb"},
-    {file = "taskara-0.1.153.tar.gz", hash = "sha256:a47cbe4fcb8a2025c923388a1eb0a82a1271a559a8d6671fa5725295e507bbb3"},
+    {file = "taskara-0.1.154-py3-none-any.whl", hash = "sha256:4f7feedf70ed0819496631898a6687e005c216fc82246d80d54a745050d88e6c"},
+    {file = "taskara-0.1.154.tar.gz", hash = "sha256:470e6a0244d5b3d6c1304fd47b148aee316e8168c3c872d418a2a6f5fa1c2419"},
 ]
 
 [package.dependencies]
@@ -4440,7 +4440,7 @@ cryptography = ">=43.0.1,<44.0.0"
 namesgenerator = ">=0.3,<0.4"
 pydantic = ">=2.6.4,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.64,<0.2.0"
+skillpacks = ">=0.1.65,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 tqdm = ">=4.66.4,<5.0.0"
@@ -4481,13 +4481,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "threadmem"
-version = "0.2.31"
+version = "0.2.33"
 description = "Thread memory for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "threadmem-0.2.31-py3-none-any.whl", hash = "sha256:3955fa9923de40d3e636e8ec9cee264e0d82b44d84a00364d978de44b0d9d3b8"},
-    {file = "threadmem-0.2.31.tar.gz", hash = "sha256:9ece3eb1890759505f028162cc9615efe62f663f172d79c58e3c56d95faed6d4"},
+    {file = "threadmem-0.2.33-py3-none-any.whl", hash = "sha256:1fea4dada42ad8ecb2b982d159bcc4f293b630fb9e74d9a1689332809f1cc3dc"},
+    {file = "threadmem-0.2.33.tar.gz", hash = "sha256:08f2e83dc99066e8a782975606170373fc5431232c08c5912cf29769b5c377bd"},
 ]
 
 [package.dependencies]
@@ -4496,6 +4496,7 @@ google-cloud-storage = ">=2.17.0,<3.0.0"
 pillow = ">=10.3.0,<11.0.0"
 pydantic = ">=2.6.3,<3.0.0"
 requests = ">=2.31.0,<3.0.0"
+shortuuid = ">=1.0.13,<2.0.0"
 sqlalchemy = ">=2.0.27,<3.0.0"
 
 [[package]]
@@ -5357,4 +5358,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "68129934af5dddcc2509555823a99fca3e05e869895bd256a32147c7fcd69a85"
+content-hash = "7529a1a1721fc1e6eb4ef8846bace18f2c6901dc73ffa0c03344f56b0d2b6e47"
