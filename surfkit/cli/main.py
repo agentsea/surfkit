@@ -133,7 +133,7 @@ def create_device(
         help="The type of device to create. Options are 'desktop'",
     ),
     provider: str = typer.Option(
-        "qemu",
+        "docker",
         "--provider",
         "-p",
         help="The provider type for the desktop. Options are 'docker', 'kube', 'ec2', 'gce', and 'qemu'",
