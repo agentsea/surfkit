@@ -94,7 +94,7 @@ surfkit list agents
 Create an Ubuntu desktop for our agent to use.
 
 ```
-surfkit create device --provider qemu -n desktop01
+surfkit create device --provider docker -n desktop01
 ```
 
 List running devices
