@@ -2,13 +2,13 @@
 
 [[package]]
 name = "agentdesk"
-version = "0.2.102"
+version = "0.2.103"
 description = "A desktop for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "agentdesk-0.2.102-py3-none-any.whl", hash = "sha256:ca9f4f65973ede47eb311da862eee05d7ff31887826e8db8847c33feea80a392"},
-    {file = "agentdesk-0.2.102.tar.gz", hash = "sha256:b1a76b42c99991b8d486f891a6d3f1d322e9c39507c4851483b98c21a29cd290"},
+    {file = "agentdesk-0.2.103-py3-none-any.whl", hash = "sha256:867936c7e695693cc24878ccae4c79ba765b0df9a20b8aba089d5c8132c50869"},
+    {file = "agentdesk-0.2.103.tar.gz", hash = "sha256:7662947549db5aeef6cbca241df1b5b8a1c752e79ae06c091a1e6d4448d3b5f5"},
 ]
 
 [package.dependencies]
@@ -5360,4 +5360,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "1ccfe9d09ee4d1f517b9247f75464bda28e08c7e4a3231cd7878e70c19a0628a"
+content-hash = "d51773992275cb1a3ab0c77b0369cddb40ec965c1f200bcdbc2197d3e0410eea"
