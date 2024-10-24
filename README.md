@@ -58,7 +58,7 @@ from surfkit import solve
 
 task = solve(
     "Search for the most common variety of french duck",
-    agent_type="mariyadavydova/SurfSlicer",
+    agent_type="pbarker/SurfPizza",
     device_type="desktop",
   )
 
@@ -80,7 +80,7 @@ surfkit find
 Create a new agent
 
 ```
-surfkit create agent -t mariyadavydova/SurfSlicer -n agent01
+surfkit create agent -t pbarker/SurfPizza -n agent01
 ```
 
 List running agents
