@@ -47,7 +47,6 @@ pip install surfkit
 - Docker
 - Python >= 3.10
 - MacOS or Linux
-- [Qemu](https://www.qemu.org/download/#macos)
 
 ### Python
 
