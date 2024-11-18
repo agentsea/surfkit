@@ -60,11 +60,11 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
                 detail=f"failed to conect to LLM providers: {e} -- did you provide a valid key?",
             )
 
-        background_tasks.add_task(_solve_task, task_model)
+        background_tasks.add_task(_solve_task, task_model, current_user)
         logger.info("created background task...")
         return
 
-    def _solve_task(task_model: V1SolveTask):
+    def _solve_task(task_model: V1SolveTask, current_user: V1UserProfile):
         owner_id = task_model.task.owner_id
         if not owner_id:
             owner_id = "local"
@@ -83,7 +83,9 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
                     logger.debug(f"found device: {task_model.task.device.model_dump()}")
 
                     config = Device.connect_config_type()(
+                        api_key = current_user.token,
                         **task_model.task.device.config  # type: ignore
+                        
                     )
                     device = Device.connect(config=config)
 
