@@ -83,7 +83,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
                     logger.debug(f"found device: {task_model.task.device.model_dump()}")
 
                     config = Device.connect_config_type()(
-                        api_key = current_user.token, **task_model.task.device.config  # type: ignore
+                        api_key=current_user.token, **task_model.task.device.config  # type: ignore
                     )
                     device = Device.connect(config=config)
 
