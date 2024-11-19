@@ -832,7 +832,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             tags=tags if tags else [],
             labels=labels if labels else {},
         )
-    
+
     # def _get_headers_with_auth(self, token) -> dict:
     #     """Helper to return headers with optional Authorization"""
     #     headers = {
