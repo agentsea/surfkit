@@ -47,7 +47,9 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
         background_tasks: BackgroundTasks,
         task_model: V1SolveTask,
     ):
-        logger.info(f"solving task: {task_model.model_dump()} with user {current_user.email}")
+        logger.info(
+            f"solving task: {task_model.model_dump()} with user {current_user.email}"
+        )
         try:
             # TODO: we need to find a way to do this earlier but get status back
             mllm_router.check_model()
@@ -81,7 +83,9 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             for Device in Agent.supported_devices():
                 if Device.type() == task_model.task.device.type:
                     logger.debug(f"found device: {task_model.task.device.model_dump()}")
-                    api_key = current_user.token if current_user.token else task.auth_token
+                    api_key = (
+                        current_user.token if current_user.token else task.auth_token
+                    )
                     if api_key is None:
                         logger.info("No Api key/token on Task or in Auth")
                     config = Device.connect_config_type()(
