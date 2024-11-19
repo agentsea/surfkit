@@ -81,9 +81,11 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
             for Device in Agent.supported_devices():
                 if Device.type() == task_model.task.device.type:
                     logger.debug(f"found device: {task_model.task.device.model_dump()}")
-
+                    api_key = current_user.token if current_user.token else task.auth_token
+                    if api_key is None:
+                        logger.info("No Api key/token on Task or in Auth")
                     config = Device.connect_config_type()(
-                        api_key=current_user.token, **task_model.task.device.config  # type: ignore
+                        api_key=api_key, **task_model.task.device.config  # type: ignore
                     )
                     device = Device.connect(config=config)
 
