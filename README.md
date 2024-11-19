@@ -47,7 +47,6 @@ pip install surfkit
 - Docker
 - Python >= 3.10
 - MacOS or Linux
-- [Qemu](https://www.qemu.org/download/#macos)
 
 ### Python
 
@@ -58,7 +57,7 @@ from surfkit import solve
 
 task = solve(
     "Search for the most common variety of french duck",
-    agent_type="mariyadavydova/SurfSlicer",
+    agent_type="pbarker/SurfPizza",
     device_type="desktop",
   )
 
@@ -80,7 +79,7 @@ surfkit find
 Create a new agent
 
 ```
-surfkit create agent -t mariyadavydova/SurfSlicer -n agent01
+surfkit create agent -t pbarker/SurfPizza -n agent01
 ```
 
 List running agents
@@ -94,7 +93,7 @@ surfkit list agents
 Create an Ubuntu desktop for our agent to use.
 
 ```
-surfkit create device --provider qemu -n desktop01
+surfkit create device --provider docker -n desktop01
 ```
 
 List running devices

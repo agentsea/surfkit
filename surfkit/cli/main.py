@@ -11,7 +11,7 @@ import typer
 import yaml
 from namesgenerator import get_random_name
 from tabulate import tabulate
-from agentdesk.vm.ec2 import EC2Provider
+from agentdesk.runtime.ec2 import EC2Provider
 
 
 logger = logging.getLogger(__name__)
@@ -133,10 +133,10 @@ def create_device(
         help="The type of device to create. Options are 'desktop'",
     ),
     provider: str = typer.Option(
-        "qemu",
+        "docker",
         "--provider",
         "-p",
-        help="The provider type for the desktop. Options are 'ec2', 'gce', and 'qemu'",
+        help="The provider type for the desktop. Options are 'docker', 'kube', 'ec2', 'gce', and 'qemu'",
     ),
     image: Optional[str] = typer.Option(
         None, help="The image to use for the desktop. Defaults to Ubuntu Jammy."
@@ -157,7 +157,7 @@ def create_device(
     ),
 ):
     from agentdesk.server.models import V1ProviderData
-    from agentdesk.vm.load import load_provider
+    from agentdesk.runtime.load import load_provider
 
     if type != "desktop":
         typer.echo("Currently only 'desktop' type is supported.")
@@ -215,7 +215,6 @@ def create_tracker(
         False, "--auth-enabled", "-e", help="Whether to enable auth for the tracker."
     ),
 ):
-
     if runtime == "docker":
         from taskara.runtime.docker import DockerConnectConfig, DockerTrackerRuntime
 
@@ -390,7 +389,6 @@ def create_agent(
     ),
     debug: bool = typer.Option(False, help="Run the agent with debug logging"),
 ):
-
     from surfkit.server.models import V1AgentType
     from surfkit.types import AgentType
 
@@ -427,10 +425,9 @@ def create_agent(
         raise ValueError(f"Unknown runtime '{runtime}'")
 
     if type:
-
         from typing import List
 
-        from surfkit.config import AGENTSEA_HUB_API_URL, GlobalConfig
+        from surfkit.config import AGENTSEA_HUB_API_URL
 
         all_types: List[AgentType] = []
 
@@ -625,13 +622,13 @@ def list_devices(
         None, "--provider", "-p", help="The provider type for the desktop."
     ),
 ):
-    from agentdesk.vm import DesktopVM
-    from agentdesk.vm.load import load_provider
+    from agentdesk.runtime import DesktopInstance
+    from agentdesk.runtime.load import load_provider
 
     from surfkit.util import convert_unix_to_datetime
 
     provider_is_refreshed = {}
-    vms = DesktopVM.find()
+    vms = DesktopInstance.find()
     if not vms:
         print("No desktops found")
     else:
@@ -648,7 +645,7 @@ def list_devices(
                 if not desktop.reserved_ip:
                     _provider.refresh(log=False)
                     provider_is_refreshed[desktop.provider.type] = True
-                    desktop = DesktopVM.get(desktop.name)
+                    desktop = DesktopInstance.get(desktop.name)
                     if not desktop:
                         continue
 
@@ -788,8 +785,6 @@ def list_evals():
 
 @list_group.command("types")
 def list_types():
-    from typing import List
-
     from surfkit.config import AGENTSEA_HUB_API_URL
     from surfkit.types import AgentType
 
@@ -877,7 +872,6 @@ def list_tasks(
         None, "--tracker", "-t", help="The tracker to list tasks from."
     ),
 ):
-
     from taskara import Task, V1Tasks
     from taskara.runtime.base import Tracker
 
@@ -982,7 +976,6 @@ def get_agent(
         None, "--runtime", "-r", help="Get agent directly from the runtime"
     ),
 ):
-
     from surfkit.runtime.agent.base import AgentInstance
 
     active_runtimes = AgentInstance.active_runtimes()
@@ -1039,11 +1032,11 @@ def get_device(
         None, "--provider", "-p", help="The provider type for the desktop."
     ),
 ):
-    from agentdesk.vm import DesktopVM
-    from agentdesk.vm.load import load_provider
+    from agentdesk.runtime import DesktopInstance
+    from agentdesk.runtime.load import load_provider
 
     if name:
-        desktop = DesktopVM.get(name)
+        desktop = DesktopInstance.get(name)
         if not desktop:
             raise ValueError("desktop not found")
         if not desktop.provider:
@@ -1055,7 +1048,7 @@ def get_device(
         _provider = load_provider(desktop.provider)
         if not desktop.reserved_ip:
             _provider.refresh(log=False)
-            desktop = DesktopVM.get(name)
+            desktop = DesktopInstance.get(name)
             if not desktop:
                 print(f"Desktop '{name}' not found")
                 return
@@ -1196,10 +1189,10 @@ def delete_device(
         None, "--provider", "-p", help="The provider type for the desktop."
     ),
 ):
-    from agentdesk.vm import DesktopVM
-    from agentdesk.vm.load import load_provider
+    from agentdesk.runtime import DesktopInstance
+    from agentdesk.runtime.load import load_provider
 
-    desktop = DesktopVM.get(name)
+    desktop = DesktopInstance.get(name)
     if not desktop:
         raise ValueError("desktop not found")
     if not desktop.provider:
@@ -1212,7 +1205,7 @@ def delete_device(
     if not desktop.reserved_ip:
         typer.echo("refreshing provider...")
         _provider.refresh(log=False)
-        desktop = DesktopVM.get(name)
+        desktop = DesktopInstance.get(name)
         if not desktop:
             print(f"Desktop '{name}' not found")
             return
@@ -1277,9 +1270,9 @@ def view_device(
         False, "--background", "-b", help="Run the viewer in background mode"
     ),
 ):
-    from agentdesk.vm import DesktopVM
+    from agentdesk.runtime import DesktopInstance
 
-    desktop = DesktopVM.get(name)
+    desktop = DesktopInstance.get(name)
     if not desktop:
         raise ValueError(f"Desktop '{name}' not found")
 
@@ -1354,7 +1347,7 @@ def new(
         "--template",
         "-t",
         help="Template to use. Options are 'surf4v' or 'surfskelly'",
-    )
+    ),
 ):
     from rich.prompt import Prompt
 
@@ -1700,7 +1693,7 @@ def get_tracker_logs(
 @app.command("config")
 def config():
     """
-    Retrieve tracker logs
+    CLI configuration
     """
     from surfkit.config import (
         AGENTSEA_AUTH_URL,
