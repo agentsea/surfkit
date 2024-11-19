@@ -47,7 +47,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
         background_tasks: BackgroundTasks,
         task_model: V1SolveTask,
     ):
-        logger.info(f"solving task: {task_model.model_dump()}")
+        logger.info(f"solving task: {task_model.model_dump()} with user {current_user.email}")
         try:
             # TODO: we need to find a way to do this earlier but get status back
             mllm_router.check_model()
