@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from surfkit.agent import TaskAgent
 from taskara import Task, TaskStatus
 from mllm import Router
+from skillpacks import EnvState
 from skillpacks.server.models import V1ActionSelection, V1EnvState
 from threadmem import RoleThread, RoleMessage
 from tenacity import (
@@ -42,7 +43,7 @@ class {agent_name}Config(BaseModel):
 
 
 class {agent_name}(TaskAgent):
-    \"""A desktop agent that uses GPT-4V augmented with OCR and Grounding Dino to solve tasks\"""
+    \"""A desktop agent that uses GPT-4V to solve tasks\"""
 
     def solve_task(
         self,
@@ -67,7 +68,7 @@ class {agent_name}(TaskAgent):
         # Create threads in the task to update the user
         console.print("creating threads...")
         task.ensure_thread("debug")
-        task.post_message("assistant", f"I'll post debug messages here", thread="debug")
+        task.post_message("assistant", "I'll post debug messages here", thread="debug")
 
         # Check that the device we received is one we support
         if not isinstance(device, Desktop):
@@ -153,7 +154,7 @@ class {agent_name}(TaskAgent):
         \"""Take an action
 
         Args:
-            desktop (SemanticDesktop): Desktop to use
+            desktop (Desktop): Desktop to use
             task (str): Task to accomplish
             thread (RoleThread): Role thread for the task
 
@@ -178,11 +179,11 @@ class {agent_name}(TaskAgent):
             _thread.remove_images()
 
             # Take a screenshot of the desktop and post a message with it
-            screenshot_b64 = desktop.take_screenshot()
+            screenshot = desktop.take_screenshots()[0]
             task.post_message(
                 "assistant",
                 "current image",
-                images=[f"data:image/png;base64,{{screenshot_b64}}"],
+                images=[screenshot],
                 thread="debug",
             )
 
@@ -197,7 +198,7 @@ class {agent_name}(TaskAgent):
                     f"Here is a screenshot of the current desktop with the mouse coordinates ({{x}}, {{y}}). "
                     "Please select an action from the provided schema."
                 ),
-                images=[f"data:image/png;base64,{{screenshot_b64}}"],
+                images=[screenshot],
             )
             _thread.add_msg(msg)
 
@@ -234,7 +235,7 @@ class {agent_name}(TaskAgent):
                     "assistant",
                     f"✅ I think the task is done, please review the result: {{selection.action.parameters['value']}}",
                 )
-                task.status = TaskStatus.REVIEW
+                task.status = TaskStatus.FINISHED
                 task.save()
                 return _thread, True
 
@@ -259,7 +260,7 @@ class {agent_name}(TaskAgent):
 
             # Record the action for feedback and tuning
             task.record_action(
-                state=V1EnvState(image=f"data:image/png;base64,{{screenshot_b64}}"),
+                state=EnvState(images=screenshot),
                 prompt=response.prompt,
                 action=selection.action,
                 tool=desktop.ref(),
