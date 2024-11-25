@@ -4401,13 +4401,13 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.85"
+version = "0.1.87"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.85-py3-none-any.whl", hash = "sha256:935f0192f8be8f2a2a456c380a0e37a94a3d484f52119ea9a4f7714729419955"},
-    {file = "skillpacks-0.1.85.tar.gz", hash = "sha256:8acb66a8e995b06bad5c61bf420f779912e5225a7c8c40f3eb9440b2640cac13"},
+    {file = "skillpacks-0.1.87-py3-none-any.whl", hash = "sha256:1ff06bb0db8c6a1ead3eac4948ba22060ef02bc3f50f07e6f8a5acc11129af6b"},
+    {file = "skillpacks-0.1.87.tar.gz", hash = "sha256:3ddbf0b843a55268efec9c7c443b99b026f0a6bf88200345f19c50e83b960206"},
 ]
 
 [package.dependencies]
@@ -4567,13 +4567,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.165"
+version = "0.1.166"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.165-py3-none-any.whl", hash = "sha256:de5978ce232b8aa7bb971b8a1a80aef9f343862fc8ffc27189471cbf6b7cc92f"},
-    {file = "taskara-0.1.165.tar.gz", hash = "sha256:bc391bca3a1fd92628e413550e78cd01f64e072f8ef10331fc8e1ec99332915a"},
+    {file = "taskara-0.1.166-py3-none-any.whl", hash = "sha256:d92d770afce3f45471d3ebc023d8ca46a6206610e34cb99e6175558a7d87ccb9"},
+    {file = "taskara-0.1.166.tar.gz", hash = "sha256:8648543e6aefc9bedf4e56e312e26ae01be3fd00c6dd1b6529abc37136ba8aa9"},
 ]
 
 [package.dependencies]
@@ -4581,7 +4581,7 @@ cryptography = ">=43.0.1,<44.0.0"
 namesgenerator = ">=0.3,<0.4"
 pydantic = ">=2.6.4,<3.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.85,<0.2.0"
+skillpacks = ">=0.1.87,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 tqdm = ">=4.66.4,<5.0.0"
@@ -5493,4 +5493,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fef492158b33536ea6d9012a5d53dfeee5f39682af2a5d14be445f52a51ba826"
+content-hash = "9a2d4e5affb08c753cb0b452117f8477ca89e5c238368d19d39986f67249985b"
