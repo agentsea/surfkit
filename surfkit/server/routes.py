@@ -8,6 +8,7 @@ from mllm import Router
 from taskara import Task, TaskStatus
 from taskara.server.models import V1Task, V1Tasks, V1TaskUpdate
 from tenacity import retry, stop_after_attempt, wait_fixed
+from agentdesk import ConnectConfig
 
 from surfkit.agent import TaskAgent
 from surfkit.auth.transport import get_user_dependency
@@ -89,7 +90,7 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
                     if api_key is None:
                         logger.info("No Api key/token on Task or in Auth")
                     config = Device.connect_config_type()(
-                        api_key=api_key, **task_model.task.device.config  # type: ignore
+                        **{**task_model.task.device.config, "api_key": api_key}  # type: ignore
                     )
                     device = Device.connect(config=config)
 
