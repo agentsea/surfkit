@@ -1,14 +1,13 @@
 import logging
 import os
-from typing import Annotated, Type
 import time
+from typing import Annotated, Type
 
+from agentdesk import ConnectConfig
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from mllm import Router
 from taskara import Task, TaskStatus
 from taskara.server.models import V1Task, V1Tasks, V1TaskUpdate
 from tenacity import retry, stop_after_attempt, wait_fixed
-from agentdesk import ConnectConfig
 
 from surfkit.agent import TaskAgent
 from surfkit.auth.transport import get_user_dependency
@@ -21,12 +20,11 @@ logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
 
 
-def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
+def task_router(Agent: Type[TaskAgent]) -> APIRouter:
     """API router for a task agent.
 
     Args:
         Agent (Type[TaskAgent]): Task agent type.
-        mllm_router (Router): An MLLM router.
 
     Returns:
         APIRouter: An APIRouter for the task agent.
@@ -51,17 +49,6 @@ def task_router(Agent: Type[TaskAgent], mllm_router: Router) -> APIRouter:
         logger.info(
             f"solving task: {task_model.model_dump()} with user {current_user.email}"
         )
-        try:
-            # TODO: we need to find a way to do this earlier but get status back
-            mllm_router.check_model()
-        except Exception as e:
-            logger.error(
-                f"Cannot connect to LLM providers: {e} -- did you provide a valid key?"
-            )
-            raise HTTPException(
-                status_code=500,
-                detail=f"failed to conect to LLM providers: {e} -- did you provide a valid key?",
-            )
 
         background_tasks.add_task(_solve_task, task_model, current_user)
         logger.info("created background task...")
