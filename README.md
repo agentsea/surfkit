@@ -187,7 +187,7 @@ surfkit list devices
 View device in UI
 
 ```sh
-surfkit view bar
+surfkit view device bar
 ```
 
 Delete a device
