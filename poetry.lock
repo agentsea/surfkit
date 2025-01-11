@@ -4010,6 +4010,24 @@ files = [
 cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
+name = "redis"
+version = "5.2.1"
+description = "Python client for Redis database and key-value store"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "redis-5.2.1-py3-none-any.whl", hash = "sha256:ee7e1056b9aea0f04c6c2ed59452947f34c4940ee025f5dd83e6a6418b6989e4"},
+    {file = "redis-5.2.1.tar.gz", hash = "sha256:16f2e22dff21d5125e8481515e386711a34cbec50f0e44413dd7d9c060a54e0f"},
+]
+
+[package.dependencies]
+async-timeout = {version = ">=4.0.3", markers = "python_full_version < \"3.11.3\""}
+
+[package.extras]
+hiredis = ["hiredis (>=3.0.0)"]
+ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==23.2.1)", "requests (>=2.31.0)"]
+
+[[package]]
 name = "referencing"
 version = "0.35.1"
 description = "JSON Referencing + Python"
@@ -4438,13 +4456,13 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.93"
+version = "0.1.100"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.93-py3-none-any.whl", hash = "sha256:793efaf3540be396e1a899c5597fcc03d48a2391c1b9dbe2adc650eb8a82c767"},
-    {file = "skillpacks-0.1.93.tar.gz", hash = "sha256:516000b601cc27aa8d1f5502b50e90e61c872138548026ea6d4e6791c9b36340"},
+    {file = "skillpacks-0.1.100-py3-none-any.whl", hash = "sha256:f0d0f849618b175fcb4f6b783ad6c379c9832b893715bd9f64c524c8fe88c862"},
+    {file = "skillpacks-0.1.100.tar.gz", hash = "sha256:5dafdb7b31f49044c874ea2f9223d273d57edf5adaed9d002793703126000e38"},
 ]
 
 [package.dependencies]
@@ -4604,21 +4622,22 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.178"
+version = "0.1.187"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.178-py3-none-any.whl", hash = "sha256:2794e59706838ad7b7cf17cf79b30cae17c615a468d53c7754250b809ede74c1"},
-    {file = "taskara-0.1.178.tar.gz", hash = "sha256:13c348fbe56a7fe999b70cf1469d45f02afd10c7e518e3b214ce94ec890db38b"},
+    {file = "taskara-0.1.187-py3-none-any.whl", hash = "sha256:63d64ab179ff572a288200625176b9e89e6d0150665fb826738feca73537dace"},
+    {file = "taskara-0.1.187.tar.gz", hash = "sha256:1562463103963d3d81ecdff9c03dccc861c7548346fc6e79263f9b611bb98188"},
 ]
 
 [package.dependencies]
 cryptography = ">=43.0.1,<44.0.0"
 namesgenerator = ">=0.3,<0.4"
 pydantic = ">=2.6.4,<3.0.0"
+redis = ">=5.2.0,<6.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.93,<0.2.0"
+skillpacks = ">=0.1.100,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 threadmem = ">=0.2.26,<0.3.0"
 tqdm = ">=4.66.4,<5.0.0"
@@ -5545,4 +5564,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "2686ccf6263a7da2a130927664e914bc32316e9a4c9448464377ad4cdd4dc9b7"
+content-hash = "dd9d806471a9b301e3fb7bd7ce2c5f46b6b4611eda8b2e83d381a3058765a0c6"

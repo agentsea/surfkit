@@ -58,7 +58,7 @@ export default function ContainerDesktopPage() {
           <iframe
             className="vnc"
             src={`${vncAddr}?autoconnect=1&resize=remote&clipboard_up=true&clipboard_down=true&clipboard_seamless=true&show_control_bar=true`}
-            style={{ width: "1024px", height: "768px" }}
+            style={{ width: "1024px", height: "768px" }} // 1280 x 858
           ></iframe>
         </div>
       </div>
