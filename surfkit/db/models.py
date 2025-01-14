@@ -7,6 +7,25 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 
+class SkillRecord(Base):
+    __tablename__ = "skills"
+
+    id = Column(String, primary_key=True)
+    owner_id = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    requirements = Column(String, nullable=True)
+    agent_type = Column(String, nullable=False)
+    threads = Column(String, nullable=True)
+    generating_tasks = Column(Boolean, nullable=False)
+    tasks = Column(String, nullable=True)
+    min_demos = Column(Integer, nullable=False)
+    demos_outstanding = Column(Integer, nullable=False)
+    created = Column(Float, default=time.time)
+    updated = Column(Float, default=time.time)
+
+
 class AgentTypeRecord(Base):
     __tablename__ = "agent_types"
 

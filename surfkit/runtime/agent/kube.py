@@ -30,6 +30,7 @@ from surfkit.server.models import (
     V1AgentType,
     V1ResourceLimits,
     V1ResourceRequests,
+    V1Skill,
     V1SolveTask,
 )
 from surfkit.types import AgentType
@@ -840,6 +841,15 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
     #         "Authorization": f"Bearer {token}"
     #     }
     #     return headers
+
+    def learn_skill(
+        self,
+        name: str,
+        skill: V1Skill,
+        follow_logs: bool = False,
+        attach: bool = False,
+    ) -> None:
+        pass
 
     def solve_task(
         self,

@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from taskara import V1Task
+from threadmem import V1RoleThread
 
 
 class V1Action(BaseModel):
@@ -175,3 +176,50 @@ class V1Meta(BaseModel):
     owner_id: Optional[str] = None
     created: float
     updated: float
+
+
+class UserTasks(BaseModel):
+    """A list of tasks for a user story"""
+
+    tasks: List[str] = Field(description="A list of tasks for a user story")
+
+
+class UserTask(BaseModel):
+    """A task for a user story"""
+
+    task: str = Field(description="A task for a user story")
+
+
+class V1Skill(BaseModel):
+    id: str
+    name: str
+    description: str
+    requirements: List[str]
+    tasks: List[V1Task]
+    threads: List[V1RoleThread] = []
+    status: Optional[str] = None
+    min_demos: Optional[int] = None
+    demos_outstanding: Optional[int] = None
+    owner_id: Optional[str] = None
+    generating_tasks: Optional[bool] = None
+    agent_type: str
+    remote: Optional[str] = None
+    created: int
+    updated: int
+
+
+class V1UpdateSkill(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    requirements: Optional[List[str]] = None
+    tasks: Optional[List[str]] = None
+    threads: Optional[List[str]] = None
+    status: Optional[str] = None
+    min_demos: Optional[int] = None
+    demos_outstanding: Optional[int] = None
+
+
+class V1LearnSkill(BaseModel):
+    skill_id: str
+    remote: Optional[str] = None
+    agent: Optional[V1Agent] = None

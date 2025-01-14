@@ -14,6 +14,7 @@ from surfkit.server.models import (
     V1AgentInstance,
     V1AgentType,
     V1RuntimeConnect,
+    V1Skill,
     V1SolveTask,
 )
 from surfkit.types import AgentType
@@ -334,7 +335,6 @@ class AgentInstance(WithDB):
 
 
 class AgentRuntime(Generic[R, C], ABC):
-
     @classmethod
     def name(cls) -> str:
         return cls.__name__
@@ -401,6 +401,25 @@ class AgentRuntime(Generic[R, C], ABC):
 
         Returns:
             AgentInstance: An agent instance
+        """
+        pass
+
+    @abstractmethod
+    def learn_skill(
+        self,
+        name: str,
+        skill: V1Skill,
+        follow_logs: bool = False,
+        attach: bool = False,
+    ) -> None:
+        """Learn a skill
+
+        Args:
+            name (str): Name of the agent
+            skill (V1Skill): The skill
+            follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
+            attach (bool, optional): Whether to attach the current process to the agent
+                If this process dies the agent will also die. Defaults to False.
         """
         pass
 
