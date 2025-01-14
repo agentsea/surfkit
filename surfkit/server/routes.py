@@ -1,10 +1,9 @@
 import logging
 import os
 import time
-from typing import Annotated, Type
+from typing import Annotated, Optional, Type
 
-from agentdesk import ConnectConfig
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends
 from taskara import Task, TaskStatus
 from taskara.server.models import V1Task, V1Tasks, V1TaskUpdate
 from tenacity import retry, stop_after_attempt, wait_fixed
@@ -12,7 +11,8 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from surfkit.agent import TaskAgent
 from surfkit.auth.transport import get_user_dependency
 from surfkit.env import AGENTESEA_HUB_API_KEY_ENV
-from surfkit.server.models import V1SolveTask, V1UserProfile
+from surfkit.server.models import V1Agent, V1LearnSkill, V1SolveTask, V1UserProfile
+from surfkit.skill import Skill
 
 DEBUG_ENV_VAR = os.getenv("DEBUG", "false").lower() == "true"
 log_level = logging.DEBUG if DEBUG_ENV_VAR else logging.INFO
@@ -39,6 +39,38 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
     @api_router.get("/health")
     async def health():
         return {"status": "ok"}
+
+    @api_router.post("/v1/learn")
+    async def learn_skill(
+        current_user: Annotated[V1UserProfile, Depends(get_user_dependency())],
+        background_tasks: BackgroundTasks,
+        skill_model: V1LearnSkill,
+    ):
+        logger.info(
+            f"learning skill: {skill_model.model_dump()} with user {current_user.email}"
+        )
+
+        found = Skill.find(remote=skill_model.remote, id=skill_model.skill_id)
+        if not found:
+            raise Exception(f"Skill {skill_model.skill_id} not found")
+
+        skill = found[0]
+
+        background_tasks.add_task(_learn_skill, skill, current_user, skill_model.agent)
+
+    def _learn_skill(
+        skill: Skill, current_user: V1UserProfile, v1_agent: Optional[V1Agent] = None
+    ):
+        if v1_agent:
+            config = Agent.config_type().model_validate(v1_agent.config)
+            agent = Agent.from_config(config=config)
+        else:
+            agent = Agent.default()
+
+        try:
+            agent.learn_skill(skill)
+        except Exception as e:
+            logger.error(f"error learning skill: {e}")
 
     @api_router.post("/v1/tasks")
     async def solve_task(

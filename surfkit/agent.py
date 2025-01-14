@@ -5,6 +5,8 @@ from devicebay import Device
 from pydantic import BaseModel
 from taskara import Task
 
+from .skill import Skill
+
 C = TypeVar("C", bound="BaseModel")
 T = TypeVar("T", bound="TaskAgent")
 
@@ -15,6 +17,17 @@ class TaskAgent(Generic[C, T], ABC):
     @classmethod
     def name(cls) -> str:
         return cls.__name__
+
+    def learn_skill(
+        self,
+        skill: Skill,
+    ):
+        """Learn a skill
+
+        Args:
+            skill (Skill): The skill
+        """
+        raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
     def solve_task(

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "surfkit"
-version = "0.1.293"
+version = "0.1.294"
 description = "A toolkit for building AI agents that use devices"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>", "Jeffrey Huckabay <jfhucka@gmail.com>"]
 license = "MIT"
@@ -20,7 +20,7 @@ litellm = "^1.35.8"
 rich = "^13.7.1"
 tqdm = "^4.66.4"
 agentdesk = "^0.2.107"
-taskara = "^0.1.187"
+taskara = "^0.1.189"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -38,6 +38,14 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 surfkit = "surfkit.cli.main:app"
 lint = "scripts.lint:main"
+
+
+[tool.pyright]
+reportUnknownParameterType = false
+reportMissingTypeArgument = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
 
 
 [tool.isort]
