@@ -62,6 +62,7 @@ class Skill(WithDB):
             demos_outstanding if demos_outstanding is not None else 5
         )
         self.remote = remote
+        self.threads: List[RoleThread] = []
 
         self.id = id or uuid()
         self.created = int(time.time())
