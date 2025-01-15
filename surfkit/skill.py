@@ -88,6 +88,8 @@ class Skill(WithDB):
         return resp.msg.text
 
     def to_v1(self) -> V1Skill:
+        if not hasattr(self, "remote"):
+            self.remote = None
         return V1Skill(
             id=self.id,
             name=self.name,  # type: ignore
@@ -192,6 +194,7 @@ class Skill(WithDB):
         out.demos_outstanding = record.demos_outstanding
         out.created = record.created
         out.updated = record.updated
+        out.remote = None
         return out
 
     def save(self):
