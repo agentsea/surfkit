@@ -108,10 +108,18 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
                     )
                     if api_key is None:
                         logger.info("No Api key/token on Task or in Auth")
-                    config = Device.connect_config_type()(
-                        **{**task_model.task.device.config, "api_key": api_key}  # type: ignore
-                    )
-                    device = Device.connect(config=config)
+
+                    try:
+                        config = Device.connect_config_type()(
+                            **{**task_model.task.device.config, "api_key": api_key}  # type: ignore
+                        )
+                        device = Device.connect(config=config)
+                    except Exception as e:
+                        err = f"error connecting to device: {e}"
+                        task.error = err
+                        task.status = TaskStatus.ERROR
+                        task.save()
+                        raise Exception(err)
 
             if not device:
                 raise ValueError(
