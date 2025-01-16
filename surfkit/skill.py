@@ -334,6 +334,25 @@ class Skill(WithDB):
             ]
         )
         current_date = datetime.now().strftime("%B %d, %Y")
+        example_task_descriptions = [task.description for task in self.example_tasks]
+        example_str = str(
+            "For example, if the skill is 'search for stays on airbnb' "
+            "and a requirement is 'find stays within a travel window' then a task "
+            "might be 'Find the most popular available stays on Airbnb between October 12th to October 14th' "
+        )
+        example_schema = '{"tasks": ["Find stays from october 2nd to 3rd", "Find stays from January 15th-17th"]}'
+        if self.example_tasks:
+            example_str = str(
+                f"Some examples of tasks for this skill are: '{json.dumps(example_task_descriptions)}'"
+            )
+            example_schema = str('{"tasks": ' f'{json.dumps(example_task_descriptions)}' '}' )
+        old_task_str = ""
+        old_tasks = self.get_task_descriptions(limit=15000)
+        if old_tasks:
+            old_task_str = str(
+                "Please do not create any tasks identical to these tasks that have already been created: "
+                f"{old_tasks}"
+            )
         if len(self.requirements) > 0:
             print(
                 f"Generating tasks for skill: '{self.description}', skill ID: {self.id} with requirements: {self.requirements}",
@@ -341,39 +360,22 @@ class Skill(WithDB):
             )
             thread = RoleThread(owner_id=self.owner_id) # TODO is this gonna keep one thread? I don't see a need for a new thread every time
             result: List[Task] = []
-            example_task_descriptions = [task.description for task in self.example_tasks]
-            example_str = str(
-                "For example, if the skill is 'search for stays on airbnb' "
-                "and a requirement is 'find stays within a travel window' then a task "
-                "might be 'Find the most popular available stays on Airbnb between October 12th to October 14th' "
-            )
-            example_schema = '{"tasks": ["Find stays from october 2nd to 3rd", "Find stays from January 15th-17th"]}'
-            if self.example_tasks:
-                example_str = str(
-                    f"Some examples of tasks for this skill are: '{json.dumps(example_task_descriptions)}'"
-                )
-                example_schema = str('{"tasks": ' f'{json.dumps(example_task_descriptions)}' '}' )
+            
             for n in range(n_permutations):
                 print(
                     f"task generation interation: {n} for skill ID {self.id}",
                     flush=True
                     )
-                old_task_str = ""
-                old_tasks = self.get_task_descriptions(limit=15000)
-                if old_tasks:
-                    old_task_str = str(
-                        "Please do not create any tasks identical to these tasks that have already been created: "
-                        f"{old_tasks}"
-                    )
+               
                 prompt = (
                     f"Given the agent skill '{self.description}', and the "
                     f"configurable requirements that the agent skill encompasses '{json.dumps(self.requirements)}', "
                     "Please generate a task that a user could take which will excercise this skill, "
-                    "our goal is to train and get good at using a skill"
+                    "our goal is to train and get good at using a skill "
                     f"Today's date is {current_date}. "
-                    f"{example_str}"
-                    f"Please return a raw json object that conforms to the schema {UserTasks.model_json_schema()}. "
-                    f'{example_schema}'
+                    f"{example_str} "
+                    f"Please return a raw json object that looks like the following example: "
+                    f'{example_schema} '
                     f"{old_task_str}"
                 )
                 print(f"prompt: {prompt}", flush=True)
@@ -434,16 +436,14 @@ class Skill(WithDB):
         else:
             print(f"Generating tasks for skill: {self.description}", flush=True)
             prompt = (
-                f"Given the agent skill '{self.description}'"
+                f"Given the agent skill '{self.description}' "
                 "Please generate a task that a agent could do which will excercise this skill, "
                 "our goal is to test whether the agent can perform the skill "
                 f"Today's date is {current_date}. "
-                "For example, if the skill is 'search for stays on airbnb' "
-                "and a requirement is 'find stays within a travel window' then a task "
-                "might be 'Find the most popular available stays on Airbnb between October 12th to October 14th' "
-                f"Please return a raw json object that conforms to the schema {UserTask.model_json_schema()}. "
-                f"For example: "
-                '{"task": "Find the most popular stays from october 2nd to 3rd"}'
+                f"{example_str} "
+                f"Please return a raw json object that looks like the following example: "
+                f'{example_schema} '
+                f"{old_task_str} "
             )
         thread = RoleThread(owner_id=self.owner_id)
         thread.post("user", prompt)
