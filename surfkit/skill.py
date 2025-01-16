@@ -159,8 +159,10 @@ class Skill(WithDB):
         thread_ids = json.loads(str(record.threads))
         threads = [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
         example_task_ids = json.loads(str(record.example_tasks))
+        print(f"from_record Skill {record.id}: record: {record} example_task_ids: {example_task_ids}", flush=True)
         task_ids = json.loads(str(record.tasks))
         example_tasks = Task.find_many_lite(example_task_ids)
+        print(f"from_record Skill {record.id}: record: {record} example_tasks: {example_tasks}", flush=True)
         tasks = Task.find_many_lite(task_ids)
         valid_task_ids = []
         # valid_example_task_ids = []
@@ -254,12 +256,13 @@ class Skill(WithDB):
                 .order_by(asc(SkillRecord.created))
                 .all()
             )
-            print("skills found in db", flush=True)
+            print(f"skills found in db {records}", flush=True)
             return [cls.from_record(record) for record in records]
 
         raise ValueError("no session")
 
     def update(self, data: V1UpdateSkill):
+        print(f"updating skill {self.id} data: {data.model_dump_json()}", flush=True)
         if data.name:
             self.name = data.name
         if data.description:
