@@ -159,13 +159,11 @@ class Skill(WithDB):
         thread_ids = json.loads(str(record.threads))
         threads = [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
         example_task_ids = json.loads(str(record.example_tasks))
-        print(f"from_record Skill {record.id}: record: {record} example_task_ids: {example_task_ids}", flush=True)
         task_ids = json.loads(str(record.tasks))
         example_tasks = Task.find_many_lite(example_task_ids)
-        print(f"from_record Skill {record.id}: record: {record} example_tasks: {example_tasks}", flush=True)
         tasks = Task.find_many_lite(task_ids)
         valid_task_ids = []
-        # valid_example_task_ids = []
+        valid_example_task_ids = []
 
         if len(tasks) < len(task_ids):
             try:
@@ -186,24 +184,24 @@ class Skill(WithDB):
             except Exception as e:
                 print(f"Error updating tasks for skill {record.id}: {e}", flush=True)
 
-        # if len(example_tasks) < len(example_task_ids):
-        #     try:
-        #         print(f"updating example_tasks for skill {record.id}", flush=True)
-        #         example_task_map = {task.id: task for task in example_tasks}
-        #         for example_task_id in example_task_ids:
-        #             if not example_task_map[example_task_id]:
-        #                 print(f"Example Task {example_task_id} not found, removing from skill")
-        #                 continue
+        if len(example_tasks) < len(example_task_ids):
+            try:
+                print(f"updating example_tasks for skill {record.id}", flush=True)
+                example_task_map = {task.id: task for task in example_tasks}
+                for example_task_id in example_task_ids:
+                    if not example_task_map[example_task_id]:
+                        print(f"Example Task {example_task_id} not found, removing from skill")
+                        continue
 
-        #             valid_example_task_ids.append(example_task_id)
+                    valid_example_task_ids.append(example_task_id)
 
-        #         record.example_tasks = json.dumps(valid_example_task_ids)  # type: ignore
-        #         for db in cls.get_db():
-        #             db.merge(record)
-        #             db.commit()
-        #         print(f"updated example_tasks for skill {record.id}", flush=True)
-        #     except Exception as e:
-        #         print(f"Error updating example_tasks for skill {record.id}: {e}", flush=True)
+                record.example_tasks = json.dumps(valid_example_task_ids)  # type: ignore
+                for db in cls.get_db():
+                    db.merge(record)
+                    db.commit()
+                print(f"updated example_tasks for skill {record.id}", flush=True)
+            except Exception as e:
+                print(f"Error updating example_tasks for skill {record.id}: {e}", flush=True)
 
         requirements = json.loads(str(record.requirements))
 
