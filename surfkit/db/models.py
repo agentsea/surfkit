@@ -19,6 +19,7 @@ class SkillRecord(Base):
     agent_type = Column(String, nullable=False)
     threads = Column(String, nullable=True)
     generating_tasks = Column(Boolean, nullable=False)
+    example_tasks = Column(String, nullable=True)
     tasks = Column(String, nullable=True)
     min_demos = Column(Integer, nullable=False)
     demos_outstanding = Column(Integer, nullable=False)

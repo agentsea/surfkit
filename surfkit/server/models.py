@@ -196,6 +196,7 @@ class V1Skill(BaseModel):
     description: str
     requirements: List[str]
     tasks: List[V1Task]
+    example_tasks: List[V1Task]
     threads: List[V1RoleThread] = []
     status: Optional[str] = None
     min_demos: Optional[int] = None
@@ -213,6 +214,7 @@ class V1UpdateSkill(BaseModel):
     description: Optional[str] = None
     requirements: Optional[List[str]] = None
     tasks: Optional[List[str]] = None
+    example_tasks: Optional[List[str]] = None
     threads: Optional[List[str]] = None
     status: Optional[str] = None
     min_demos: Optional[int] = None
