@@ -21,6 +21,7 @@ class SkillRecord(Base):
     generating_tasks = Column(Boolean, nullable=False)
     example_tasks = Column(String, nullable=True)
     tasks = Column(String, nullable=True)
+    public = Column(Boolean, nullable=True, default=False)
     min_demos = Column(Integer, nullable=False)
     demos_outstanding = Column(Integer, nullable=False)
     created = Column(Float, default=time.time)
