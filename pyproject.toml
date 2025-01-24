@@ -20,7 +20,7 @@ litellm = "^1.35.8"
 rich = "^13.7.1"
 tqdm = "^4.66.4"
 agentdesk = "^0.2.114"
-taskara = "^0.1.209"
+taskara = "^0.1.210"
 
 
 [tool.poetry.group.dev.dependencies]
