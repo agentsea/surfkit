@@ -151,7 +151,7 @@ class Skill(WithDB):
             min_demos=self.min_demos,
             demos_outstanding=self.demos_outstanding,
             created=self.created,
-            updated=self.updated,
+            updated=int(time.time()),
         )
 
     @classmethod
