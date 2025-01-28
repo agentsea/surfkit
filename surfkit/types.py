@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 import yaml
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 
 from surfkit.config import GlobalConfig
 
@@ -257,26 +257,25 @@ class AgentType(WithDB):
                 session.commit()
 
     @classmethod
-    def find(cls, remote: Optional[str] = None, **kwargs) -> List["AgentType"]:
+    def find(
+        cls, remote: Optional[str] = None, owners: Optional[List[str]] = None, **kwargs
+    ) -> List["AgentType"]:
         if remote:
-            logger.debug(
-                "finding remote agent_types for: ", remote, kwargs.get("owner_id")
-            )
+            logger.debug("finding remote agent_types for: ", remote, owners)
 
-            json_data = {}
-            if kwargs.get("name"):
-                json_data["name"] = kwargs.get("name")
-            if kwargs.get("namespace"):
-                json_data["namespace"] = kwargs.get("namespace")
+            # Prepare query parameters
+            params = dict(kwargs)
+            if owners:
+                params["owners"] = owners
 
             remote_response = cls._remote_request(
                 remote,
                 "GET",
                 "/v1/agenttypes",
-                json_data=json_data,
+                params=params,
             )
-            agent_types = V1AgentTypes(**remote_response)
             if remote_response is not None:
+                agent_types = V1AgentTypes(**remote_response)
                 out = [
                     cls.from_v1(record, kwargs.get("owner_id"))
                     for record in agent_types.types
@@ -288,31 +287,44 @@ class AgentType(WithDB):
             else:
                 return []
         else:
+            out = []
             for session in cls.get_db():
-                records = session.query(AgentTypeRecord).filter_by(**kwargs).all()
-                return [cls.from_record(record) for record in records]
-
-            return []
+                query = session.query(AgentTypeRecord)
+                if owners:
+                    query = query.filter(AgentTypeRecord.owner_id.in_(owners))
+                for key, value in kwargs.items():
+                    query = query.filter(getattr(AgentTypeRecord, key) == value)
+                records = query.all()
+                out.extend([cls.from_record(record) for record in records])
+            return out
 
     @classmethod
     def find_for_user(
-        cls, user_id: str, name: Optional[str] = None, namespace: Optional[str] = None
+        cls, user_id: str, owners: Optional[List[str]] = None, **kwargs
     ) -> List["AgentType"]:
         for session in cls.get_db():
-            # Base query
-            query = session.query(AgentTypeRecord).filter(
-                or_(
-                    AgentTypeRecord.owner_id == user_id,  # type: ignore
-                    AgentTypeRecord.public == True,
-                )
-            )
+            # Base filter: agent types owned by user
+            user_owned_filter = AgentTypeRecord.owner_id == user_id  # type: ignore
 
-            # Conditionally add name filter if name is provided
-            if name is not None:
-                query = query.filter(AgentTypeRecord.name == name)
+            # Public agent types filter
+            public_filter = AgentTypeRecord.public == True
 
-            if namespace is not None:
-                query = query.filter(AgentTypeRecord.namespace == namespace)
+            # Owners filter if provided
+            if owners:
+                owners_filter = AgentTypeRecord.owner_id.in_(owners)
+                # Combine public and owners filters
+                public_owners_filter = and_(public_filter, owners_filter)
+                # Combine user-owned and public owners filters
+                query_filter = or_(user_owned_filter, public_owners_filter)
+            else:
+                # No owners filter, include all public and user-owned agent types
+                query_filter = or_(user_owned_filter, public_filter)
+
+            query = session.query(AgentTypeRecord).filter(query_filter)
+
+            # Process additional filters from kwargs
+            for key, value in kwargs.items():
+                query = query.filter(getattr(AgentTypeRecord, key) == value)
 
             records = query.all()
             return [cls.from_record(record) for record in records]
@@ -447,12 +459,12 @@ class AgentType(WithDB):
         addr: str,
         method: str,
         endpoint: str,
+        params: Optional[dict] = None,
         json_data: Optional[dict] = None,
         auth_token: Optional[str] = None,
     ) -> Any:
         url = f"{addr}{endpoint}"
         headers = {}
-        params = None
 
         if not auth_token:
             auth_token = os.getenv(AGENTESEA_HUB_API_KEY_ENV)
@@ -465,13 +477,11 @@ class AgentType(WithDB):
         if auth_token:
             headers["Authorization"] = f"Bearer {auth_token}"
 
-        if method.upper() == "GET" and json_data:
-            params = json_data
-
         try:
             if method.upper() == "GET":
                 logger.debug("\ncalling remote task GET with url: ", url)
                 logger.debug("\ncalling remote task GET with headers: ", headers)
+                logger.debug("\ncalling remote task GET with params: ", params)
                 response = requests.get(url, headers=headers, params=params)
             elif method.upper() == "POST":
                 logger.debug("\ncalling remote task POST with: ", url)
@@ -488,26 +498,14 @@ class AgentType(WithDB):
             else:
                 return None
 
-            try:
-                response.raise_for_status()
-            except requests.exceptions.HTTPError as e:
-                logger.debug("HTTP Error:", e)
-                logger.debug("Status Code:", response.status_code)
-                try:
-                    logger.debug("Response Body:", response.json())
-                except ValueError:
-                    logger.debug("Raw Response:", response.text)
-                raise
+            response.raise_for_status()
             logger.debug("response: ", response.__dict__)
             logger.debug("response.status_code: ", response.status_code)
 
-            try:
-                response_json = response.json()
-                logger.debug("response_json: ", response_json)
-                return response_json
-            except ValueError:
-                logger.debug("Raw Response:", response.text)
-                return None
+            response_json = response.json()
+            logger.debug("response_json: ", response_json)
+            return response_json
 
         except requests.RequestException as e:
+            logger.error("Request Exception:", e)
             raise e

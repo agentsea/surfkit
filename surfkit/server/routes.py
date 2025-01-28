@@ -3,6 +3,7 @@ import os
 import time
 from typing import Annotated, Optional, Type
 
+from agentcore.models import V1UserProfile
 from fastapi import APIRouter, BackgroundTasks, Depends
 from taskara import Task, TaskStatus
 from taskara.server.models import V1Task, V1Tasks, V1TaskUpdate
@@ -11,7 +12,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from surfkit.agent import TaskAgent
 from surfkit.auth.transport import get_user_dependency
 from surfkit.env import AGENTESEA_HUB_API_KEY_ENV
-from surfkit.server.models import V1Agent, V1LearnSkill, V1SolveTask, V1UserProfile
+from surfkit.server.models import V1Agent, V1LearnSkill, V1SolveTask
 from surfkit.skill import Skill
 
 DEBUG_ENV_VAR = os.getenv("DEBUG", "false").lower() == "true"
