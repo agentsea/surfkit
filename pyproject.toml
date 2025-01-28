@@ -1,10 +1,6 @@
 [tool.poetry]
 name = "surfkit"
-<<<<<<< HEAD
-version = "0.1.314"
-=======
-version = "0.1.315"
->>>>>>> c12ab4e (rbac)
+version = "0.1.316"
 description = "A toolkit for building AI agents that use devices"
 authors = ["Patrick Barker <patrickbarkerco@gmail.com>", "Jeffrey Huckabay <jfhucka@gmail.com>"]
 license = "MIT"
