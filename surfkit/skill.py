@@ -82,7 +82,7 @@ class Skill(WithDB):
         thread = RoleThread()
         thread.post(
             role="user",
-            msg=f"Please generate a name for this skill description that is no longer than 5 words: '{self.description}'",
+            msg=f"Please generate a name for this skill description that is no longer than 5 words, lowercase and hyphenated as a single word, e.g. 'search-for-stays-on-airbnb': '{self.description}'",
         )
         resp = router.chat(thread, model="gemini/gemini-2.0-flash-exp")
         print(
