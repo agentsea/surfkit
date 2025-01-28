@@ -9,9 +9,7 @@ Base = declarative_base()
 
 class SkillRecord(Base):
     __tablename__ = "skills"
-    __table_args__ = (
-        Index("idx_skill_owner_id", "owner_id"),
-    )
+    __table_args__ = (Index("idx_skill_owner_id", "owner_id"),)
     id = Column(String, primary_key=True)
     owner_id = Column(String, nullable=False)
     name = Column(String, nullable=False)

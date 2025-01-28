@@ -41,7 +41,7 @@ class Skill(WithDB):
         status: SkillStatus = SkillStatus.NEEDS_DEFINITION,
         agent_type: Optional[str] = None,
         owner_id: Optional[str] = None,
-        example_tasks: Optional[List[Task]]= None,
+        example_tasks: Optional[List[Task]] = None,
         min_demos: Optional[int] = None,
         demos_outstanding: Optional[int] = None,
         remote: Optional[str] = None,
@@ -183,7 +183,9 @@ class Skill(WithDB):
                         db.commit()
                     print(f"updated tasks for skill {record.id}", flush=True)
                 except Exception as e:
-                    print(f"Error updating tasks for skill {record.id}: {e}", flush=True)
+                    print(
+                        f"Error updating tasks for skill {record.id}: {e}", flush=True
+                    )
 
         example_task_ids = json.loads(str(record.example_tasks))
         if example_task_ids:
@@ -195,7 +197,9 @@ class Skill(WithDB):
                     example_task_map = {task.id: task for task in example_tasks}
                     for example_task_id in example_task_ids:
                         if not example_task_map[example_task_id]:
-                            print(f"Example Task {example_task_id} not found, removing from skill")
+                            print(
+                                f"Example Task {example_task_id} not found, removing from skill"
+                            )
                             continue
 
                         valid_example_task_ids.append(example_task_id)
@@ -206,7 +210,10 @@ class Skill(WithDB):
                         db.commit()
                     print(f"updated example_tasks for skill {record.id}", flush=True)
                 except Exception as e:
-                    print(f"Error updating example_tasks for skill {record.id}: {e}", flush=True)
+                    print(
+                        f"Error updating example_tasks for skill {record.id}: {e}",
+                        flush=True,
+                    )
 
         requirements = json.loads(str(record.requirements))
 
@@ -236,33 +243,54 @@ class Skill(WithDB):
             db.commit()
 
     @classmethod
-    def find(cls, remote: Optional[str] = None, **kwargs) -> List["Skill"]:  # type: ignore
+    def find(
+        cls, remote: Optional[str] = None, owners: Optional[List[str]] = None, **kwargs
+    ) -> List["Skill"]:
         print("running find for skills", flush=True)
 
         if remote:
-            resp = requests.get(f"{remote}/v1/skills")
-            skills = [cls.from_v1(skill) for skill in resp.json()]
-            for key, value in kwargs.items():
-                skills = [
-                    skill for skill in skills if getattr(skill, key, None) == value
-                ]
+            # Prepare query parameters
+            params = dict(kwargs)
+            if owners:
+                # Pass owners as multiple query parameters
+                for owner in owners:
+                    params.setdefault("owners", []).append(owner)
 
+            print(f"Query params for remote request: {params}", flush=True)
+
+            try:
+                resp = requests.get(f"{remote}/v1/skills", params=params)
+                resp.raise_for_status()
+            except requests.RequestException as e:
+                print(f"Error fetching skills from remote: {e}", flush=True)
+                return []
+
+            skills_json = resp.json()
+            skills = [cls.from_v1(V1Skill(**skill_data)) for skill_data in skills_json]
+
+            # Set remote attribute for each skill
             for skill in skills:
                 skill.remote = remote
 
             return skills
 
-        for db in cls.get_db():
-            records = (
-                db.query(SkillRecord)
-                .filter_by(**kwargs)
-                .order_by(asc(SkillRecord.created))
-                .all()
-            )
-            print(f"skills found in db {records}", flush=True)
-            return [cls.from_record(record) for record in records]
+        else:
+            out = []
+            for db in cls.get_db():
+                query = db.query(SkillRecord)
 
-        raise ValueError("no session")
+                # Apply owners filter if provided
+                if owners:
+                    query = query.filter(SkillRecord.owner_id.in_(owners))
+
+                # Apply additional filters from kwargs
+                for key, value in kwargs.items():
+                    query = query.filter(getattr(SkillRecord, key) == value)
+
+                records = query.order_by(asc(SkillRecord.created)).all()
+                print(f"skills found in db {records}", flush=True)
+                out.extend([cls.from_record(record) for record in records])
+            return out
 
     def update(self, data: V1UpdateSkill):
         print(f"updating skill {self.id} data: {data.model_dump_json()}", flush=True)
@@ -279,7 +307,9 @@ class Skill(WithDB):
         if data.tasks:
             self.tasks = [Task.find(id=task_id)[0] for task_id in data.tasks]
         if data.example_tasks:
-            self.example_tasks = [Task.find(id=task_id)[0] for task_id in data.example_tasks]
+            self.example_tasks = [
+                Task.find(id=task_id)[0] for task_id in data.example_tasks
+            ]
         if data.status:
             self.status = SkillStatus(data.status)
         if data.min_demos:
@@ -322,7 +352,7 @@ class Skill(WithDB):
     def get_task_descriptions(self, limit: Optional[int] = None):
         maxLimit = len(self.tasks)
         limit = limit if limit and limit < maxLimit else maxLimit
-        return { "tasks": [task.description for task in self.tasks[-limit:]]}
+        return {"tasks": [task.description for task in self.tasks[-limit:]]}
 
     def generate_tasks(
         self,
@@ -350,7 +380,9 @@ class Skill(WithDB):
             example_str = str(
                 f"Some examples of tasks for this skill are: '{json.dumps(example_task_descriptions)}'"
             )
-            example_schema = str('{"tasks": ' f'{json.dumps(example_task_descriptions)}' '}' )
+            example_schema = str(
+                '{"tasks": ' f"{json.dumps(example_task_descriptions)}" "}"
+            )
         old_task_str = ""
         old_tasks = self.get_task_descriptions(limit=15000)
         if old_tasks:
@@ -363,15 +395,17 @@ class Skill(WithDB):
                 f"Generating tasks for skill: '{self.description}', skill ID: {self.id} with requirements: {self.requirements}",
                 flush=True,
             )
-            thread = RoleThread(owner_id=self.owner_id) # TODO is this gonna keep one thread? I don't see a need for a new thread every time
+            thread = RoleThread(
+                owner_id=self.owner_id
+            )  # TODO is this gonna keep one thread? I don't see a need for a new thread every time
             result: List[Task] = []
-            
+
             for n in range(n_permutations):
                 print(
                     f"task generation interation: {n} for skill ID {self.id}",
-                    flush=True
-                    )
-               
+                    flush=True,
+                )
+
                 prompt = (
                     f"Given the agent skill '{self.description}', and the "
                     f"configurable requirements that the agent skill encompasses '{json.dumps(self.requirements)}', "
@@ -380,7 +414,7 @@ class Skill(WithDB):
                     f"Today's date is {current_date}. "
                     f"{example_str} "
                     f"Please return a raw json object that looks like the following example: "
-                    f'{example_schema} '
+                    f"{example_schema} "
                     f"{old_task_str}"
                 )
                 print(f"prompt: {prompt}", flush=True)
@@ -402,7 +436,9 @@ class Skill(WithDB):
                 if not gen_tasks:
                     self.set_generating_tasks(False)
                     raise ValueError(f"no tasks generated for skill ID {self.id}")
-                gen_tasks = gen_tasks[:1] # take only one as we are doing this one at a time
+                gen_tasks = gen_tasks[
+                    :1
+                ]  # take only one as we are doing this one at a time
 
                 if not self.owner_id:
                     self.set_generating_tasks(False)
@@ -432,7 +468,7 @@ class Skill(WithDB):
                         flush=True,
                     )
                     result.append(tsk)
-                self.save() # need to save for every iteration as we want tasks to incrementally show up
+                self.save()  # need to save for every iteration as we want tasks to incrementally show up
             self.generating_tasks = False
             self.save()
 
@@ -447,7 +483,7 @@ class Skill(WithDB):
                 f"Today's date is {current_date}. "
                 f"{example_str} "
                 f"Please return a raw json object that looks like the following example: "
-                f'{example_schema} '
+                f"{example_schema} "
                 f"{old_task_str} "
             )
         thread = RoleThread(owner_id=self.owner_id)
