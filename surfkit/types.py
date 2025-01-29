@@ -300,11 +300,10 @@ class AgentType(WithDB):
 
     @classmethod
     def find_for_user(
-        cls, user_id: str, owners: Optional[List[str]] = None, **kwargs
+        cls, user_id: Optional[str] = None, owners: Optional[List[str]] = None, **kwargs
     ) -> List["AgentType"]:
         for session in cls.get_db():
             # Base filter: agent types owned by user
-            user_owned_filter = AgentTypeRecord.owner_id == user_id  # type: ignore
 
             # Public agent types filter
             public_filter = AgentTypeRecord.public == True
@@ -315,10 +314,18 @@ class AgentType(WithDB):
                 # Combine public and owners filters
                 public_owners_filter = and_(public_filter, owners_filter)
                 # Combine user-owned and public owners filters
-                query_filter = or_(user_owned_filter, public_owners_filter)
+                if user_id:
+                    user_owned_filter = AgentTypeRecord.owner_id == user_id  # type: ignore
+                    query_filter = or_(user_owned_filter, public_owners_filter)
+                else:
+                    query_filter = public_owners_filter
             else:
                 # No owners filter, include all public and user-owned agent types
-                query_filter = or_(user_owned_filter, public_filter)
+                if user_id:
+                    user_owned_filter = AgentTypeRecord.owner_id == user_id  # type: ignore
+                    query_filter = or_(user_owned_filter, public_filter)
+                else:
+                    query_filter = public_filter
 
             query = session.query(AgentTypeRecord).filter(query_filter)
 
