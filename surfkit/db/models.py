@@ -24,6 +24,7 @@ class SkillRecord(Base):
     public = Column(Boolean, nullable=True, default=False)
     min_demos = Column(Integer, nullable=False)
     demos_outstanding = Column(Integer, nullable=False)
+    kvs = Column(String, nullable=True)
     created = Column(Float, default=time.time)
     updated = Column(Float, default=time.time)
 

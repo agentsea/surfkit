@@ -3,7 +3,7 @@ import time
 from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import requests
 from mllm import Router
@@ -45,6 +45,7 @@ class Skill(WithDB):
         min_demos: Optional[int] = None,
         demos_outstanding: Optional[int] = None,
         remote: Optional[str] = None,
+        kvs: Optional[Dict[str, str]] = None,
     ):
         self.description = description or ""
         self.name = name
@@ -65,7 +66,7 @@ class Skill(WithDB):
         )
         self.remote = remote
         self.threads: List[RoleThread] = []
-
+        self.kvs = kvs or {}
         self.id = id or uuid()
         self.created = int(time.time())
         self.updated = int(time.time())
@@ -110,6 +111,7 @@ class Skill(WithDB):
             created=self.created,
             updated=self.updated,
             remote=self.remote,
+            kvs=self.kvs,
         )
 
     @classmethod
@@ -133,6 +135,7 @@ class Skill(WithDB):
         out.created = data.created
         out.updated = data.updated
         out.remote = data.remote
+        out.kvs = data.kvs
         return out
 
     def to_record(self) -> SkillRecord:
@@ -150,6 +153,7 @@ class Skill(WithDB):
             status=self.status.value,
             min_demos=self.min_demos,
             demos_outstanding=self.demos_outstanding,
+            kvs=json.dumps(self.kvs),
             created=self.created,
             updated=int(time.time()),
         )
@@ -231,6 +235,7 @@ class Skill(WithDB):
         out.status = SkillStatus(record.status)
         out.min_demos = record.min_demos
         out.demos_outstanding = record.demos_outstanding
+        out.kvs = json.loads(str(record.kvs))
         out.created = record.created
         out.updated = record.updated
         out.remote = None
@@ -244,7 +249,10 @@ class Skill(WithDB):
 
     @classmethod
     def find(
-        cls, remote: Optional[str] = None, owners: Optional[List[str]] = None, **kwargs
+        cls,
+        remote: Optional[str] = None,
+        owners: Optional[List[str]] = None,
+        **kwargs,  # type: ignore
     ) -> List["Skill"]:
         print("running find for skills", flush=True)
 
@@ -319,6 +327,18 @@ class Skill(WithDB):
 
         self.save()
 
+    def set_key(self, key: str, value: str):
+        self.kvs[key] = value
+        self.save()
+
+    def get_key(self, key: str) -> Optional[str]:
+        return self.kvs.get(key)
+
+    def delete_key(self, key: str):
+        if key in self.kvs:
+            del self.kvs[key]
+            self.save()
+
     def refresh(self):
         """
         Refresh the object state from the database.
@@ -342,6 +362,7 @@ class Skill(WithDB):
         self.status = new.status
         self.min_demos = new.min_demos
         self.demos_outstanding = new.demos_outstanding
+        self.kvs = new.kvs
         return self
 
     def set_generating_tasks(self, input: bool):

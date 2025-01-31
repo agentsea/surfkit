@@ -204,6 +204,7 @@ class V1Skill(BaseModel):
     owner_id: Optional[str] = None
     generating_tasks: Optional[bool] = None
     agent_type: str
+    kvs: Optional[Dict[str, str]] = None
     remote: Optional[str] = None
     created: int
     updated: int
@@ -219,6 +220,11 @@ class V1UpdateSkill(BaseModel):
     status: Optional[str] = None
     min_demos: Optional[int] = None
     demos_outstanding: Optional[int] = None
+
+
+class V1SetKey(BaseModel):
+    key: str
+    value: str
 
 
 class V1LearnSkill(BaseModel):
