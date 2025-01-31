@@ -235,7 +235,7 @@ class Skill(WithDB):
         out.status = SkillStatus(record.status)
         out.min_demos = record.min_demos
         out.demos_outstanding = record.demos_outstanding
-        out.kvs = json.loads(str(record.kvs))
+        out.kvs = json.loads(str(record.kvs)) if record.kvs else {}  # type: ignore
         out.created = record.created
         out.updated = record.updated
         out.remote = None
