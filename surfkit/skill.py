@@ -3,7 +3,7 @@ import time
 from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from mllm import Router
@@ -45,7 +45,7 @@ class Skill(WithDB):
         min_demos: Optional[int] = None,
         demos_outstanding: Optional[int] = None,
         remote: Optional[str] = None,
-        kvs: Optional[Dict[str, str]] = None,
+        kvs: Optional[Dict[str, Any]] = None,
     ):
         self.description = description or ""
         self.name = name
