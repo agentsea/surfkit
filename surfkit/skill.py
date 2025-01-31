@@ -242,10 +242,40 @@ class Skill(WithDB):
         return out
 
     def save(self):
-        for db in self.get_db():
-            record = self.to_record()
-            db.merge(record)
-            db.commit()
+        """
+        Save the current state of the Skill either locally or via the remote API.
+
+        For remote saves:
+        - If the skill exists remotely, update it via a PUT request.
+        - If the skill does not exist remotely, create it via a POST request.
+
+        For local saves, perform the normal database merge/commit.
+        """
+        if self.remote:
+            skill_url = f"{self.remote}/v1/skills/{self.id}"
+            payload = self.to_v1().model_dump()  # Adjust serialization as needed
+            try:
+                # Check if the skill exists remotely.
+                get_resp = requests.get(skill_url)
+                if get_resp.status_code == 404:
+                    # The skill does not exist remotely, so create it using POST.
+                    create_url = f"{self.remote}/v1/skills"
+                    post_resp = requests.post(create_url, json=payload)
+                    post_resp.raise_for_status()
+                    print(f"Skill {self.id} created remotely", flush=True)
+                else:
+                    # If found, update the remote record using PUT.
+                    put_resp = requests.put(skill_url, json=payload)
+                    put_resp.raise_for_status()
+                    print(f"Skill {self.id} updated remotely", flush=True)
+            except requests.RequestException as e:
+                print(f"Error saving skill {self.id} on remote: {e}", flush=True)
+            return
+        else:
+            for db in self.get_db():
+                record = self.to_record()
+                db.merge(record)
+                db.commit()
 
     @classmethod
     def find(
@@ -301,6 +331,11 @@ class Skill(WithDB):
             return out
 
     def update(self, data: V1UpdateSkill):
+        """
+        Update the skill's properties based on the provided data.
+        After updating the in-memory attributes, the method calls save() to persist
+        changes locally or remotely.
+        """
         print(f"updating skill {self.id} data: {data.model_dump_json()}", flush=True)
         if data.name:
             self.name = data.name
@@ -325,29 +360,106 @@ class Skill(WithDB):
         if data.demos_outstanding:
             self.demos_outstanding = data.demos_outstanding
 
+        # Save the updated skill, either locally or remotely.
         self.save()
 
     def set_key(self, key: str, value: str):
-        self.kvs[key] = value
-        self.save()
+        """
+        Sets the given key to the specified value.
+        If a remote is set, delegate this operation to the remote API.
+        """
+        if self.remote:
+            url = f"{self.remote}/v1/skills/{self.id}/keys"
+            payload = {"key": key, "value": value}
+            try:
+                resp = requests.post(url, json=payload)
+                resp.raise_for_status()
+                print(
+                    f"Successfully set key '{key}' on remote for skill {self.id}",
+                    flush=True,
+                )
+            except requests.RequestException as e:
+                print(
+                    f"Error setting key on remote for skill {self.id}: {e}", flush=True
+                )
+            return
+        else:
+            self.kvs[key] = value
+            self.save()
 
     def get_key(self, key: str) -> Optional[str]:
-        return self.kvs.get(key)
+        """
+        Retrieves the value for the given key.
+        If a remote is set, retrieve the value via the remote API.
+        """
+        if self.remote:
+            url = f"{self.remote}/v1/skills/{self.id}/keys/{key}"
+            try:
+                resp = requests.get(url)
+                resp.raise_for_status()
+                data = resp.json()
+                value = data.get("value")
+                print(
+                    f"Successfully retrieved key '{key}' from remote for skill {self.id}",
+                    flush=True,
+                )
+                return value
+            except requests.RequestException as e:
+                print(
+                    f"Error retrieving key on remote for skill {self.id}: {e}",
+                    flush=True,
+                )
+                return None
+        else:
+            return self.kvs.get(key)
 
     def delete_key(self, key: str):
-        if key in self.kvs:
-            del self.kvs[key]
-            self.save()
+        """
+        Deletes the given key.
+        If a remote is set, perform the deletion via the remote API.
+        """
+        if self.remote:
+            url = f"{self.remote}/v1/skills/{self.id}/keys/{key}"
+            try:
+                resp = requests.delete(url)
+                resp.raise_for_status()
+                print(
+                    f"Successfully deleted key '{key}' on remote for skill {self.id}",
+                    flush=True,
+                )
+            except requests.RequestException as e:
+                print(
+                    f"Error deleting key on remote for skill {self.id}: {e}", flush=True
+                )
+            return
+        else:
+            if key in self.kvs:
+                del self.kvs[key]
+                self.save()
 
     def refresh(self):
         """
-        Refresh the object state from the database.
+        Refresh the object state from the database or remote API.
         """
-        found = self.find(id=self.id)
-        if not found:
-            raise ValueError("Skill not found")
+        if self.remote:
+            url = f"{self.remote}/v1/skills/{self.id}"
+            try:
+                resp = requests.get(url)
+                resp.raise_for_status()
+                data = resp.json()
+                # Assume that the response data can be used to instantiate a V1Skill.
+                # You may need to adjust this based on your actual API response format.
+                v1skill = V1Skill(**data)
+                new = Skill.from_v1(v1skill, owner_id=self.owner_id)
+            except requests.RequestException as e:
+                raise ValueError(f"Error refreshing skill from remote: {e}")
+        else:
+            found = self.find(id=self.id)
+            if not found:
+                raise ValueError("Skill not found")
+            new = found[0]
 
-        new = found[0]
+        # Update the current object's fields with the new data.
         self.name = new.name
         self.description = new.description
         self.requirements = new.requirements
@@ -363,6 +475,7 @@ class Skill(WithDB):
         self.min_demos = new.min_demos
         self.demos_outstanding = new.demos_outstanding
         self.kvs = new.kvs
+
         return self
 
     def set_generating_tasks(self, input: bool):
