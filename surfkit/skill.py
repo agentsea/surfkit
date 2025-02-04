@@ -46,6 +46,7 @@ class Skill(WithDB):
         demos_outstanding: Optional[int] = None,
         remote: Optional[str] = None,
         kvs: Optional[Dict[str, Any]] = None,
+        token: Optional[str] = None,
     ):
         self.description = description or ""
         self.name = name
@@ -70,6 +71,7 @@ class Skill(WithDB):
         self.id = id or uuid()
         self.created = int(time.time())
         self.updated = int(time.time())
+        self.token = token
 
     def _get_name(self) -> str:
         router = Router(
@@ -256,7 +258,9 @@ class Skill(WithDB):
             payload = self.to_v1().model_dump()  # Adjust serialization as needed
             try:
                 # Check if the skill exists remotely.
-                get_resp = requests.get(skill_url)
+                get_resp = requests.get(
+                    skill_url, headers={"Authorization": f"Bearer {self.token}"}
+                )
                 if get_resp.status_code == 404:
                     # The skill does not exist remotely, so create it using POST.
                     create_url = f"{self.remote}/v1/skills"
@@ -282,6 +286,7 @@ class Skill(WithDB):
         cls,
         remote: Optional[str] = None,
         owners: Optional[List[str]] = None,
+        token: Optional[str] = None,
         **kwargs,  # type: ignore
     ) -> List["Skill"]:
         print("running find for skills", flush=True)
@@ -297,7 +302,11 @@ class Skill(WithDB):
             print(f"Query params for remote request: {params}", flush=True)
 
             try:
-                resp = requests.get(f"{remote}/v1/skills", params=params)
+                resp = requests.get(
+                    f"{remote}/v1/skills",
+                    params=params,
+                    headers={"Authorization": f"Bearer {token}"},
+                )
                 resp.raise_for_status()
             except requests.RequestException as e:
                 print(f"Error fetching skills from remote: {e}", flush=True)
@@ -372,7 +381,9 @@ class Skill(WithDB):
             url = f"{self.remote}/v1/skills/{self.id}/keys"
             payload = {"key": key, "value": value}
             try:
-                resp = requests.post(url, json=payload)
+                resp = requests.post(
+                    url, json=payload, headers={"Authorization": f"Bearer {self.token}"}
+                )
                 resp.raise_for_status()
                 print(
                     f"Successfully set key '{key}' on remote for skill {self.id}",
@@ -395,7 +406,9 @@ class Skill(WithDB):
         if self.remote:
             url = f"{self.remote}/v1/skills/{self.id}/keys/{key}"
             try:
-                resp = requests.get(url)
+                resp = requests.get(
+                    url, headers={"Authorization": f"Bearer {self.token}"}
+                )
                 resp.raise_for_status()
                 data = resp.json()
                 value = data.get("value")
@@ -444,7 +457,9 @@ class Skill(WithDB):
         if self.remote:
             url = f"{self.remote}/v1/skills/{self.id}"
             try:
-                resp = requests.get(url)
+                resp = requests.get(
+                    url, headers={"Authorization": f"Bearer {self.token}"}
+                )
                 resp.raise_for_status()
                 data = resp.json()
                 # Assume that the response data can be used to instantiate a V1Skill.

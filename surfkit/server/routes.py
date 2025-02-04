@@ -51,7 +51,11 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
             f"learning skill: {skill_model.model_dump()} with user {current_user.email}"
         )
 
-        found = Skill.find(remote=skill_model.remote, id=skill_model.skill_id)
+        found = Skill.find(
+            remote=skill_model.remote,
+            id=skill_model.skill_id,
+            token=current_user.token,
+        )
         if not found:
             raise Exception(f"Skill {skill_model.skill_id} not found")
 

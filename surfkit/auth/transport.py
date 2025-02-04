@@ -26,6 +26,7 @@ async def get_current_user(
     try:
         logger.debug(f"checking user token: {token}")
         user = user_auth.get_user_auth(token)
+        user.token = token
     except Exception as e:
         logging.error(e)
         raise HTTPException(
