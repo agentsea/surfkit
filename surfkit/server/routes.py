@@ -60,6 +60,8 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
             raise Exception(f"Skill {skill_model.skill_id} not found")
 
         skill = found[0]
+        skill.remote = skill_model.remote
+        skill.token = current_user.token
 
         background_tasks.add_task(_learn_skill, skill, current_user, skill_model.agent)
 
