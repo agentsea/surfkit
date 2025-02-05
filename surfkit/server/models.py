@@ -231,3 +231,9 @@ class V1LearnSkill(BaseModel):
     skill_id: str
     remote: Optional[str] = None
     agent: Optional[V1Agent] = None
+
+
+class V1LearnTask(BaseModel):
+    task: V1Task
+    remote: Optional[str] = None
+    agent: Optional[V1Agent] = None

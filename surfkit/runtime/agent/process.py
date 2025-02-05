@@ -13,9 +13,10 @@ from agentdesk.util import find_open_port
 from mllm import Router
 from pydantic import BaseModel
 from taskara import Task
+from taskara.server.models import V1Task
 
 from surfkit import config
-from surfkit.server.models import V1AgentType, V1Skill, V1SolveTask
+from surfkit.server.models import V1AgentType, V1LearnTask, V1SolveTask
 from surfkit.types import AgentType
 from surfkit.util import find_open_port
 
@@ -311,10 +312,10 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         """Whether this runtime requires a proxy to be used"""
         return False
 
-    def learn_skill(
+    def learn_task(
         self,
         name: str,
-        skill: V1Skill,
+        learn_task: V1LearnTask,
         follow_logs: bool = False,
         attach: bool = False,
     ) -> None:

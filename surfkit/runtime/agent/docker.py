@@ -12,8 +12,9 @@ from docker.api.client import APIClient
 from docker.errors import NotFound
 from mllm import Router
 from pydantic import BaseModel
+from taskara.server.models import V1Task
 
-from surfkit.server.models import V1AgentType, V1Skill, V1SolveTask
+from surfkit.server.models import V1AgentType, V1LearnTask, V1SolveTask
 from surfkit.types import AgentType
 
 from .base import AgentInstance, AgentRuntime, AgentStatus
@@ -78,10 +79,10 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
             self.client.networks.create(network_name)
             print(f"Network '{network_name}' created.")
 
-    def learn_skill(
+    def learn_task(
         self,
         name: str,
-        skill: V1Skill,
+        learn_task: V1LearnTask,
         follow_logs: bool = False,
         attach: bool = False,
     ) -> None:
@@ -89,7 +90,7 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
 
         Args:
             name (str): Name of the agent
-            skill (V1Skill): The skill
+            learn_task (V1LearnTask): The task
             follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
             attach (bool, optional): Whether to attach the current process to the agent
                 If this process dies the agent will also die. Defaults to False.

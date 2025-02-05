@@ -12,7 +12,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from surfkit.agent import TaskAgent
 from surfkit.auth.transport import get_user_dependency
 from surfkit.env import AGENTESEA_HUB_API_KEY_ENV
-from surfkit.server.models import V1Agent, V1LearnSkill, V1SolveTask
+from surfkit.server.models import V1Agent, V1LearnTask, V1SolveTask
 from surfkit.skill import Skill
 
 DEBUG_ENV_VAR = os.getenv("DEBUG", "false").lower() == "true"
@@ -42,31 +42,52 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
         return {"status": "ok"}
 
     @api_router.post("/v1/learn")
-    async def learn_skill(
+    async def learn_task(
         current_user: Annotated[V1UserProfile, Depends(get_user_dependency())],
         background_tasks: BackgroundTasks,
-        skill_model: V1LearnSkill,
+        learn_model: V1LearnTask,
     ):
+        task_model = learn_model.task
         logger.info(
-            f"learning skill: {skill_model.model_dump()} with user {current_user.email}"
+            f"learning task: {task_model.model_dump()} with user {current_user.email}"
         )
 
-        found = Skill.find(
-            remote=skill_model.remote,
-            id=skill_model.skill_id,
-            token=current_user.token,
+        found = Task.find(
+            remote=task_model.remote,
+            id=task_model.id,
+            auth_token=current_user.token,
         )
         if not found:
-            raise Exception(f"Skill {skill_model.skill_id} not found")
+            raise Exception(f"Task {task_model.id} not found")
 
-        skill = found[0]
-        skill.remote = skill_model.remote
-        skill.token = current_user.token
+        task = found[0]
+        task.remote = task_model.remote  # type: ignore
+        task.auth_token = current_user.token  # type: ignore
 
-        background_tasks.add_task(_learn_skill, skill, current_user, skill_model.agent)
+        skill_id = None
+        if task.skill:
+            skill_id = task.skill
+        elif "skill" in task.labels:
+            skill_id = task.labels["skill"]
+        elif "skill_id" in task.labels:
+            skill_id = task.labels["skill_id"]
+        else:
+            raise ValueError("Task skill or skill label not set")
 
-    def _learn_skill(
-        skill: Skill, current_user: V1UserProfile, v1_agent: Optional[V1Agent] = None
+        skills = Skill.find(id=skill_id, remote=task.remote, token=current_user.token)
+        if not skills:
+            raise ValueError(f"Skill not found: {skill_id}")
+        skill = skills[0]
+
+        background_tasks.add_task(
+            _learn_task, task, skill, current_user, learn_model.agent
+        )
+
+    def _learn_task(
+        task: Task,
+        skill: Skill,
+        current_user: V1UserProfile,
+        v1_agent: Optional[V1Agent] = None,
     ):
         if v1_agent:
             config = Agent.config_type().model_validate(v1_agent.config)
@@ -75,9 +96,9 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
             agent = Agent.default()
 
         try:
-            agent.learn_skill(skill)
+            agent.learn_task(task, skill)
         except Exception as e:
-            logger.error(f"error learning skill: {e}")
+            logger.error(f"error learning task: {e}")
 
     @api_router.post("/v1/tasks")
     async def solve_task(

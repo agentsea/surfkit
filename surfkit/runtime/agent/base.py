@@ -7,14 +7,15 @@ from typing import Dict, Generic, Iterator, List, Optional, Type, TypeVar, Union
 
 from mllm import Router
 from pydantic import BaseModel
+from taskara.server.models import V1Task
 
 from surfkit.db.conn import WithDB
 from surfkit.db.models import AgentInstanceRecord
 from surfkit.server.models import (
     V1AgentInstance,
     V1AgentType,
+    V1LearnTask,
     V1RuntimeConnect,
-    V1Skill,
     V1SolveTask,
 )
 from surfkit.types import AgentType
@@ -149,14 +150,14 @@ class AgentInstance(WithDB):
         """
         return self._runtime.solve_task(self._name, task, follow_logs)
 
-    def learn_skill(self, skill: V1Skill, follow_logs: bool = False) -> None:
-        """Learn a skill
+    def learn_task(self, task: V1LearnTask, follow_logs: bool = False) -> None:
+        """Learn a task
 
         Args:
-            skill (V1Skill): The skill
+            task (V1LearnTask): The task
             follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
         """
-        return self._runtime.learn_skill(self._name, skill, follow_logs)
+        return self._runtime.learn_task(self._name, task, follow_logs)
 
     @classmethod
     def active_runtimes(cls) -> List["AgentRuntime"]:
@@ -414,18 +415,18 @@ class AgentRuntime(Generic[R, C], ABC):
         pass
 
     @abstractmethod
-    def learn_skill(
+    def learn_task(
         self,
         name: str,
-        skill: V1Skill,
+        learn_task: V1LearnTask,
         follow_logs: bool = False,
         attach: bool = False,
     ) -> None:
-        """Learn a skill
+        """Learn a task
 
         Args:
             name (str): Name of the agent
-            skill (V1Skill): The skill
+            learn_task (V1LearnTask): The task
             follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
             attach (bool, optional): Whether to attach the current process to the agent
                 If this process dies the agent will also die. Defaults to False.

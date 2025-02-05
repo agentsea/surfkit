@@ -24,13 +24,14 @@ from kubernetes.stream import portforward
 from mllm import Router
 from namesgenerator import get_random_name
 from pydantic import BaseModel
+from taskara.server.models import V1Task
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from surfkit.server.models import (
     V1AgentType,
+    V1LearnTask,
     V1ResourceLimits,
     V1ResourceRequests,
-    V1Skill,
     V1SolveTask,
 )
 from surfkit.types import AgentType
@@ -842,10 +843,10 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
     #     }
     #     return headers
 
-    def learn_skill(
+    def learn_task(
         self,
         name: str,
-        skill: V1Skill,
+        learn_task: V1LearnTask,
         follow_logs: bool = False,
         attach: bool = False,
     ) -> None:
@@ -855,7 +856,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 path="/v1/learn",
                 method="POST",
                 port=9090,
-                data=skill.model_dump(),
+                data=learn_task.model_dump(),
                 # headers=self._get_headers_with_auth(task.task.auth_token)
             )
             logger.debug(f"Skill posted with response: {status_code}, {response_text}")
