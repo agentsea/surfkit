@@ -13,7 +13,7 @@ from docker.errors import NotFound
 from mllm import Router
 from pydantic import BaseModel
 
-from surfkit.server.models import V1AgentType, V1SolveTask
+from surfkit.server.models import V1AgentType, V1Skill, V1SolveTask
 from surfkit.types import AgentType
 
 from .base import AgentInstance, AgentRuntime, AgentStatus
@@ -27,7 +27,6 @@ class DockerConnectConfig(BaseModel):
 
 
 class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]):
-
     def __init__(self, cfg: Optional[DockerConnectConfig] = None) -> None:
         self._configure_docker_socket()
         if not cfg:
@@ -78,6 +77,24 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         except NotFound:
             self.client.networks.create(network_name)
             print(f"Network '{network_name}' created.")
+
+    def learn_skill(
+        self,
+        name: str,
+        skill: V1Skill,
+        follow_logs: bool = False,
+        attach: bool = False,
+    ) -> None:
+        """Learn a skill
+
+        Args:
+            name (str): Name of the agent
+            skill (V1Skill): The skill
+            follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
+            attach (bool, optional): Whether to attach the current process to the agent
+                If this process dies the agent will also die. Defaults to False.
+        """
+        raise NotImplementedError("DockerAgentRuntime does not support learning skills")
 
     def run(
         self,
@@ -437,7 +454,6 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
     def get(
         self, name: str, owner_id: Optional[str] = None, source: bool = False
     ) -> AgentInstance:
-
         if source:
             try:
                 container = self.client.containers.get(name)
@@ -576,7 +592,9 @@ class DockerAgentRuntime(AgentRuntime["DockerAgentRuntime", DockerConnectConfig]
         db_instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
 
         # Create a mapping of container names to containers
-        running_containers_map = {container.name: container for container in running_containers}  # type: ignore
+        running_containers_map = {
+            container.name: container for container in running_containers
+        }  # type: ignore
 
         # Create a mapping of instance names to instances
         db_instances_map = {instance.name: instance for instance in db_instances}

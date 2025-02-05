@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from taskara import Task
 
 from surfkit import config
-from surfkit.server.models import V1AgentType, V1SolveTask
+from surfkit.server.models import V1AgentType, V1Skill, V1SolveTask
 from surfkit.types import AgentType
 from surfkit.util import find_open_port
 
@@ -29,7 +29,6 @@ class ProcessConnectConfig(BaseModel):
 
 
 class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConfig]):
-
     @classmethod
     def name(cls) -> str:
         return "process"
@@ -58,7 +57,6 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
         auth_enabled: bool = True,
         debug: bool = False,
     ) -> AgentInstance:
-
         port = find_open_port(9090, 10090)
         if not port:
             raise ValueError("Could not find open port")
@@ -312,6 +310,17 @@ class ProcessAgentRuntime(AgentRuntime["ProcessAgentRuntime", ProcessConnectConf
     def requires_proxy(self) -> bool:
         """Whether this runtime requires a proxy to be used"""
         return False
+
+    def learn_skill(
+        self,
+        name: str,
+        skill: V1Skill,
+        follow_logs: bool = False,
+        attach: bool = False,
+    ) -> None:
+        raise NotImplementedError(
+            "ProcessAgentRuntime does not support learning skills"
+        )
 
     def proxy(
         self,

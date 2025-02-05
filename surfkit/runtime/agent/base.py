@@ -404,6 +404,7 @@ class AgentRuntime(Generic[R, C], ABC):
         """
         pass
 
+    @abstractmethod
     def learn_skill(
         self,
         name: str,

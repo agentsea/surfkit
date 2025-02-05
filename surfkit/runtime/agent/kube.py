@@ -849,7 +849,27 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         follow_logs: bool = False,
         attach: bool = False,
     ) -> None:
-        pass
+        try:
+            status_code, response_text = self.call(
+                name=name,
+                path="/v1/learn",
+                method="POST",
+                port=9090,
+                data=skill.model_dump(),
+                # headers=self._get_headers_with_auth(task.task.auth_token)
+            )
+            logger.debug(f"Skill posted with response: {status_code}, {response_text}")
+
+            if follow_logs:
+                print(f"Following logs for '{name}':")
+                self._handle_logs_with_attach(name, attach)
+
+        except ApiException as e:
+            logger.error(f"API exception occurred: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"An error occurred while posting the task: {e}")
+            raise
 
     def solve_task(
         self,
