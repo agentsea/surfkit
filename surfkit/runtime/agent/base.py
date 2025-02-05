@@ -149,6 +149,15 @@ class AgentInstance(WithDB):
         """
         return self._runtime.solve_task(self._name, task, follow_logs)
 
+    def learn_skill(self, skill: V1Skill, follow_logs: bool = False) -> None:
+        """Learn a skill
+
+        Args:
+            skill (V1Skill): The skill
+            follow_logs (bool, optional): Whether to follow the logs. Defaults to False.
+        """
+        return self._runtime.learn_skill(self._name, skill, follow_logs)
+
     @classmethod
     def active_runtimes(cls) -> List["AgentRuntime"]:
         """Find all unique runtime objects currently used by agent instances.
