@@ -565,6 +565,7 @@ class Skill(WithDB):
                     f"Please return a raw json object that looks like the following example: "
                     f"{example_schema} "
                     f"{old_task_str}"
+                    "Please ensure the task parameters are varied. If there are dates or numbers please vary them a little bit."
                 )
                 print(f"prompt: {prompt}", flush=True)
                 thread.post("user", prompt)
@@ -634,6 +635,7 @@ class Skill(WithDB):
                 f"Please return a raw json object that looks like the following example: "
                 f"{example_schema} "
                 f"{old_task_str} "
+                "Please ensure the task parameters are varied. If there are dates or numbers please vary them a little bit."
             )
         thread = RoleThread(owner_id=self.owner_id)
         thread.post("user", prompt)
