@@ -10,7 +10,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Dict, Iterator, Literal, List, Optional, Tuple, Type, Union
 
 from agentdesk.util import find_open_port
 from google.auth.transport.requests import Request

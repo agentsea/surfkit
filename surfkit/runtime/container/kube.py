@@ -5,7 +5,7 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import List, Optional, Tuple, Type
+from typing import Literal, List, Optional, Tuple, Type
 
 from google.auth.transport.requests import Request
 from google.cloud import container_v1
