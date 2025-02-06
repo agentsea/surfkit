@@ -3,6 +3,7 @@ import os
 import time
 from typing import Annotated, Optional, Type
 
+import requests
 from agentcore.models import V1UserProfile
 from fastapi import APIRouter, BackgroundTasks, Depends
 from taskara import Task, TaskStatus
@@ -95,10 +96,28 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
         else:
             agent = Agent.default()
 
+        print(f"agent: {agent}", flush=True)
+
+        if not task.remote or not task.auth_token:
+            raise ValueError("Task remote and auth token must be set")
+
         try:
+            print(f"labeling task as training: {task.id}", flush=True)
+            _label_task(
+                task.remote, task.auth_token, task, "foo/train/status", "training"
+            )
+            print("labeled task as training", flush=True)
             agent.learn_task(task, skill)
+            print(f"labeling task as finished: {task.id}", flush=True)
+            _label_task(
+                task.remote, task.auth_token, task, "foo/train/status", "finished"
+            )
+            print("labeled task as finished", flush=True)
         except Exception as e:
             logger.error(f"error learning task: {e}")
+            print(f"labeling task as error: {task.id}", flush=True)
+            _label_task(task.remote, task.auth_token, task, "foo/train/status", "error")
+            print("labeled task as error", flush=True)
 
     @api_router.post("/v1/tasks")
     async def solve_task(
@@ -246,3 +265,20 @@ def get_remote_task(id: str, owner_id: str, server: str) -> Task:
     except Exception as e:
         logger.error(f"error getting remote task: {e}")
         raise e
+
+
+def _label_task(remote: str, token: str, task: Task, key: str, value: str) -> None:
+    """Label a task as trained
+
+    Args:
+        task (Task): The task
+    """
+    update = V1TaskUpdate(
+        set_labels={key: value},
+    )
+    resp = requests.put(
+        f"{remote}/v1/tasks/{task.id}",
+        json=update.model_dump(),
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    resp.raise_for_status()
