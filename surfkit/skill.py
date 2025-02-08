@@ -313,7 +313,10 @@ class Skill(WithDB):
                 return []
 
             skills_json = resp.json()
-            skills = [cls.from_v1(V1Skill(**skill_data)) for skill_data in skills_json]
+            skills = [
+                cls.from_v1(V1Skill.model_validate(skill_data))
+                for skill_data in skills_json["skills"]
+            ]
 
             # Set remote attribute for each skill
             for skill in skills:
