@@ -50,7 +50,7 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
     ):
         task_model = learn_model.task
         logger.info(
-            f"learning task: {task_model.model_dump()} with user {current_user.email}"
+            f"learning task: {task_model.model_dump()} with user {current_user.model_dump()}"
         )
 
         found = Task.find(
@@ -117,6 +117,7 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
             logger.error(f"error learning task: {e}")
             print(f"labeling task as error: {task.id}", flush=True)
             _label_task(task.remote, task.auth_token, task, "foo/train/status", "error")
+            _label_task(task.remote, task.auth_token, task, "foo/train/error", str(e))
             print("labeled task as error", flush=True)
 
     @api_router.post("/v1/tasks")
