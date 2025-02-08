@@ -56,6 +56,7 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
         found = Task.find(
             remote=task_model.remote,
             id=task_model.id,
+            owner_id=task_model.owner_id,
             auth_token=current_user.token,
         )
         if not found:
