@@ -836,12 +836,12 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             labels=labels if labels else {},
         )
 
-    # def _get_headers_with_auth(self, token) -> dict:
-    #     """Helper to return headers with optional Authorization"""
-    #     headers = {
-    #         "Authorization": f"Bearer {token}"
-    #     }
-    #     return headers
+    def _get_headers_with_auth(self, token: Optional[str] = None) -> dict:
+        """Helper to return headers with optional Authorization"""
+        if not token:
+            return {}
+        headers = {"Authorization": f"Bearer {token}"}
+        return headers
 
     def learn_task(
         self,
@@ -857,7 +857,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 method="POST",
                 port=9090,
                 data=learn_task.model_dump(),
-                # headers=self._get_headers_with_auth(task.task.auth_token)
+                headers=self._get_headers_with_auth(learn_task.task.auth_token),
             )
             logger.debug(f"Skill posted with response: {status_code}, {response_text}")
 
@@ -887,7 +887,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                 method="POST",
                 port=9090,
                 data=task.model_dump(),
-                # headers=self._get_headers_with_auth(task.task.auth_token)
+                headers=self._get_headers_with_auth(task.task.auth_token),
             )
             logger.debug(f"Task posted with response: {status_code}, {response_text}")
 
