@@ -106,7 +106,9 @@ class Skill(WithDB):
             threads=[thread.to_v1() for thread in self.threads],
             example_tasks=[task.to_v1() for task in self.example_tasks],
             status=self.status.value,
-            generating_tasks=self.generating_tasks,
+            generating_tasks=self.generating_tasks
+            if hasattr(self, "generating_tasks")
+            else False,
             min_demos=self.min_demos,
             demos_outstanding=self.demos_outstanding,
             owner_id=self.owner_id,
@@ -175,6 +177,7 @@ class Skill(WithDB):
         out.status = skill_status
         out.min_demos = data.min_demos
         out.demos_outstanding = data.demos_outstanding
+        out.generating_tasks = data.generating_tasks
         out.created = data.created
         out.updated = data.updated
         out.remote = data.remote
