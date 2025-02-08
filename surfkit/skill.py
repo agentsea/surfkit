@@ -117,7 +117,12 @@ class Skill(WithDB):
         )
 
     @classmethod
-    def from_v1(cls, data: V1Skill, owner_id: Optional[str] = None) -> "Skill":
+    def from_v1(
+        cls,
+        data: V1Skill,
+        owner_id: Optional[str] = None,
+        auth_token: Optional[str] = None,
+    ) -> "Skill":
         skill_status = (
             SkillStatus(data.status) if data.status else SkillStatus.NEEDS_DEFINITION
         )
@@ -128,9 +133,30 @@ class Skill(WithDB):
         out.requirements = data.requirements
         out.agent_type = data.agent_type
         out.owner_id = owner_id
-        out.tasks = [Task.find(id=task.id)[0] for task in data.tasks]
-        out.example_tasks = [Task.find(id=task.id)[0] for task in data.example_tasks]
-        out.threads = [RoleThread.find(id=thread.id)[0] for thread in data.threads]
+        owners = None
+        if not out.owner_id:
+            out.owner_id = data.owner_id
+        if out.owner_id:
+            owners = [out.owner_id]
+        out.tasks = [
+            Task.find(
+                id=task.id,
+                remote=data.remote,
+                auth_token=auth_token,
+                owners=owners,
+            )[0]
+            for task in data.tasks
+        ]
+        out.example_tasks = [
+            Task.find(
+                id=task.id,
+                remote=data.remote,
+                auth_token=auth_token,
+                owners=owners,
+            )[0]
+            for task in data.example_tasks
+        ]
+        out.threads = []  # TODO: fix if needed
         out.status = skill_status
         out.min_demos = data.min_demos
         out.demos_outstanding = data.demos_outstanding
@@ -314,7 +340,10 @@ class Skill(WithDB):
 
             skills_json = resp.json()
             skills = [
-                cls.from_v1(V1Skill.model_validate(skill_data))
+                cls.from_v1(
+                    V1Skill.model_validate(skill_data),
+                    auth_token=token,
+                )
                 for skill_data in skills_json["skills"]
             ]
 
