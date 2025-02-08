@@ -61,6 +61,8 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
         if not found:
             raise Exception(f"Task {task_model.id} not found")
 
+        logger.info(f"found task: {found[0].to_v1().model_dump()}")
+
         task = found[0]
         task.remote = task_model.remote  # type: ignore
         task.auth_token = current_user.token  # type: ignore
@@ -75,10 +77,12 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
         else:
             raise ValueError("Task skill or skill label not set")
 
+        logger.info(f"finding skill_id: {skill_id}")
         skills = Skill.find(id=skill_id, remote=task.remote, token=current_user.token)
         if not skills:
             raise ValueError(f"Skill not found: {skill_id}")
         skill = skills[0]
+        logger.info(f"skill: {skill.to_v1().model_dump()}")
 
         background_tasks.add_task(
             _learn_task, task, skill, current_user, learn_model.agent

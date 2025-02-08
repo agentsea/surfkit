@@ -24,7 +24,7 @@ async def get_current_user(
     if not user_auth:
         raise SystemError("user auth is not configured")
     try:
-        logger.debug(f"checking user token: {token}")
+        print(f"checking user token: {token}", flush=True)
         user = user_auth.get_user_auth(token)
         user.token = token
     except Exception as e:
@@ -48,6 +48,8 @@ async def get_user_mock_auth() -> V1UserProfile:
 
 def get_user_dependency():
     if os.getenv("AGENT_NO_AUTH", "false").lower() == "true":
+        print("using mock auth", flush=True)
         return get_user_mock_auth
     else:
+        print("using current user", flush=True)
         return get_current_user

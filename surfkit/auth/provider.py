@@ -56,7 +56,7 @@ class HubAuthProvider(AuthProvider):
                     }
                 )
                 auth_url = f"{self.hub_url}/v1/users/me"
-                logger.debug(f"authorizing token with: {auth_url}")
+                print(f"authorizing token with: {auth_url}", flush=True)
                 response = requests.get(auth_url, headers=headers)
                 response.raise_for_status()
 
