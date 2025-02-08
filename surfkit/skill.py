@@ -138,24 +138,39 @@ class Skill(WithDB):
             out.owner_id = data.owner_id
         if out.owner_id:
             owners = [out.owner_id]
-        out.tasks = [
-            Task.find(
+
+        out.tasks = []
+        for task in data.tasks:
+            found = Task.find(
                 id=task.id,
                 remote=data.remote,
                 auth_token=auth_token,
                 owners=owners,
-            )[0]
-            for task in data.tasks
-        ]
-        out.example_tasks = [
-            Task.find(
+            )
+            if found:
+                out.tasks.append(found[0])
+            else:
+                print(
+                    f"Task {task.id} not found when searching with owners {owners} and remote {data.remote} and auth_token {auth_token}",
+                    flush=True,
+                )
+
+        out.example_tasks = []
+        for task in data.example_tasks:
+            found = Task.find(
                 id=task.id,
                 remote=data.remote,
                 auth_token=auth_token,
                 owners=owners,
-            )[0]
-            for task in data.example_tasks
-        ]
+            )
+            if found:
+                out.example_tasks.append(found[0])
+            else:
+                print(
+                    f"Example Task {task.id} not found when searching with owners {owners} and remote {data.remote} and auth_token {auth_token}",
+                    flush=True,
+                )
+
         out.threads = []  # TODO: fix if needed
         out.status = skill_status
         out.min_demos = data.min_demos
