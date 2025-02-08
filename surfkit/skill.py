@@ -124,6 +124,7 @@ class Skill(WithDB):
         data: V1Skill,
         owner_id: Optional[str] = None,
         auth_token: Optional[str] = None,
+        remote: Optional[str] = None,
     ) -> "Skill":
         skill_status = (
             SkillStatus(data.status) if data.status else SkillStatus.NEEDS_DEFINITION
@@ -141,11 +142,14 @@ class Skill(WithDB):
         if out.owner_id:
             owners = [out.owner_id]
 
+        if not remote:
+            remote = data.remote
+
         out.tasks = []
         for task in data.tasks:
             found = Task.find(
                 id=task.id,
-                remote=data.remote,
+                remote=remote,
                 auth_token=auth_token,
                 owners=owners,
             )
@@ -153,7 +157,7 @@ class Skill(WithDB):
                 out.tasks.append(found[0])
             else:
                 print(
-                    f"Task {task.id} not found when searching with owners {owners} and remote {data.remote} and auth_token {auth_token}",
+                    f"Task {task.id} not found when searching with owners {owners} and remote {remote} and auth_token {auth_token}",
                     flush=True,
                 )
 
@@ -161,7 +165,7 @@ class Skill(WithDB):
         for task in data.example_tasks:
             found = Task.find(
                 id=task.id,
-                remote=data.remote,
+                remote=remote,
                 auth_token=auth_token,
                 owners=owners,
             )
@@ -169,7 +173,7 @@ class Skill(WithDB):
                 out.example_tasks.append(found[0])
             else:
                 print(
-                    f"Example Task {task.id} not found when searching with owners {owners} and remote {data.remote} and auth_token {auth_token}",
+                    f"Example Task {task.id} not found when searching with owners {owners} and remote {remote} and auth_token {auth_token}",
                     flush=True,
                 )
 
@@ -361,6 +365,7 @@ class Skill(WithDB):
                 cls.from_v1(
                     V1Skill.model_validate(skill_data),
                     auth_token=token,
+                    remote=remote,
                 )
                 for skill_data in skills_json["skills"]
             ]
