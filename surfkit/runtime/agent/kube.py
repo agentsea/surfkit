@@ -10,7 +10,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Dict, Iterator, Literal, List, Optional, Tuple, Type, Union
 
 from agentdesk.util import find_open_port
 from google.auth.transport.requests import Request
@@ -41,6 +41,10 @@ from .base import AgentInstance, AgentRuntime, AgentStatus
 logger = logging.getLogger(__name__)
 
 
+class APIOpts(BaseModel):
+    url: str
+
+
 class GKEOpts(BaseModel):
     cluster_name: str
     region: str
@@ -52,8 +56,9 @@ class LocalOpts(BaseModel):
 
 
 class KubeConnectConfig(BaseModel):
-    provider: str = "local"
+    provider: Literal["api", "gke", "local"] = "local"
     namespace: str = "default"
+    api_opts: Optional[APIOpts] = None
     gke_opts: Optional[GKEOpts] = None
     local_opts: Optional[LocalOpts] = None
 
@@ -66,7 +71,12 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         if not cfg:
             cfg = KubeConnectConfig()
         self.cfg = cfg
-        if cfg.provider == "gke":
+        if cfg.provider == "api":
+            opts = cfg.api_opts
+            if not opts:
+                raise ValueError("API opts missing")
+            self.connect_to_api(opts)
+        elif cfg.provider == "gke":
             opts = cfg.gke_opts
             if not opts:
                 raise ValueError("GKE opts missing")
@@ -247,6 +257,13 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
     @classmethod
     def connect(cls, cfg: KubeConnectConfig) -> "KubeAgentRuntime":
         return cls(cfg)
+
+    def connect_to_api(self, opts: APIOpts) -> Tuple[client.CoreV1Api, str, str]:
+        configuration = client.Configuration()
+        configuration.host = opts.url
+        api_client = client.ApiClient(configuration)
+        v1_client = client.CoreV1Api(api_client)
+        return v1_client, "unknown", "anonymous"
 
     @retry(stop=stop_after_attempt(15))
     def connect_to_gke(self, opts: GKEOpts) -> Tuple[client.CoreV1Api, str, str]:
