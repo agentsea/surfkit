@@ -152,6 +152,7 @@ class Skill(WithDB):
                 remote=remote,
                 auth_token=auth_token,
                 owners=owners,
+                owner_id=out.owner_id,
             )
             if found:
                 out.tasks.append(found[0])
@@ -168,6 +169,7 @@ class Skill(WithDB):
                 remote=remote,
                 auth_token=auth_token,
                 owners=owners,
+                owner_id=out.owner_id,
             )
             if found:
                 out.example_tasks.append(found[0])
