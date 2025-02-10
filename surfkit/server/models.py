@@ -196,7 +196,7 @@ class V1Skill(BaseModel):
     description: str
     requirements: List[str]
     tasks: List[V1Task]
-    example_tasks: List[V1Task]
+    example_tasks: List[str]
     threads: List[V1RoleThread] = []
     status: Optional[str] = None
     min_demos: Optional[int] = None

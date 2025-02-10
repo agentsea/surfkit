@@ -41,7 +41,7 @@ class Skill(WithDB):
         status: SkillStatus = SkillStatus.NEEDS_DEFINITION,
         agent_type: Optional[str] = None,
         owner_id: Optional[str] = None,
-        example_tasks: Optional[List[Task]] = None,
+        example_tasks: Optional[list[str]] = None,
         min_demos: Optional[int] = None,
         demos_outstanding: Optional[int] = None,
         remote: Optional[str] = None,
@@ -56,7 +56,7 @@ class Skill(WithDB):
         self.status = status
         self.requirements = requirements or []
         self.tasks: List[Task] = []
-        self.example_tasks: List[Task] = example_tasks or []
+        self.example_tasks = example_tasks or []
         self.owner_id = owner_id
         self.agent_type = agent_type
         if not self.agent_type:
@@ -104,7 +104,7 @@ class Skill(WithDB):
             agent_type=self.agent_type,  # type: ignore
             tasks=[task.to_v1() for task in self.tasks],
             threads=[thread.to_v1() for thread in self.threads],
-            example_tasks=[task.to_v1() for task in self.example_tasks],
+            example_tasks=self.example_tasks,
             status=self.status.value,
             generating_tasks=self.generating_tasks
             if hasattr(self, "generating_tasks")
@@ -162,23 +162,7 @@ class Skill(WithDB):
                     flush=True,
                 )
 
-        out.example_tasks = []
-        for task in data.example_tasks:
-            found = Task.find(
-                id=task.id,
-                remote=remote,
-                auth_token=auth_token,
-                owners=owners,
-                owner_id=out.owner_id,
-            )
-            if found:
-                out.example_tasks.append(found[0])
-            else:
-                print(
-                    f"Example Task {task.id} not found when searching with owners {owners} and remote {remote} and auth_token {auth_token}",
-                    flush=True,
-                )
-
+        out.example_tasks = data.example_tasks
         out.threads = []  # TODO: fix if needed
         out.status = skill_status
         out.min_demos = data.min_demos
@@ -200,7 +184,7 @@ class Skill(WithDB):
             agent_type=self.agent_type,
             threads=json.dumps([thread._id for thread in self.threads]),  # type: ignore
             tasks=json.dumps([task.id for task in self.tasks]),
-            example_tasks=json.dumps([task.id for task in self.example_tasks]),
+            example_tasks=json.dumps(self.example_tasks),
             generating_tasks=self.generating_tasks,
             status=self.status.value,
             min_demos=self.min_demos,
@@ -215,7 +199,6 @@ class Skill(WithDB):
         thread_ids = json.loads(str(record.threads))
         threads = [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
         tasks = []
-        example_tasks = []
         task_ids = json.loads(str(record.tasks))
 
         if task_ids:
@@ -243,33 +226,7 @@ class Skill(WithDB):
                         f"Error updating tasks for skill {record.id}: {e}", flush=True
                     )
 
-        example_task_ids = json.loads(str(record.example_tasks))
-        if example_task_ids:
-            example_tasks = Task.find_many_lite(example_task_ids)
-            valid_example_task_ids = []
-            if len(example_tasks) < len(example_task_ids):
-                try:
-                    print(f"updating example_tasks for skill {record.id}", flush=True)
-                    example_task_map = {task.id: task for task in example_tasks}
-                    for example_task_id in example_task_ids:
-                        if not example_task_map[example_task_id]:
-                            print(
-                                f"Example Task {example_task_id} not found, removing from skill"
-                            )
-                            continue
-
-                        valid_example_task_ids.append(example_task_id)
-
-                    record.example_tasks = json.dumps(valid_example_task_ids)  # type: ignore
-                    for db in cls.get_db():
-                        db.merge(record)
-                        db.commit()
-                    print(f"updated example_tasks for skill {record.id}", flush=True)
-                except Exception as e:
-                    print(
-                        f"Error updating example_tasks for skill {record.id}: {e}",
-                        flush=True,
-                    )
+        example_tasks = json.loads(str(record.example_tasks))
 
         requirements = json.loads(str(record.requirements))
 
@@ -416,9 +373,7 @@ class Skill(WithDB):
         if data.tasks:
             self.tasks = [Task.find(id=task_id)[0] for task_id in data.tasks]
         if data.example_tasks:
-            self.example_tasks = [
-                Task.find(id=task_id)[0] for task_id in data.example_tasks
-            ]
+            self.example_tasks = data.example_tasks
         if data.status:
             self.status = SkillStatus(data.status)
         if data.min_demos:
@@ -575,7 +530,6 @@ class Skill(WithDB):
             ]
         )
         current_date = datetime.now().strftime("%B %d, %Y")
-        example_task_descriptions = [task.description for task in self.example_tasks]
         example_str = str(
             "For example, if the skill is 'search for stays on airbnb' "
             "and a requirement is 'find stays within a travel window' then a task "
@@ -584,10 +538,10 @@ class Skill(WithDB):
         example_schema = '{"tasks": ["Find stays from october 2nd to 3rd", "Find stays from January 15th-17th"]}'
         if self.example_tasks:
             example_str = str(
-                f"Some examples of tasks for this skill are: '{json.dumps(example_task_descriptions)}'"
+                f"Some examples of tasks for this skill are: '{json.dumps(self.example_tasks)}'"
             )
             example_schema = str(
-                '{"tasks": ' f"{json.dumps(example_task_descriptions)}" "}"
+                '{"tasks": ' f"{json.dumps(self.example_tasks)}" "}"
             )
         old_task_str = ""
         old_tasks = self.get_task_descriptions(limit=15000)
