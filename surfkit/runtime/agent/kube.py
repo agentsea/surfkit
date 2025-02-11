@@ -7,10 +7,34 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Dict, Iterator, Literal, List, Optional, Tuple, Type, Union
+from typing import Dict, Iterator, List, Literal, Optional, Tuple, Type, Union
+
+import websocket
+
+
+# 1) Define a custom exception hook for worker threads
+def _k8s_portforward_excepthook(args: threading.ExceptHookArgs) -> None:
+    # Check if the exception is from the K8s port-forward thread
+    if issubclass(
+        args.exc_type, websocket._exceptions.WebSocketConnectionClosedException
+    ):
+        logging.warning(
+            "Suppressed WebSocketConnectionClosedException from the K8s port-forward thread. "
+            "Add retry logic here if desired."
+        )
+        # By returning, we skip re-raising. This prevents termination of the application.
+        return
+
+    # Otherwise, fallback to Python’s default behavior
+    sys.__excepthook__(args.exc_type, args.exc_value, args.exc_traceback)
+
+
+# 2) Attach our custom hook (only done once on import)
+threading.excepthook = _k8s_portforward_excepthook
 
 from agentdesk.util import find_open_port
 from google.auth.transport.requests import Request
