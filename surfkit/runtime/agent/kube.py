@@ -28,6 +28,7 @@ def custom_thread_excepthook(args):
 # This sets a global default for all threads in this interpreter.
 threading.excepthook = custom_thread_excepthook
 
+import kubernetes.stream.ws_client as ws_client
 from agentdesk.util import find_open_port
 from google.auth.transport.requests import Request
 from google.cloud import container_v1
@@ -53,6 +54,27 @@ from surfkit.server.models import (
 from surfkit.types import AgentType
 
 from .base import AgentInstance, AgentRuntime, AgentStatus
+
+# Monkey patch errors
+
+original_proxy = ws_client.PortForward._proxy
+
+
+def my_proxy_override(self, *args, **kwargs):
+    try:
+        return original_proxy(self, *args, **kwargs)
+    except Exception as exc:
+        # Log the detail
+        import traceback
+
+        print(">>> K8s PortForward _proxy crashed with exception:")
+        traceback.print_exc()
+        # Potentially re-raise if you want it to be truly “unhandled”
+        raise
+
+
+ws_client.PortForward._proxy = my_proxy_override
+
 
 logger = logging.getLogger(__name__)
 
