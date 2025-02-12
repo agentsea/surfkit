@@ -630,6 +630,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
     ) -> Optional[int]:
         """Proxy the agent port to localhost.
 
+        If the runtime is GKE, we load a temporary kubeconfig (the same way
+        we do in `connect_to_gke`) so that kubectl uses proper credentials.
+
         Args:
             name (str): Name of the agent
             local_port (Optional[int], optional): Local port to proxy to. Defaults to None.
@@ -638,12 +641,95 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             owner_id (Optional[str], optional): Owner ID. Defaults to None.
 
         Returns:
-            Optional[int]: An optional PID of the proxy
+            Optional[int]: An optional PID of the proxy when background==True, else None.
         """
         if local_port is None:
             local_port = find_open_port(9090, 10090)
 
-        cmd = f"kubectl port-forward pod/{name} {local_port}:{agent_port} -n {self.namespace}"
+        # Default: no special KUBECONFIG prefix
+        kube_cmd_prefix = ""
+
+        # If we're using GKE, generate a temp kube config so kubectl has credentials
+        if self.cfg.provider == "gke" and self.cfg.gke_opts:
+            import base64
+            import tempfile
+
+            import yaml
+
+            # We'll re-gather the GKE config using the same logic as connect_to_gke,
+            # but only to build the ephemeral kubeconfig file for the CLI call.
+            service_account_info = json.loads(self.cfg.gke_opts.service_account_json)
+            credentials = service_account.Credentials.from_service_account_info(
+                service_account_info,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            )
+
+            gke_service = container_v1.ClusterManagerClient(credentials=credentials)
+            project_id = service_account_info.get("project_id")
+            if (
+                not project_id
+                or not self.cfg.gke_opts.cluster_name
+                or not self.cfg.gke_opts.region
+            ):
+                raise ValueError(
+                    "Missing project_id, cluster_name, or region in credentials or metadata"
+                )
+            cluster_request = container_v1.GetClusterRequest(
+                name=(
+                    f"projects/{project_id}/locations/"
+                    f"{self.cfg.gke_opts.region}/clusters/"
+                    f"{self.cfg.gke_opts.cluster_name}"
+                )
+            )
+            cluster = gke_service.get_cluster(request=cluster_request)
+            ca_cert = base64.b64decode(cluster.master_auth.cluster_ca_certificate)
+            credentials.refresh(Request())
+            access_token = credentials.token
+            cluster_name = self.cfg.gke_opts.cluster_name
+
+            # Build an ephemeral kubeconfig dict
+            kubeconfig = {
+                "apiVersion": "v1",
+                "kind": "Config",
+                "clusters": [
+                    {
+                        "name": cluster_name,
+                        "cluster": {
+                            "server": f"https://{cluster.endpoint}",
+                            "certificate-authority-data": base64.b64encode(
+                                ca_cert
+                            ).decode(),
+                        },
+                    }
+                ],
+                "contexts": [
+                    {
+                        "name": cluster_name,
+                        "context": {
+                            "cluster": cluster_name,
+                            "user": cluster_name,
+                        },
+                    }
+                ],
+                "current-context": cluster_name,
+                "users": [
+                    {
+                        "name": cluster_name,
+                        "user": {
+                            "token": access_token,
+                        },
+                    }
+                ],
+            }
+
+            # Write out the ephemeral kubeconfig
+            with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+                yaml.dump(kubeconfig, tmp)
+                tmp.flush()
+                kube_cmd_prefix = f"KUBECONFIG={tmp.name} "
+
+        # Build port-forward command
+        cmd = f"{kube_cmd_prefix}kubectl port-forward pod/{name} {local_port}:{agent_port} -n {self.namespace}"
 
         if background:
             proc = subprocess.Popen(
@@ -651,7 +737,6 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             )
             self._register_cleanup(proc)
             return proc.pid  # Return the PID of the subprocess
-
         else:
             try:
                 subprocess.run(cmd, shell=True, check=True)
@@ -773,7 +858,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             # Delete the pod
             self.core_api.delete_namespaced_pod(
                 name=name,
-                namespace="default",
+                namespace=self.namespace,
                 body=client.V1DeleteOptions(grace_period_seconds=5),
             )
             self.core_api.delete_namespaced_secret(name=name, namespace=self.namespace)
