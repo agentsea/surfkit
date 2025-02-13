@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import requests
-from threadmem.server.models import V1UserProfile
+from agentcore.models import V1UserProfile
 
 from .key import KeyProvider, MockProvider, default_key_provider
 

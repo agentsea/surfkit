@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import requests
+from agentcore.models import V1UserProfile
 from requests.exceptions import RequestException
 from threadmem.db.conn import WithDB
-from threadmem.server.models import V1UserProfile
 
 from surfkit.config import AGENTSEA_AUTH_URL
 

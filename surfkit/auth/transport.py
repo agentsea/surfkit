@@ -2,9 +2,9 @@ import logging
 import os
 from typing import Annotated
 
+from agentcore.models import V1UserProfile
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from threadmem.server.models import V1UserProfile
 
 from .provider import default_auth_provider
 
@@ -64,6 +64,7 @@ def get_current_user_sync(
         print(f"checking user token: {token}", flush=True)
         user = user_auth.get_user_auth(token)
         user.token = token
+
     except Exception as e:
         logging.error(e)
         raise HTTPException(
