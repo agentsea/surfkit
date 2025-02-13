@@ -1235,6 +1235,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         # Create the container spec
         container = client.V1Container(
             name=name,
+            command=["poetry", "run", "python", "-m", "foo.learner"],
             image=image,
             image_pull_policy="Always",
             env=container_env,
