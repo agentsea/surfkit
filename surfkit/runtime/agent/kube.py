@@ -181,6 +181,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         env_vars: Optional[dict] = None,
         owner_id: Optional[str] = None,
         auth_enabled: bool = True,
+        labels: Optional[Dict[str, str]] = None,
     ) -> None:
         if not name:
             name = get_random_name("-")
@@ -240,7 +241,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             kind="Pod",
             metadata=client.V1ObjectMeta(
                 name=name,
-                labels={"provisioner": "surfkit"},
+                labels={"provisioner": "surfkit", **(labels or {})},
                 annotations={
                     "owner": owner_id,
                     "agent_name": name,
@@ -962,6 +963,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             env_vars=env_vars,
             owner_id=owner_id,
             auth_enabled=auth_enabled,
+            labels=labels,
         )
 
         return AgentInstance(
