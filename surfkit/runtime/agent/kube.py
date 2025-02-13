@@ -1162,6 +1162,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         name: str,
         agent_type: AgentType,
         learn_task: V1LearnTask,
+        api_key: str,
         version: Optional[str] = None,
         env_vars: Optional[dict] = None,
         owner_id: Optional[str] = None,
@@ -1176,6 +1177,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             name (str): Name for the job
             agent_type (AgentType): The type describing the agent environment/image
             learn_task (V1LearnTask): The V1LearnTask containing the learning request
+            api_key (str): The API key to use for the job
             version (Optional[str], optional): Optional agent version (image tag) to use. Defaults to None.
             env_vars (Optional[dict], optional): Additional environment variables to pass along. Defaults to None.
             owner_id (Optional[str], optional): Owner ID used for labeling/annotations if desired. Defaults to None.
@@ -1203,6 +1205,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         # Store the learn_task as a JSON-encoded environment variable
         # so the container can parse/use that data at startup
         env_vars["LEARN_TASK_JSON"] = learn_task.model_dump_json()
+        env_vars["AGENTSEA_API_KEY"] = api_key
 
         if debug:
             env_vars["DEBUG"] = "true"

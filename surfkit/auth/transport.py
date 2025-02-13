@@ -56,7 +56,7 @@ def get_user_dependency():
 
 
 def get_current_user_sync(
-    token: Annotated[str, Depends(oauth2_scheme)],
+    token: str,
 ) -> V1UserProfile:
     if not user_auth:
         raise SystemError("user auth is not configured")
