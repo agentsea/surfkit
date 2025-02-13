@@ -70,7 +70,7 @@ def my_proxy_override(self, *args, **kwargs):
         print(">>> K8s PortForward _proxy crashed with exception:")
         traceback.print_exc()
         # Potentially re-raise if you want it to be truly “unhandled”
-        raise
+        # raise
 
 
 ws_client.PortForward._proxy = my_proxy_override
@@ -1156,3 +1156,135 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         logger.debug(
             "Refresh complete. State synchronized between Kubernetes and the database."
         )
+
+    def learn_task_with_job(
+        self,
+        name: str,
+        agent_type: AgentType,
+        learn_task: V1LearnTask,
+        version: Optional[str] = None,
+        env_vars: Optional[dict] = None,
+        owner_id: Optional[str] = None,
+        debug: bool = False,
+    ) -> None:
+        """
+        Creates and launches a Kubernetes Job for a learning task.
+        This is very similar to 'run', but instead of creating a Pod,
+        it creates a Job resource and injects the V1LearnTask as an env var.
+
+        Args:
+            name (str): Name for the job
+            agent_type (AgentType): The type describing the agent environment/image
+            learn_task (V1LearnTask): The V1LearnTask containing the learning request
+            version (Optional[str], optional): Optional agent version (image tag) to use. Defaults to None.
+            env_vars (Optional[dict], optional): Additional environment variables to pass along. Defaults to None.
+            owner_id (Optional[str], optional): Owner ID used for labeling/annotations if desired. Defaults to None.
+            debug (bool, optional): Whether to enable debug mode. Defaults to False.
+        """
+        logger.debug(
+            "creating job for learning task with agent type: %s", agent_type.__dict__
+        )
+        if not agent_type.versions:
+            raise ValueError("No versions specified in agent type")
+
+        if not version:
+            version = list(agent_type.versions.keys())[0]
+
+        image = agent_type.versions.get(version)
+        if not image:
+            raise ValueError(
+                f"No image found for version '{version}' in agent type '{agent_type.name}'"
+            )
+
+        # Initialize env_vars if None
+        if env_vars is None:
+            env_vars = {}
+
+        # Store the learn_task as a JSON-encoded environment variable
+        # so the container can parse/use that data at startup
+        env_vars["LEARN_TASK_JSON"] = learn_task.model_dump_json()
+
+        if debug:
+            env_vars["DEBUG"] = "true"
+
+        # Prepare resource requests/limits
+        resource_requests = agent_type.resource_requests
+        resource_limits = agent_type.resource_limits
+
+        if resource_requests.gpu:
+            raise ValueError(
+                "GPU resource requests are not supported via this job method yet"
+            )
+
+        # Build up the container environment
+        # This is simpler than the approach with a Secret, but if you need
+        # sensitive data, consider a Secret instead.
+        container_env = [
+            client.V1EnvVar(name=k, value=str(v)) for k, v in env_vars.items()
+        ]
+
+        resources = client.V1ResourceRequirements(
+            requests={"memory": resource_requests.memory, "cpu": resource_requests.cpu},
+            limits={"memory": resource_limits.memory, "cpu": resource_limits.cpu},
+        )
+        logger.debug("Job will use resources: %s", resources.__dict__)
+
+        # Create the container spec
+        container = client.V1Container(
+            name=name,
+            image=image,
+            image_pull_policy="Always",
+            env=container_env,
+            resources=resources,
+        )
+
+        # Build the Pod spec (template for the Job)
+        pod_spec = client.V1PodSpec(
+            containers=[container],
+            restart_policy="Never",
+        )
+
+        # Incorporate any relevant annotations/labels
+        annotations = {
+            "owner": owner_id if owner_id else "",
+            "agent_name": name,
+            "agent_type": agent_type.name,
+            "agent_model": agent_type.to_v1().model_dump_json(),
+        }
+        labels = {"provisioner": "surfkit"}
+
+        # Construct the pod template
+        template = client.V1PodTemplateSpec(
+            metadata=client.V1ObjectMeta(
+                labels=labels,
+                annotations=annotations,
+            ),
+            spec=pod_spec,
+        )
+
+        # Construct the Job spec
+        job_spec = client.V1JobSpec(
+            template=template,
+            backoff_limit=0,  # e.g. for tasks that should run exactly once
+        )
+
+        # Construct the Job object
+        job = client.V1Job(
+            api_version="batch/v1",
+            kind="Job",
+            metadata=client.V1ObjectMeta(
+                name=name,
+                labels=labels,
+            ),
+            spec=job_spec,
+        )
+
+        # Create the Job in the namespace
+        batch_api = client.BatchV1Api()
+        try:
+            batch_api.create_namespaced_job(namespace=self.namespace, body=job)
+            logger.info(f"Job '{name}' created successfully for learn task.")
+            print(f"Job created: {name}")
+        except ApiException as e:
+            logger.error(f"Failed to create job '{name}' for learn task: {e}")
+            raise
