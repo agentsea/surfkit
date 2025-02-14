@@ -812,7 +812,6 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
 
         else:
             instances = AgentInstance.find(owner_id=owner_id, runtime_name=self.name())
-            instance = instances[0]
 
         return instances
 
