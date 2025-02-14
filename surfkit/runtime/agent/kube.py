@@ -182,6 +182,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         owner_id: Optional[str] = None,
         auth_enabled: bool = True,
         labels: Optional[Dict[str, str]] = None,
+        check_http_health: bool = True,
     ) -> None:
         if not name:
             name = get_random_name("-")
@@ -284,7 +285,8 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             raise
 
         self.wait_pod_ready(name)
-        self.wait_for_http_200(name)
+        if check_http_health:
+            self.wait_for_http_200(name)
 
     @classmethod
     def connect_config_type(cls) -> Type[KubeConnectConfig]:
@@ -910,6 +912,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         labels: Optional[Dict[str, str]] = None,
         auth_enabled: bool = True,
         debug: bool = False,
+        check_http_health: bool = True,
     ) -> AgentInstance:
         logger.debug("creating agent with type: ", agent_type.__dict__)
         if not agent_type.versions:
@@ -963,6 +966,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             owner_id=owner_id,
             auth_enabled=auth_enabled,
             labels=labels,
+            check_http_health=check_http_health,
         )
 
         return AgentInstance(

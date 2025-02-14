@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generic, List, Optional, Type, TypeVar
 
+from agentcore.models import V1UserProfile
 from devicebay import Device
 from pydantic import BaseModel
 from taskara import Task
@@ -18,14 +19,18 @@ class TaskAgent(Generic[C, T], ABC):
     def name(cls) -> str:
         return cls.__name__
 
-    def learn_skill(
+    def learn_task(
         self,
+        task: Task,
         skill: Skill,
+        user: V1UserProfile,
     ):
-        """Learn a skill
+        """Learn a task
 
         Args:
             skill (Skill): The skill
+            user (V1UserProfile): The user
+            task (Task): The task
         """
         raise NotImplementedError("Subclasses must implement this method")
 
