@@ -551,6 +551,10 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         # Access the nginx http server using the
         # "<pod-name>.pod.<namespace>.kubernetes" dns name.
         # Construct the URL with the custom path
+        print(
+            f"connecting to: {name.lower()}.pod.{namespace}.kubernetes:{port}{path}",
+            flush=True,
+        )
         url = f"http://{name.lower()}.pod.{namespace}.kubernetes:{port}{path}"
 
         # Create a request object based on the HTTP method
@@ -850,6 +854,21 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             if not instances:
                 raise ValueError(f"No agent instance found with name '{name}'")
             return instances[0]
+
+    def exists(
+        self,
+        name: str,
+    ) -> bool:
+        try:
+            pod = self.core_api.read_namespaced_pod(name=name, namespace=self.namespace)
+            agent_type_model = pod.metadata.annotations.get("agent_model")  # type: ignore
+            if not agent_type_model:
+                raise ValueError("Agent model annotation missing in pod metadata")
+
+            return True
+        except ApiException as e:
+            print(f"Failed to get pod '{name}': {e}")
+            return False
 
     def delete(
         self,
