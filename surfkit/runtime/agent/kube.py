@@ -1294,6 +1294,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         job_spec = client.V1JobSpec(
             template=template,
             backoff_limit=0,  # e.g. for tasks that should run exactly once
+            ttl_seconds_after_finished=60 * 60 * 24,  # 1 day
         )
 
         # Construct the Job object

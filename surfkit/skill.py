@@ -540,9 +540,7 @@ class Skill(WithDB):
             example_str = str(
                 f"Some examples of tasks for this skill are: '{json.dumps(self.example_tasks)}'"
             )
-            example_schema = str(
-                '{"tasks": ' f"{json.dumps(self.example_tasks)}" "}"
-            )
+            example_schema = str('{"tasks": ' f"{json.dumps(self.example_tasks)}" "}")
         old_task_str = ""
         old_tasks = self.get_task_descriptions(limit=15000)
         if old_tasks:
