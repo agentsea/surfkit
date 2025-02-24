@@ -94,7 +94,7 @@ class Skill(WithDB):
             role="user",
             msg=f"Please generate a name for this skill description that is no longer than 5 words, lowercase and hyphenated as a single word, e.g. 'search-for-stays-on-airbnb': '{self.description}'",
         )
-        resp = router.chat(thread, model="gemini/gemini-2.0-flash-exp")
+        resp = router.chat(thread, model="mistral/mistral-small-latest")
         print(
             "Get Name Chat response", asdict(resp), flush=True
         )  # TODO test pydantic dump
@@ -600,7 +600,7 @@ class Skill(WithDB):
                 print(f"prompt: {prompt}", flush=True)
                 thread.post("user", prompt)
                 response = router.chat(
-                    thread, model="gemini/gemini-2.0-flash-exp", expect=UserTasks
+                    thread, model="mistral/mistral-small-latest", expect=UserTasks
                 )
                 print(f"thread {thread}, response: {response}", flush=True)
                 if not response.parsed:
@@ -672,7 +672,7 @@ class Skill(WithDB):
         thread.post("user", prompt)
 
         response = router.chat(
-            thread, model="gemini/gemini-2.0-flash-exp", expect=UserTask
+            thread, model="mistral/mistral-small-latest", expect=UserTask
         )
 
         if not response.parsed:
