@@ -65,7 +65,7 @@ class Skill(WithDB):
         self.owner_id = owner_id
         self.agent_type = agent_type
         self.max_steps = max_steps_agent if max_steps_agent is not None else 40
-        self.review_requirements = review_requirements
+        self.review_requirements = review_requirements or []
         if not self.agent_type:
             self.agent_type = "foo"
         self.min_demos = min_demos if min_demos is not None else 100
@@ -250,7 +250,7 @@ class Skill(WithDB):
         out.description = record.description
         out.requirements = requirements
         out.max_steps = record.max_steps
-        out.review_requirements = json.loads(str(record.review_requirements))
+        out.review_requirements = json.loads(str(record.review_requirements)) if record.review_requirements is not None else []
         out.agent_type = record.agent_type
         out.threads = threads
         out.tasks = tasks
