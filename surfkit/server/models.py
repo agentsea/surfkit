@@ -196,7 +196,7 @@ class V1Skill(BaseModel):
     description: str
     requirements: List[str]
     max_steps: int
-    review_requirement: Optional[List[ReviewRequirement]] = None
+    review_requirements: Optional[List[ReviewRequirement]] = None
     tasks: List[V1Task]
     example_tasks: List[str]
     threads: List[V1RoleThread] = []
@@ -217,7 +217,7 @@ class V1UpdateSkill(BaseModel):
     description: Optional[str] = None
     requirements: Optional[List[str]] = None
     max_steps: Optional[int] = None
-    review_requirement: Optional[List[ReviewRequirement]] = None
+    review_requirements: Optional[List[ReviewRequirement]] = None
     tasks: Optional[List[str]] = None
     example_tasks: Optional[List[str]] = None
     threads: Optional[List[str]] = None

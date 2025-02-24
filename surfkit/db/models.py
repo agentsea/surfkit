@@ -17,7 +17,7 @@ class SkillRecord(Base):
     description = Column(String, nullable=False)
     requirements = Column(String, nullable=True)
     max_steps = Column(Integer, nullable=False)
-    review_requirement = Column(String, nullable=True)
+    review_requirements = Column(String, nullable=True)
     agent_type = Column(String, nullable=False)
     threads = Column(String, nullable=True)
     generating_tasks = Column(Boolean, nullable=False)
