@@ -109,7 +109,7 @@ class Skill(WithDB):
             description=self.description,
             requirements=self.requirements,
             max_steps=self.max_steps,
-            review_requirements=self.review_requirements,
+            review_requirements=[review.to_v1() for review in self.review_requirements] if self.review_requirements else [],
             agent_type=self.agent_type,  # type: ignore
             tasks=[task.to_v1() for task in self.tasks],
             threads=[thread.to_v1() for thread in self.threads],
@@ -144,7 +144,7 @@ class Skill(WithDB):
         out.description = data.description
         out.requirements = data.requirements
         out.max_steps = data.max_steps
-        out.review_requirements = data.review_requirements
+        out.review_requirements = [ReviewRequirement.from_v1(r) for r in data.review_requirements] if data.review_requirements else []
         out.agent_type = data.agent_type
         out.owner_id = owner_id
         owners = None
@@ -394,7 +394,7 @@ class Skill(WithDB):
         if data.max_steps: 
             self.max_steps = data.max_steps
         if data.review_requirements: 
-            self.review_requirements = data.review_requirements
+            self.review_requirements = [ReviewRequirement.from_v1(r) for r in data.review_requirements]
         if data.min_demos:
             self.min_demos = data.min_demos
         if data.demos_outstanding:

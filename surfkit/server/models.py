@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
-from taskara import ReviewRequirement, V1Task
+from taskara import V1Task
+from taskara.review import V1ReviewRequirement
 from threadmem import V1RoleThread
 
 
@@ -196,7 +197,7 @@ class V1Skill(BaseModel):
     description: str
     requirements: List[str]
     max_steps: int
-    review_requirements: Optional[List[ReviewRequirement]] = None
+    review_requirements: Optional[List[V1ReviewRequirement]] = None
     tasks: List[V1Task]
     example_tasks: List[str]
     threads: List[V1RoleThread] = []
@@ -217,7 +218,7 @@ class V1UpdateSkill(BaseModel):
     description: Optional[str] = None
     requirements: Optional[List[str]] = None
     max_steps: Optional[int] = None
-    review_requirements: Optional[List[ReviewRequirement]] = None
+    review_requirements: Optional[List[V1ReviewRequirement]] = None
     tasks: Optional[List[str]] = None
     example_tasks: Optional[List[str]] = None
     threads: Optional[List[str]] = None
