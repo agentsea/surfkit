@@ -9,7 +9,7 @@ import requests
 from mllm import Router
 from shortuuid import uuid
 from sqlalchemy import asc
-from taskara import Task, TaskStatus
+from taskara import ReviewRequirement, Task, TaskStatus
 from threadmem import RoleThread
 
 from surfkit.db.conn import WithDB
@@ -22,6 +22,9 @@ class SkillStatus(Enum):
 
     COMPLETED = "completed"
     TRAINING = "training"
+    AGENT_TRAINING = 'agent_training' # state change for when generated tasks start assigning to agents
+    AGENT_REVIEW = 'agent_review'
+    DEMO = 'demo'
     NEEDS_DEFINITION = "needs_definition"
     CREATED = "created"
     FINISHED = "finished"
@@ -47,6 +50,8 @@ class Skill(WithDB):
         remote: Optional[str] = None,
         kvs: Optional[Dict[str, Any]] = None,
         token: Optional[str] = None,
+        max_steps_agent: Optional[int] = None,
+        review_requirement: Optional[list[ReviewRequirement]] = None
     ):
         self.description = description or ""
         self.name = name
@@ -59,6 +64,8 @@ class Skill(WithDB):
         self.example_tasks = example_tasks or []
         self.owner_id = owner_id
         self.agent_type = agent_type
+        self.max_steps = max_steps_agent if max_steps_agent is not None else 40
+        self.review_requirement = review_requirement
         if not self.agent_type:
             self.agent_type = "foo"
         self.min_demos = min_demos if min_demos is not None else 100
@@ -101,6 +108,8 @@ class Skill(WithDB):
             name=self.name,  # type: ignore
             description=self.description,
             requirements=self.requirements,
+            max_steps=self.max_steps,
+            review_requirement=self.review_requirement,
             agent_type=self.agent_type,  # type: ignore
             tasks=[task.to_v1() for task in self.tasks],
             threads=[thread.to_v1() for thread in self.threads],
@@ -134,6 +143,8 @@ class Skill(WithDB):
         out.name = data.name
         out.description = data.description
         out.requirements = data.requirements
+        out.max_steps = data.max_steps
+        out.review_requirement = data.review_requirement
         out.agent_type = data.agent_type
         out.owner_id = owner_id
         owners = None
@@ -181,6 +192,8 @@ class Skill(WithDB):
             name=self.name,
             description=self.description,
             requirements=json.dumps(self.requirements),
+            max_steps=self.max_steps,
+            review_requirement=json.dumps(self.review_requirement),
             agent_type=self.agent_type,
             threads=json.dumps([thread._id for thread in self.threads]),  # type: ignore
             tasks=json.dumps([task.id for task in self.tasks]),
@@ -236,6 +249,8 @@ class Skill(WithDB):
         out.owner_id = record.owner_id
         out.description = record.description
         out.requirements = requirements
+        out.max_steps = record.max_steps
+        out.review_requirement = json.loads(str(record.review_requirement))
         out.agent_type = record.agent_type
         out.threads = threads
         out.tasks = tasks
@@ -376,6 +391,10 @@ class Skill(WithDB):
             self.example_tasks = data.example_tasks
         if data.status:
             self.status = SkillStatus(data.status)
+        if data.max_steps: 
+            self.max_steps = data.max_steps
+        if data.review_requirement: 
+            self.review_requirement = data.review_requirement
         if data.min_demos:
             self.min_demos = data.min_demos
         if data.demos_outstanding:
@@ -490,6 +509,8 @@ class Skill(WithDB):
         self.name = new.name
         self.description = new.description
         self.requirements = new.requirements
+        self.max_steps = new.max_steps
+        self.review_requirement = new.review_requirement
         self.threads = new.threads
         self.tasks = new.tasks
         self.example_tasks = new.example_tasks
@@ -614,6 +635,7 @@ class Skill(WithDB):
                             #     number_required=1, users=[self.owner_id]
                             # )  # TODO: make this configurable
                         ],
+                        max_steps=self.max_steps,
                         assigned_to=assigned_to if assigned_to else self.owner_id,
                         assigned_type=assigned_type if assigned_type else "user",
                         labels={"skill": self.id},
@@ -667,6 +689,7 @@ class Skill(WithDB):
                 #     number_required=1, users=[self.owner_id]
                 # )  # TODO: make this configurable
             ],
+            max_steps=self.max_steps,
             assigned_to=assigned_to if assigned_to else self.owner_id,
             assigned_type=assigned_type if assigned_type else "user",
             labels={"skill": self.id},
