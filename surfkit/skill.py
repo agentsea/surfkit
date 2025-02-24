@@ -76,9 +76,9 @@ class Skill(WithDB):
     def _get_name(self) -> str:
         router = Router(
             [
-                "gemini/gemini-2.0-flash-exp",
-                "anthropic/claude-3-5-sonnet-20240620",
-                "gpt-4o",
+                "mistral/mistral-medium-latest",
+                "mistral/mistral-small-latest",
+                "mistral/mistral-large-latest",
             ]
         )
         print("generating Name")
@@ -524,9 +524,9 @@ class Skill(WithDB):
         self.set_generating_tasks(True)
         router = Router(
             [
-                "gemini/gemini-2.0-flash-exp",
-                "anthropic/claude-3-5-sonnet-20240620",
-                "gpt-4o",
+                "mistral/mistral-medium-latest",
+                "mistral/mistral-small-latest",
+                "mistral/mistral-large-latest",
             ]
         )
         current_date = datetime.now().strftime("%B %d, %Y")
