@@ -642,6 +642,7 @@ class Skill(WithDB):
                         assigned_to=assigned_to if assigned_to else self.owner_id,
                         assigned_type=assigned_type if assigned_type else "user",
                         labels={"skill": self.id},
+                        created_by='agenttutor'
                     )
                     tsk.status = TaskStatus.IN_QUEUE
                     self.tasks.append(tsk)
@@ -696,6 +697,7 @@ class Skill(WithDB):
             assigned_to=assigned_to if assigned_to else self.owner_id,
             assigned_type=assigned_type if assigned_type else "user",
             labels={"skill": self.id},
+            created_by='agenttutor'
         )
         task.status = TaskStatus.IN_QUEUE
         self.tasks.append(task)
