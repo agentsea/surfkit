@@ -209,6 +209,7 @@ class Skill(WithDB):
 
     @classmethod
     def from_record(cls, record: SkillRecord) -> "Skill":
+        start_time = time.time()
         thread_ids = json.loads(str(record.threads))
         threads = [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
         tasks = []
@@ -238,7 +239,7 @@ class Skill(WithDB):
                     print(
                         f"Error updating tasks for skill {record.id}: {e}", flush=True
                     )
-
+        print(f"tasks found for skill {record.id} time lapsed: {(time.time() - start_time):.4f}")
         example_tasks = json.loads(str(record.example_tasks))
 
         requirements = json.loads(str(record.requirements))
@@ -263,6 +264,7 @@ class Skill(WithDB):
         out.created = record.created
         out.updated = record.updated
         out.remote = None
+        print(f"record composed for skill {record.id} time lapsed: {(time.time() - start_time):.4f}")
         return out
 
     def save(self):
@@ -312,7 +314,7 @@ class Skill(WithDB):
         **kwargs,  # type: ignore
     ) -> List["Skill"]:
         print("running find for skills", flush=True)
-
+        start_time = time.time()
         if remote:
             # Prepare query parameters
             params = dict(kwargs)
@@ -364,8 +366,9 @@ class Skill(WithDB):
                     query = query.filter(getattr(SkillRecord, key) == value)
 
                 records = query.order_by(asc(SkillRecord.created)).all()
-                print(f"skills found in db {records}", flush=True)
+                print(f"skills found in db {records} time lapsed: {(time.time() - start_time):.4f}", flush=True)
                 out.extend([cls.from_record(record) for record in records])
+                print(f"skills from_record ran time lapsed: {(time.time() - start_time):.4f}", flush=True)
             return out
 
     def update(self, data: V1UpdateSkill):
