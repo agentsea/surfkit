@@ -22,9 +22,9 @@ class SkillStatus(Enum):
 
     COMPLETED = "completed"
     TRAINING = "training"
-    AGENT_TRAINING = 'agent_training' # state change for when generated tasks start assigning to agents
-    AGENT_REVIEW = 'agent_review'
-    DEMO = 'demo'
+    AGENT_TRAINING = "agent_training"  # state change for when generated tasks start assigning to agents
+    AGENT_REVIEW = "agent_review"
+    DEMO = "demo"
     NEEDS_DEFINITION = "needs_definition"
     CREATED = "created"
     FINISHED = "finished"
@@ -51,7 +51,7 @@ class Skill(WithDB):
         kvs: Optional[Dict[str, Any]] = None,
         token: Optional[str] = None,
         max_steps_agent: Optional[int] = None,
-        review_requirements: Optional[list[ReviewRequirement]] = None
+        review_requirements: Optional[list[ReviewRequirement]] = None,
     ):
         self.description = description or ""
         self.name = name
@@ -109,7 +109,9 @@ class Skill(WithDB):
             description=self.description,
             requirements=self.requirements,
             max_steps=self.max_steps,
-            review_requirements=[review.to_v1() for review in self.review_requirements] if self.review_requirements else [],
+            review_requirements=[review.to_v1() for review in self.review_requirements]
+            if self.review_requirements
+            else [],
             agent_type=self.agent_type,  # type: ignore
             tasks=[task.to_v1() for task in self.tasks],
             threads=[thread.to_v1() for thread in self.threads],
@@ -144,7 +146,11 @@ class Skill(WithDB):
         out.description = data.description
         out.requirements = data.requirements
         out.max_steps = data.max_steps
-        out.review_requirements = [ReviewRequirement.from_v1(r) for r in data.review_requirements] if data.review_requirements else []
+        out.review_requirements = (
+            [ReviewRequirement.from_v1(r) for r in data.review_requirements]
+            if data.review_requirements
+            else []
+        )
         out.agent_type = data.agent_type
         out.owner_id = owner_id
         owners = None
@@ -251,7 +257,11 @@ class Skill(WithDB):
         out.description = record.description
         out.requirements = requirements
         out.max_steps = record.max_steps
-        out.review_requirements = json.loads(str(record.review_requirements)) if record.review_requirements is not None else []
+        out.review_requirements = (
+            json.loads(str(record.review_requirements))
+            if record.review_requirements is not None
+            else []
+        )
         out.agent_type = record.agent_type
         out.threads = threads
         out.tasks = tasks
@@ -394,10 +404,12 @@ class Skill(WithDB):
             self.example_tasks = data.example_tasks
         if data.status:
             self.status = SkillStatus(data.status)
-        if data.max_steps: 
+        if data.max_steps:
             self.max_steps = data.max_steps
-        if data.review_requirements: 
-            self.review_requirements = [ReviewRequirement.from_v1(r) for r in data.review_requirements]
+        if data.review_requirements:
+            self.review_requirements = [
+                ReviewRequirement.from_v1(r) for r in data.review_requirements
+            ]
         if data.min_demos:
             self.min_demos = data.min_demos
         if data.demos_outstanding:
@@ -603,7 +615,7 @@ class Skill(WithDB):
                 print(f"prompt: {prompt}", flush=True)
                 thread.post("user", prompt)
                 response = router.chat(
-                    thread, model="mistral/mistral-small-latest", expect=UserTasks
+                    thread, model="mistral/mistral-medium-latest", expect=UserTasks
                 )
                 print(f"thread {thread}, response: {response}", flush=True)
                 if not response.parsed:
@@ -676,7 +688,7 @@ class Skill(WithDB):
         thread.post("user", prompt)
 
         response = router.chat(
-            thread, model="mistral/mistral-small-latest", expect=UserTask
+            thread, model="mistral/mistral-medium-latest", expect=UserTask
         )
 
         if not response.parsed:
