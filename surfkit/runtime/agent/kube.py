@@ -860,9 +860,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         name: str,
     ) -> bool:
         try:
-            print(f"checking if pod '{name}' exists in namespace '{self.namespace}'")
             pod = self.core_api.read_namespaced_pod(name=name, namespace=self.namespace)
-            print(f"pod: {pod}")
 
             agent_type_model = pod.metadata.annotations.get("agent_model")  # type: ignore
             if not agent_type_model:
