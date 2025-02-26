@@ -582,13 +582,7 @@ class Skill(WithDB):
                 f"Generating tasks for skill: '{self.description}', skill ID: {self.id} with requirements: {self.requirements}",
                 flush=True,
             )
-            old_task_str = ""
-            old_tasks = self.get_task_descriptions(limit=15000)
-            if old_tasks:
-                old_task_str = str(
-                    "Please do not create any tasks identical to these tasks that have already been created: "
-                    f"{old_tasks}"
-                )
+
             thread = RoleThread(
                 owner_id=self.owner_id
             )  # TODO is this gonna keep one thread? I don't see a need for a new thread every time
@@ -599,6 +593,14 @@ class Skill(WithDB):
                     f"task generation interation: {n} for skill ID {self.id}",
                     flush=True,
                 )
+
+                old_task_str = ""
+                old_tasks = self.get_task_descriptions(limit=15000)
+                if old_tasks:
+                    old_task_str = str(
+                        "Please do not create any tasks identical to these tasks that have already been created: "
+                        f"{old_tasks}"
+                    )
 
                 prompt = (
                     f"Given the agent skill '{self.description}', and the "
