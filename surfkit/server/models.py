@@ -207,7 +207,7 @@ class V1Skill(BaseModel):
     owner_id: Optional[str] = None
     generating_tasks: Optional[bool] = None
     agent_type: str
-    kvs: Optional[Dict[str, str]] = None
+    kvs: Optional[Dict[str, Any]] = None
     remote: Optional[str] = None
     created: int
     updated: int
