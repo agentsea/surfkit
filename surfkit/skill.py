@@ -374,6 +374,12 @@ class Skill(WithDB):
                 # Apply additional filters from kwargs
                 for key, value in kwargs.items():
                     query = query.filter(getattr(SkillRecord, key) == value)
+                for key, value in kwargs.items():
+                    column_attr = getattr(SkillRecord, key)
+                    if isinstance(value, (list, tuple)):  # Support multiple values
+                        query = query.filter(column_attr.in_(value))
+                    else:
+                        query = query.filter(column_attr == value)
 
                 records = query.order_by(asc(SkillRecord.created)).all()
                 print(f"skills found in db {records} time lapsed: {(time.time() - start_time):.4f}", flush=True)
