@@ -64,13 +64,13 @@ class Skill(WithDB):
         self.example_tasks = example_tasks or []
         self.owner_id = owner_id
         self.agent_type = agent_type
-        self.max_steps = max_steps_agent if max_steps_agent is not None else 40
+        self.max_steps = max_steps_agent if max_steps_agent is not None else 30
         self.review_requirements = review_requirements or []
         if not self.agent_type:
             self.agent_type = "foo"
         self.min_demos = min_demos if min_demos is not None else 100
         self.demos_outstanding = (
-            demos_outstanding if demos_outstanding is not None else 5
+            demos_outstanding if demos_outstanding is not None else 3
         )
         self.remote = remote
         self.threads: List[RoleThread] = []
@@ -92,7 +92,7 @@ class Skill(WithDB):
         thread = RoleThread()
         thread.post(
             role="user",
-            msg=f"Please generate a name for this skill description that is no longer than 5 words, lowercase and hyphenated as a single word, e.g. 'search-for-stays-on-airbnb': '{self.description}'",
+            msg=f"Please generate a name for this skill description that is no longer than 5 words, lowercase and hyphenated as a single word, if there is a specific tool involved like 'airbnb' make sure to include that e.g. 'search-for-stays-on-airbnb': '{self.description}'",
         )
         resp = router.chat(thread, model="mistral/mistral-small-latest")
         print(
@@ -245,7 +245,9 @@ class Skill(WithDB):
                     print(
                         f"Error updating tasks for skill {record.id}: {e}", flush=True
                     )
-        print(f"tasks found for skill {record.id} time lapsed: {(time.time() - start_time):.4f}")
+        print(
+            f"tasks found for skill {record.id} time lapsed: {(time.time() - start_time):.4f}"
+        )
         example_tasks = json.loads(str(record.example_tasks))
 
         requirements = json.loads(str(record.requirements))
@@ -274,7 +276,9 @@ class Skill(WithDB):
         out.created = record.created
         out.updated = record.updated
         out.remote = None
-        print(f"record composed for skill {record.id} time lapsed: {(time.time() - start_time):.4f}")
+        print(
+            f"record composed for skill {record.id} time lapsed: {(time.time() - start_time):.4f}"
+        )
         return out
 
     def save(self):
@@ -380,9 +384,15 @@ class Skill(WithDB):
                         query = query.filter(column_attr == value)
 
                 records = query.order_by(asc(SkillRecord.created)).all()
-                print(f"skills found in db {records} time lapsed: {(time.time() - start_time):.4f}", flush=True)
+                print(
+                    f"skills found in db {records} time lapsed: {(time.time() - start_time):.4f}",
+                    flush=True,
+                )
                 out.extend([cls.from_record(record) for record in records])
-                print(f"skills from_record ran time lapsed: {(time.time() - start_time):.4f}", flush=True)
+                print(
+                    f"skills from_record ran time lapsed: {(time.time() - start_time):.4f}",
+                    flush=True,
+                )
             return out
 
     def update(self, data: V1UpdateSkill):
@@ -621,7 +631,7 @@ class Skill(WithDB):
                 print(f"prompt: {prompt}", flush=True)
                 thread.post("user", prompt)
                 response = router.chat(
-                    thread, model="mistral/mistral-medium-latest", expect=UserTasks
+                    thread, model="mistral/mistral-small-latest", expect=UserTasks
                 )
                 print(f"thread {thread}, response: {response}", flush=True)
                 if not response.parsed:
@@ -660,7 +670,7 @@ class Skill(WithDB):
                         assigned_to=assigned_to if assigned_to else self.owner_id,
                         assigned_type=assigned_type if assigned_type else "user",
                         labels={"skill": self.id},
-                        created_by='agenttutor'
+                        created_by="agenttutor",
                     )
                     tsk.status = TaskStatus.IN_QUEUE
                     self.tasks.append(tsk)
@@ -703,7 +713,7 @@ class Skill(WithDB):
         thread.post("user", prompt)
 
         response = router.chat(
-            thread, model="mistral/mistral-medium-latest", expect=UserTask
+            thread, model="mistral/mistral-small-latest", expect=UserTask
         )
 
         if not response.parsed:
@@ -724,7 +734,7 @@ class Skill(WithDB):
             assigned_to=assigned_to if assigned_to else self.owner_id,
             assigned_type=assigned_type if assigned_type else "user",
             labels={"skill": self.id},
-            created_by='agenttutor'
+            created_by="agenttutor",
         )
         task.status = TaskStatus.IN_QUEUE
         self.tasks.append(task)
