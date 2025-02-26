@@ -373,8 +373,6 @@ class Skill(WithDB):
 
                 # Apply additional filters from kwargs
                 for key, value in kwargs.items():
-                    query = query.filter(getattr(SkillRecord, key) == value)
-                for key, value in kwargs.items():
                     column_attr = getattr(SkillRecord, key)
                     if isinstance(value, (list, tuple)):  # Support multiple values
                         query = query.filter(column_attr.in_(value))
