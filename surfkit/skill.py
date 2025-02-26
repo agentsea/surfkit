@@ -673,6 +673,8 @@ class Skill(WithDB):
                     result.append(tsk)
                 self.save()  # need to save for every iteration as we want tasks to incrementally show up
             self.generating_tasks = False
+            self.kvs["agenttutor_msg"] = {"msg": "test information message, baby shark do do do do", "timestamp": time.time()}
+            self.kvs["alert"] = {"msg": "test alert message, the lion sleeps in the jungle tonight", "timestamp": time.time()}
             self.save()
 
             return result
