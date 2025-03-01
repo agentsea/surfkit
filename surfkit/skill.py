@@ -773,7 +773,7 @@ class Skill(WithDB):
             db.commit()
 
     @classmethod
-    def find_skills_for_task_gen(cls):
+    def find_skills_for_task_gen(cls) -> list[SkillsWithGenTasks]:
         skill_records = []
         for skill_session in cls.get_db():
 
