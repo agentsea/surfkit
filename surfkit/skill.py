@@ -772,9 +772,10 @@ class Skill(WithDB):
             db.delete(record)
             db.commit()
 
-    def find_skills_for_task_gen(self):
+    @classmethod
+    def find_skills_for_task_gen(cls):
         skill_records = []
-        for skill_session in self.get_db():
+        for skill_session in cls.get_db():
 
             # Query all skills needing tasks
             skill_records = (
