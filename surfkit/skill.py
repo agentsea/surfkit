@@ -17,7 +17,7 @@ from taskara.db.conn import get_db as get_task_DB
 from taskara.db.models import TaskRecord, LabelRecord, task_label_association
 from surfkit.db.conn import WithDB
 from surfkit.db.models import SkillRecord
-from surfkit.server.models import UserTask, UserTasks, V1Skill, V1UpdateSkill
+from surfkit.server.models import SkillsWithGenTasks, UserTask, UserTasks, V1Skill, V1UpdateSkill
 
 
 class SkillStatus(Enum):
@@ -845,10 +845,10 @@ class Skill(WithDB):
             min_demos = skill_map[sid]["demo_queue_size"]
             count_value = in_queue_counts[sid]  # defaults to 0 if sid never occurred
             if count_value < min_demos:
-                results.append({
-                    "skill_id": sid,
-                    "in_queue_count": count_value,
-                    "demo_tasks_needed": min_demos - count_value
-                })
+                results.append(SkillsWithGenTasks(
+                                skill_id=sid, 
+                                in_queue_count=count_value, 
+                                tasks_needed=min_demos - count_value
+                                ))
 
         return results
