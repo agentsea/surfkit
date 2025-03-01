@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import time
 from dataclasses import asdict
@@ -8,10 +9,12 @@ from typing import Any, Dict, List, Optional
 import requests
 from mllm import Router
 from shortuuid import uuid
-from sqlalchemy import asc
+from sqlalchemy import Integer, asc, func, case, cast, and_
+from sqlalchemy.orm import joinedload
 from taskara import ReviewRequirement, Task, TaskStatus
 from threadmem import RoleThread
-
+from taskara.db.conn import get_db as get_task_DB
+from taskara.db.models import TaskRecord, LabelRecord, task_label_association
 from surfkit.db.conn import WithDB
 from surfkit.db.models import SkillRecord
 from surfkit.server.models import UserTask, UserTasks, V1Skill, V1UpdateSkill
@@ -47,6 +50,7 @@ class Skill(WithDB):
         example_tasks: Optional[list[str]] = None,
         min_demos: Optional[int] = None,
         demos_outstanding: Optional[int] = None,
+        demo_queue_size: Optional[int] = None,
         remote: Optional[str] = None,
         kvs: Optional[Dict[str, Any]] = None,
         token: Optional[str] = None,
@@ -71,6 +75,9 @@ class Skill(WithDB):
         self.min_demos = min_demos if min_demos is not None else 100
         self.demos_outstanding = (
             demos_outstanding if demos_outstanding is not None else 3
+        )
+        self.demo_queue_size =  (
+            demo_queue_size if demo_queue_size is not None else 5
         )
         self.remote = remote
         self.threads: List[RoleThread] = []
@@ -121,6 +128,7 @@ class Skill(WithDB):
             if hasattr(self, "generating_tasks")
             else False,
             min_demos=self.min_demos,
+            demo_queue_size = self.demo_queue_size,
             demos_outstanding=self.demos_outstanding,
             owner_id=self.owner_id,
             created=self.created,
@@ -184,6 +192,7 @@ class Skill(WithDB):
         out.status = skill_status
         out.min_demos = data.min_demos
         out.demos_outstanding = data.demos_outstanding
+        out.demo_queue_size = data.demo_queue_size
         out.generating_tasks = data.generating_tasks
         out.created = data.created
         out.updated = data.updated
@@ -208,6 +217,7 @@ class Skill(WithDB):
             status=self.status.value,
             min_demos=self.min_demos,
             demos_outstanding=self.demos_outstanding,
+            demo_queue_size=self.demo_queue_size,
             kvs=json.dumps(self.kvs),
             created=self.created,
             updated=int(time.time()),
@@ -272,6 +282,7 @@ class Skill(WithDB):
         out.status = SkillStatus(record.status)
         out.min_demos = record.min_demos
         out.demos_outstanding = record.demos_outstanding
+        out.demo_queue_size = record.demo_queue_size
         out.kvs = json.loads(str(record.kvs)) if record.kvs else {}  # type: ignore
         out.created = record.created
         out.updated = record.updated
@@ -424,10 +435,12 @@ class Skill(WithDB):
             self.review_requirements = [
                 ReviewRequirement.from_v1(r) for r in data.review_requirements
             ]
-        if data.min_demos:
+        if data.min_demos is not None:
             self.min_demos = data.min_demos
-        if data.demos_outstanding:
+        if data.demos_outstanding is not None:
             self.demos_outstanding = data.demos_outstanding
+        if data.demo_queue_size is not None:
+            self.demo_queue_size = data.demo_queue_size
 
         # Save the updated skill, either locally or remotely.
         self.save()
@@ -572,6 +585,10 @@ class Skill(WithDB):
         assigned_type: Optional[str] = None,
     ) -> List[Task]:
         self.set_generating_tasks(True)
+        task_assigned_to = assigned_to or self.owner_id
+        if assigned_to is None and assigned_type != 'user':
+            task_assigned_to = None
+
         router = Router(
             [
                 "mistral/mistral-medium-latest",
@@ -667,9 +684,10 @@ class Skill(WithDB):
                             # )  # TODO: make this configurable
                         ],
                         max_steps=self.max_steps,
-                        assigned_to=assigned_to if assigned_to else self.owner_id,
+                        assigned_to=task_assigned_to,
                         assigned_type=assigned_type if assigned_type else "user",
                         labels={"skill": self.id},
+                        skill=self.id,
                         created_by="agenttutor",
                     )
                     tsk.status = TaskStatus.IN_QUEUE
@@ -731,9 +749,10 @@ class Skill(WithDB):
                 # )  # TODO: make this configurable
             ],
             max_steps=self.max_steps,
-            assigned_to=assigned_to if assigned_to else self.owner_id,
+            assigned_to=task_assigned_to,
             assigned_type=assigned_type if assigned_type else "user",
             labels={"skill": self.id},
+            skill=self.id,
             created_by="agenttutor",
         )
         task.status = TaskStatus.IN_QUEUE
@@ -752,3 +771,83 @@ class Skill(WithDB):
             )
             db.delete(record)
             db.commit()
+
+    def find_skills_for_task_gen(self):
+        skill_records = []
+        for skill_session in self.get_db():
+
+            # Query all skills needing tasks
+            skill_records = (
+                skill_session.query(SkillRecord.id, SkillRecord.demo_queue_size)
+                .filter(
+                    SkillRecord.status.in_([SkillStatus.TRAINING.value, SkillStatus.DEMO.value]),
+                    SkillRecord.generating_tasks == False,  # noqa: E712
+                )
+                .all()
+            )
+            skill_session.close()
+
+        # Return early if no matching skills
+        if not skill_records:
+            return []
+
+        # Create a dict of skill_id -> (demos_outstanding, min_demos)
+        skill_map = {
+            row[0]: {  # row[0] is skill_id
+                "demo_queue_size": row[1],  # row[1] is demos_outstanding
+            }
+            for row in skill_records
+        }
+        skill_ids = list(skill_map.keys())
+        direct_rows = []
+        labeled_rows = []
+        for task_session in get_task_DB():
+            # Query A: Direct skill references
+            direct_rows = (
+                task_session.query(
+                    TaskRecord.skill.label("skill_id"),
+                    func.count().label("count"),
+                )
+                .filter(TaskRecord.status.is_(TaskStatus.IN_QUEUE.value), TaskRecord.skill.in_(skill_ids))
+                .group_by(TaskRecord.skill)
+                .all()
+            )
+
+            # Query B: Labeled tasks only, excluding tasks that already have a direct TaskRecord.skill
+            labeled_rows = (
+                task_session.query(
+                    TaskRecord.skill.label("skill_id"),
+                    func.count().label("count"),
+                )
+                .join(
+                    TaskRecord.labels.and_(LabelRecord.key == "skill").and_(TaskRecord.skill.is_(None)).and_(TaskRecord.status.is_(TaskStatus.IN_QUEUE.value))
+                )
+                .filter(
+                    LabelRecord.value.in_(skill_ids),
+                )
+                .group_by(LabelRecord.value, TaskRecord.status)
+                .all()
+            )
+
+            task_session.close()
+
+        # Combine all counts into a single dict. If a skill never appears, it remains 0.
+        in_queue_counts = defaultdict(int)
+        
+        # direct_rows + labeled_rows => e.g. [("skillA", 2), ("skillC", 1), ...]
+        for sid, count_value in direct_rows + labeled_rows:
+            in_queue_counts[sid] += count_value
+
+        # Now iterate over all skill IDs to catch zero counts
+        results = []
+        for sid in skill_ids:
+            min_demos = skill_map[sid]["demo_queue_size"]
+            count_value = in_queue_counts[sid]  # defaults to 0 if sid never occurred
+            if count_value < min_demos:
+                results.append({
+                    "skill_id": sid,
+                    "in_queue_count": count_value,
+                    "demo_tasks_needed": min_demos - count_value
+                })
+
+        return results

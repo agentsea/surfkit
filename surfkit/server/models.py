@@ -204,6 +204,7 @@ class V1Skill(BaseModel):
     status: Optional[str] = None
     min_demos: Optional[int] = None
     demos_outstanding: Optional[int] = None
+    demo_queue_size: Optional[int] = None
     owner_id: Optional[str] = None
     generating_tasks: Optional[bool] = None
     agent_type: str
@@ -225,6 +226,7 @@ class V1UpdateSkill(BaseModel):
     status: Optional[str] = None
     min_demos: Optional[int] = None
     demos_outstanding: Optional[int] = None
+    demo_queue_size: Optional[int] = None
 
 
 class V1SetKey(BaseModel):
