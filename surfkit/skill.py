@@ -809,7 +809,7 @@ class Skill(WithDB):
                     TaskRecord.skill.label("skill_id"),
                     func.count().label("count"),
                 )
-                .filter(TaskRecord.status.is_(TaskStatus.IN_QUEUE.value), TaskRecord.skill.in_(skill_ids))
+                .filter(TaskRecord.status == (TaskStatus.IN_QUEUE.value), TaskRecord.skill.in_(skill_ids))
                 .group_by(TaskRecord.skill)
                 .all()
             )
@@ -817,16 +817,16 @@ class Skill(WithDB):
             # Query B: Labeled tasks only, excluding tasks that already have a direct TaskRecord.skill
             labeled_rows = (
                 task_session.query(
-                    TaskRecord.skill.label("skill_id"),
+                    LabelRecord.value.label("skill_id"),
                     func.count().label("count"),
                 )
                 .join(
-                    TaskRecord.labels.and_(LabelRecord.key == "skill").and_(TaskRecord.skill.is_(None)).and_(TaskRecord.status.is_(TaskStatus.IN_QUEUE.value))
+                    TaskRecord.labels.and_(LabelRecord.key == "skill").and_(TaskRecord.skill.is_(None)).and_(TaskRecord.status == (TaskStatus.IN_QUEUE.value))
                 )
                 .filter(
                     LabelRecord.value.in_(skill_ids),
                 )
-                .group_by(LabelRecord.value, TaskRecord.status)
+                .group_by(LabelRecord.value)
                 .all()
             )
 
