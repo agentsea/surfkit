@@ -213,10 +213,12 @@ class V1Skill(BaseModel):
     created: int
     updated: int
 
+
 class SkillsWithGenTasks(BaseModel):
     skill_id: str
     in_queue_count: int
     tasks_needed: int
+
 
 class V1UpdateSkill(BaseModel):
     name: Optional[str] = None

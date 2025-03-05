@@ -17,7 +17,13 @@ from taskara.db.conn import get_db as get_task_DB
 from taskara.db.models import TaskRecord, LabelRecord
 from surfkit.db.conn import WithDB
 from surfkit.db.models import SkillRecord
-from surfkit.server.models import SkillsWithGenTasks, UserTask, UserTasks, V1Skill, V1UpdateSkill
+from surfkit.server.models import (
+    SkillsWithGenTasks,
+    UserTask,
+    UserTasks,
+    V1Skill,
+    V1UpdateSkill,
+)
 
 
 class SkillStatus(Enum):
@@ -76,9 +82,7 @@ class Skill(WithDB):
         self.demos_outstanding = (
             demos_outstanding if demos_outstanding is not None else 3
         )
-        self.demo_queue_size =  (
-            demo_queue_size if demo_queue_size is not None else 5
-        )
+        self.demo_queue_size = demo_queue_size if demo_queue_size is not None else 5
         self.remote = remote
         self.threads: List[RoleThread] = []
         self.kvs = kvs or {}
@@ -116,19 +120,21 @@ class Skill(WithDB):
             description=self.description,
             requirements=self.requirements,
             max_steps=self.max_steps,
-            review_requirements=[review.to_v1() for review in self.review_requirements]
-            if self.review_requirements
-            else [],
+            review_requirements=(
+                [review.to_v1() for review in self.review_requirements]
+                if self.review_requirements
+                else []
+            ),
             agent_type=self.agent_type,  # type: ignore
             tasks=[task.to_v1() for task in self.tasks],
             threads=[thread.to_v1() for thread in self.threads],
             example_tasks=self.example_tasks,
             status=self.status.value,
-            generating_tasks=self.generating_tasks
-            if hasattr(self, "generating_tasks")
-            else False,
+            generating_tasks=(
+                self.generating_tasks if hasattr(self, "generating_tasks") else False
+            ),
             min_demos=self.min_demos,
-            demo_queue_size = self.demo_queue_size,
+            demo_queue_size=self.demo_queue_size,
             demos_outstanding=self.demos_outstanding,
             owner_id=self.owner_id,
             created=self.created,
@@ -588,7 +594,7 @@ class Skill(WithDB):
     ) -> List[Task]:
         self.set_generating_tasks(True)
         task_assigned_to = assigned_to or self.owner_id
-        if assigned_to is None and assigned_type != 'user':
+        if assigned_to is None and assigned_type != "user":
             task_assigned_to = None
 
         router = Router(
@@ -783,7 +789,9 @@ class Skill(WithDB):
             skill_records = (
                 skill_session.query(SkillRecord.id, SkillRecord.demo_queue_size)
                 .filter(
-                    SkillRecord.status.in_([SkillStatus.TRAINING.value, SkillStatus.DEMO.value]),
+                    SkillRecord.status.in_(
+                        [SkillStatus.TRAINING.value, SkillStatus.DEMO.value]
+                    ),
                     SkillRecord.generating_tasks == False,  # noqa: E712
                 )
                 .all()
@@ -811,7 +819,10 @@ class Skill(WithDB):
                     TaskRecord.skill.label("skill_id"),
                     func.count().label("count"),
                 )
-                .filter(TaskRecord.status == (TaskStatus.IN_QUEUE.value), TaskRecord.skill.in_(skill_ids))
+                .filter(
+                    TaskRecord.status == (TaskStatus.IN_QUEUE.value),
+                    TaskRecord.skill.in_(skill_ids),
+                )
                 .group_by(TaskRecord.skill)
                 .all()
             )
@@ -823,7 +834,9 @@ class Skill(WithDB):
                     func.count().label("count"),
                 )
                 .join(
-                    TaskRecord.labels.and_(LabelRecord.key == "skill").and_(TaskRecord.skill.is_(None)).and_(TaskRecord.status == (TaskStatus.IN_QUEUE.value))
+                    TaskRecord.labels.and_(LabelRecord.key == "skill")
+                    .and_(TaskRecord.skill.is_(None))
+                    .and_(TaskRecord.status == (TaskStatus.IN_QUEUE.value))
                 )
                 .filter(
                     LabelRecord.value.in_(skill_ids),
@@ -836,7 +849,7 @@ class Skill(WithDB):
 
         # Combine all counts into a single dict. If a skill never appears, it remains 0.
         in_queue_counts = defaultdict(int)
-        
+
         # direct_rows + labeled_rows => e.g. [("skillA", 2), ("skillC", 1), ...]
         for sid, count_value in direct_rows + labeled_rows:
             in_queue_counts[sid] += count_value
@@ -847,10 +860,12 @@ class Skill(WithDB):
             min_demos = skill_map[sid]["demo_queue_size"]
             count_value = in_queue_counts[sid]  # defaults to 0 if sid never occurred
             if count_value < min_demos:
-                results.append(SkillsWithGenTasks(
-                                skill_id=sid, 
-                                in_queue_count=count_value, 
-                                tasks_needed=min_demos - count_value
-                                ))
+                results.append(
+                    SkillsWithGenTasks(
+                        skill_id=sid,
+                        in_queue_count=count_value,
+                        tasks_needed=min_demos - count_value,
+                    )
+                )
 
         return results
