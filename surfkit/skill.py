@@ -14,7 +14,7 @@ from sqlalchemy.orm import joinedload
 from taskara import ReviewRequirement, Task, TaskStatus
 from threadmem import RoleThread
 from taskara.db.conn import get_db as get_task_DB
-from taskara.db.models import TaskRecord, LabelRecord, task_label_association
+from taskara.db.models import TaskRecord, LabelRecord
 from surfkit.db.conn import WithDB
 from surfkit.db.models import SkillRecord
 from surfkit.server.models import SkillsWithGenTasks, UserTask, UserTasks, V1Skill, V1UpdateSkill
@@ -441,6 +441,8 @@ class Skill(WithDB):
             self.demos_outstanding = data.demos_outstanding
         if data.demo_queue_size is not None:
             self.demo_queue_size = data.demo_queue_size
+        if data.kvs is not None:
+            self.kvs = data.kvs
 
         # Save the updated skill, either locally or remotely.
         self.save()
@@ -701,8 +703,8 @@ class Skill(WithDB):
                     result.append(tsk)
                 self.save()  # need to save for every iteration as we want tasks to incrementally show up
             self.generating_tasks = False
-            self.kvs["agenttutor_msg"] = {"msg": "test information message, baby shark do do do do", "timestamp": time.time()}
-            self.kvs["alert"] = {"msg": "test alert message, the lion sleeps in the jungle tonight", "timestamp": time.time()}
+            # self.kvs["agenttutor_msg"] = {"msg": "test information message, baby shark do do do do", "timestamp": time.time()}
+            # self.kvs["alert"] = {"msg": "test alert message, the lion sleeps in the jungle tonight", "timestamp": time.time()}
             self.save()
 
             return result

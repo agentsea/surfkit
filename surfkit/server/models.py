@@ -231,6 +231,7 @@ class V1UpdateSkill(BaseModel):
     min_demos: Optional[int] = None
     demos_outstanding: Optional[int] = None
     demo_queue_size: Optional[int] = None
+    kvs: Optional[Dict[str, Any]] = None
 
 
 class V1SetKey(BaseModel):
