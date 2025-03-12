@@ -14,7 +14,7 @@ from sqlalchemy.orm import joinedload
 from taskara import ReviewRequirement, Task, TaskStatus
 from threadmem import RoleThread
 from taskara.db.conn import get_db as get_task_DB
-from taskara.db.models import TaskRecord, LabelRecord
+from taskara.db.models import TaskRecord, LabelRecord, task_label_association
 from surfkit.db.conn import WithDB
 from surfkit.db.models import SkillRecord
 from surfkit.server.models import (
@@ -865,6 +865,195 @@ class Skill(WithDB):
                         skill_id=sid,
                         in_queue_count=count_value,
                         tasks_needed=min_demos - count_value,
+                    )
+                )
+
+        return results
+    
+    @classmethod
+    def stop_failing_agent_tasks(cls, timestamp: float | None = None) -> list[str]:
+        if timestamp is None:
+            timestamp = time.time() - 86400  # Compute dynamically at runtime
+
+        direct_rows = []
+        for task_session in get_task_DB():
+            # Find skills with failing tasks
+            direct_rows = (
+                task_session.query(
+                    TaskRecord.skill.label("skill_id"),
+                    func.count().label("task_count"),
+                ).join(
+                    TaskRecord.labels
+                    .and_(TaskRecord.completed > timestamp)
+                    .and_(LabelRecord.key == "can_review")
+                    .and_(LabelRecord.value == "false")
+                    .and_(
+                        TaskRecord.status.in_([
+                            TaskStatus.ERROR.value, 
+                            TaskStatus.FAILED.value, 
+                            TaskStatus.TIMED_OUT.value
+                        ])
+                    )
+                )
+                .group_by(TaskRecord.skill)
+                .all()
+            )
+
+            task_session.close()
+
+        skills_with_failure_conditions = []
+        print(f'stop_failing_agent_tasks got skills list {direct_rows}', flush=True)
+        for skill_id, task_count in direct_rows:
+            found = cls.find(id=skill_id)
+            if not found:
+                print(f'stop_failing_agent_tasks: ERROR skill: {skill_id} not found #slack-alerts', flush=True)
+                continue
+            skill = found[0]
+
+            # Only process skills in training
+            if skill.status != SkillStatus.TRAINING:
+                continue
+
+            # Skip if tasks are currently being generated, we don't want to overwrite anything
+            if skill.generating_tasks: 
+                continue
+
+            # Get failure limit from skill's key-value store (defaults to 3)
+            allowed_consecutive_fails = 3
+            if 'fail_limit' in skill.kvs:
+                print(f'fail limit is {skill.kvs["fail_limit"]}', flush=True)
+                try:
+                    allowed_consecutive_fails = int(skill.kvs['fail_limit'])  # Ensure conversion
+                except ValueError:
+                    print(f"Invalid fail_limit for skill {skill.id}, using default 3", flush=True)
+
+            # Only proceed if enough tasks exist
+            if len(skill.tasks) < allowed_consecutive_fails:
+                continue
+
+            # Sort tasks by completion time (descending)
+            sorted_tasks = sorted(
+                skill.tasks,
+                key=lambda t: t.completed or 0,  # Handle None safely
+                reverse=True
+            )
+
+            last_tasks = sorted_tasks[:allowed_consecutive_fails]
+            # Check if all last `allowed_consecutive_fails` tasks match the failure conditions
+            all_failed = all(
+                (task.completed or 0) > 1 and  # Completed after timestamp
+                task.assigned_type != "user" and       # Assigned to agent
+                task.labels.get("can_review") == "false" and  # Labeled as unreviewable
+                task.status in [TaskStatus.FAILED, TaskStatus.ERROR, TaskStatus.TIMED_OUT]
+                for task in last_tasks
+            )
+
+            if all_failed:
+                print(f"Skill {skill.id} has {allowed_consecutive_fails} consecutive failing tasks.", flush=True)
+                print(f"Failing tasks: {[task.id for task in last_tasks]}", flush=True)
+                
+                # Update skill state
+                skill.status = SkillStatus.DEMO
+                skill.min_demos += 1
+                skill.kvs['last_agent_stop_from_failure'] = time.time()
+                skill.save()
+                skills_with_failure_conditions.append(skill_id)
+
+        return skills_with_failure_conditions
+    
+    @classmethod
+    def find_skills_for_agent_task_gen(cls) -> list[SkillsWithGenTasks]:
+        skill_records = []
+        for skill_session in cls.get_db():
+
+            # Query all skills needing tasks
+            skill_records = (
+                skill_session.query(SkillRecord.id, SkillRecord.kvs)
+                .filter(
+                    SkillRecord.status.in_(
+                        [SkillStatus.TRAINING.value]
+                    ),
+                    SkillRecord.generating_tasks == False,  # noqa: E712
+                )
+                .all()
+            )
+            skill_session.close()
+
+        if not skill_records:
+            return []
+
+        # Create a dict of skill_id -> (kvs)
+        skill_map = {
+            row[0]: {  # row[0] is skill_id
+                "kvs": json.loads(str(row[1])) if row[1] else {},  # row[1] is kvs
+            }
+            for row in skill_records
+        }
+        skill_ids = list(skill_map.keys())
+        incomplete_agent_Tasks = []
+        for task_session in get_task_DB():
+            # tasks that need a review or are in progress
+            incomplete_agent_Tasks = (
+                task_session.query(
+                    TaskRecord.skill.label("skill_id"),
+                    func.count().label("count"),
+                )
+                .filter(
+                    TaskRecord.assigned_type != 'user',
+                    TaskRecord.reviews == '[]',  # Only include tasks with an empty reviews field
+                    TaskRecord.status.in_([
+                        TaskStatus.IN_QUEUE.value,
+                        TaskStatus.TIMED_OUT.value,
+                        TaskStatus.WAITING.value,
+                        TaskStatus.IN_PROGRESS.value,
+                        TaskStatus.FAILED.value,
+                        TaskStatus.ERROR.value,
+                        TaskStatus.REVIEW.value,
+                    ]),
+                )
+                .outerjoin(
+                    task_label_association,
+                    TaskRecord.id == task_label_association.c.task_id
+                )
+                .outerjoin(
+                    LabelRecord,
+                    and_(
+                        task_label_association.c.label_id == LabelRecord.id,
+                        LabelRecord.key == 'can_review',
+                        LabelRecord.value == 'false'
+                    )
+                )
+                .filter(LabelRecord.id.is_(None))  # Exclude tasks with the "can_review" label set to 'false'
+                .group_by(TaskRecord.skill)
+                .all()
+            )
+            task_session.close()
+
+        # Combine all counts into a single dict. If a skill never appears, it remains 0.
+        in_queue_counts = defaultdict(int)
+
+        # direct_rows + labeled_rows => e.g. [("skillA", 2), ("skillC", 1), ...]
+        for sid, count_value in incomplete_agent_Tasks:
+            in_queue_counts[sid] += count_value
+
+        # Now iterate over all skill IDs to catch zero counts
+        results = []
+        for sid in skill_ids:
+            agent_task_queue_size = 5
+            if 'agent_task_queue_size' in skill_map[sid]['kvs']:
+                print(f'fail limit is {skill_map[sid]["kvs"]["agent_task_queue_size"]}', flush=True)
+                try:
+                    agent_task_queue_size = int(skill_map[sid]['kvs']['agent_task_queue_size'])  # Ensure conversion
+                except ValueError:
+                    print(f"Invalid agent_task_queue_size for skill {skill_map[sid]}, using default 3", flush=True)
+                
+            count_value = in_queue_counts[sid]  # defaults to 0 if sid never occurred
+            if count_value < agent_task_queue_size:
+                results.append(
+                    SkillsWithGenTasks(
+                        skill_id=sid,
+                        in_queue_count=count_value,
+                        tasks_needed=agent_task_queue_size - count_value,
                     )
                 )
 
