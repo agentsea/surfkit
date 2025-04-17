@@ -9,10 +9,11 @@ from typing import Any, Dict, List, Optional
 import requests
 from mllm import Router
 from shortuuid import uuid
-from sqlalchemy import Integer, asc, func, case, cast, and_
+from sqlalchemy import Integer, asc, func, case, cast, and_, distinct, over
 from sqlalchemy.orm import joinedload
 from taskara import ReviewRequirement, Task, TaskStatus
 from threadmem import RoleThread
+from skillpacks.db.models import ActionRecord, EpisodeRecord, ReviewRecord, action_reviews
 from taskara.db.conn import get_db as get_task_DB
 from taskara.db.models import TaskRecord, LabelRecord, task_label_association
 from surfkit.db.conn import WithDB
@@ -232,8 +233,9 @@ class Skill(WithDB):
     @classmethod
     def from_record(cls, record: SkillRecord) -> "Skill":
         start_time = time.time()
-        thread_ids = json.loads(str(record.threads))
-        threads = [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
+        # We aren't using threads right now
+        # thread_ids = json.loads(str(record.threads))
+        threads = [] # [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
         tasks = []
         task_ids = json.loads(str(record.tasks))
 
@@ -264,6 +266,47 @@ class Skill(WithDB):
         print(
             f"tasks found for skill {record.id} time lapsed: {(time.time() - start_time):.4f}"
         )
+        example_tasks = json.loads(str(record.example_tasks))
+
+        requirements = json.loads(str(record.requirements))
+
+        out = cls.__new__(cls)
+        out.id = record.id
+        out.name = record.name
+        out.owner_id = record.owner_id
+        out.description = record.description
+        out.requirements = requirements
+        out.max_steps = record.max_steps
+        out.review_requirements = (
+            json.loads(str(record.review_requirements))
+            if record.review_requirements is not None
+            else []
+        )
+        out.agent_type = record.agent_type
+        out.threads = threads
+        out.tasks = tasks
+        out.example_tasks = example_tasks
+        out.generating_tasks = record.generating_tasks
+        out.status = SkillStatus(record.status)
+        out.min_demos = record.min_demos
+        out.demos_outstanding = record.demos_outstanding
+        out.demo_queue_size = record.demo_queue_size
+        out.kvs = json.loads(str(record.kvs)) if record.kvs else {}  # type: ignore
+        out.created = record.created
+        out.updated = record.updated
+        out.remote = None
+        print(
+            f"record composed for skill {record.id} time lapsed: {(time.time() - start_time):.4f}"
+        )
+        return out
+
+
+    @classmethod
+    def from_record_with_tasks(cls, record: SkillRecord, tasks: List[Task]) -> "Skill":
+        start_time = time.time()
+        # We aren't using threads right now
+        # thread_ids = json.loads(str(record.threads))
+        threads = [] # [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
         example_tasks = json.loads(str(record.example_tasks))
 
         requirements = json.loads(str(record.requirements))
@@ -411,6 +454,49 @@ class Skill(WithDB):
                     flush=True,
                 )
             return out
+
+    @classmethod
+    def find_many(
+        cls,
+        owners: Optional[List[str]] = None,
+        token: Optional[str] = None,
+        **kwargs,  # type: ignore
+    ) -> List["Skill"]:
+        print("running find for skills", flush=True)
+        start_time = time.time()
+        out = []
+        for db in cls.get_db():
+            query = db.query(SkillRecord)
+
+            # Apply owners filter if provided
+            if owners:
+                query = query.filter(SkillRecord.owner_id.in_(owners))
+
+            # Apply additional filters from kwargs
+            for key, value in kwargs.items():
+                column_attr = getattr(SkillRecord, key)
+                if isinstance(value, (list, tuple)):  # Support multiple values
+                    query = query.filter(column_attr.in_(value))
+                else:
+                    query = query.filter(column_attr == value)
+
+            records = query.order_by(asc(SkillRecord.created)).all()
+            print(
+                f"skills found in db {records} time lapsed: {(time.time() - start_time):.4f}",
+                flush=True,
+            )
+            skill_ids = [str(record.id) for record in records]
+            tasks = Task.find_many_lite(skill_ids=skill_ids)
+
+            task_map: defaultdict[str, list[Task]] = defaultdict(list)
+            for task in tasks:
+                task_map[task.skill].append(task) # type: ignore
+            out.extend([cls.from_record_with_tasks(record, task_map[str(record.id)]) for record in records])
+            print(
+                f"skills from_record ran time lapsed: {(time.time() - start_time):.4f}",
+                flush=True,
+            )
+        return out
 
     def update(self, data: V1UpdateSkill):
         """
@@ -1058,3 +1144,125 @@ class Skill(WithDB):
                 )
 
         return results
+
+    def calc_metrics(self, start_time: float = 0.0, end_time: float|None = None):
+        end = end_time if end_time else time.time()
+        new_skill_metrics = []
+        new_skill_metrics = []
+        for metrics_session in get_task_DB():
+            # Optimized Task reviews subquery
+            subquery_task_reviews = (
+                metrics_session.query(
+                    TaskRecord.id.label("task_id"),
+                    TaskRecord.skill.label("skill_id"),
+                    (func.max(TaskRecord.completed) - func.max(TaskRecord.started)).label("task_completion_time"),
+                    func.max(case((ReviewRecord.approved, 1), else_=0)).label("task_review_approved"),
+                )
+                .join(
+                    ReviewRecord,
+                    and_(
+                        ReviewRecord.resource_type == "task",
+                        TaskRecord.id == ReviewRecord.resource_id,
+                        TaskRecord.skill == self.id,
+                        TaskRecord.assigned_type != "user",
+                        TaskRecord.reviews != "[]",
+                        TaskRecord.completed.between(start_time, end)
+                    ),
+                )
+                .group_by(TaskRecord.id, TaskRecord.skill)
+                .subquery()
+            )
+
+            # Subquery: For each action, compute "is_approved" = 1 if any review is True, else 0
+            action_approvals_subq = (
+                metrics_session.query(
+                    action_reviews.c.action_id.label("action_id"),
+                    func.max(case((ReviewRecord.approved, 1), else_=0)).label("is_approved"),
+                )
+                .select_from(TaskRecord)
+                .join(
+                    EpisodeRecord,
+                    and_(
+                        TaskRecord.episode_id == EpisodeRecord.id,
+                        TaskRecord.skill == self.id,  # earliest filtering by skill
+                        TaskRecord.assigned_type != "user",
+                        TaskRecord.reviews != "[]",
+                        TaskRecord.completed.between(start_time, end)
+                    ),
+                )
+                .join(
+                    ActionRecord,
+                    ActionRecord.episode_id == EpisodeRecord.id
+                )
+                .join(
+                    action_reviews,
+                    action_reviews.c.action_id == ActionRecord.id,
+                )
+                .join(
+                    ReviewRecord,
+                    ReviewRecord.id == action_reviews.c.review_id,
+                )
+                .group_by(action_reviews.c.action_id)
+                .subquery()
+            )
+
+            # Define a window specification for calculating the time difference
+            # 'partition_by' = group by each task, 'order_by' = sequence by the action's created time
+            # The time-difference expression
+            time_diff_expr = (
+                ActionRecord.created - func.lag(ActionRecord.created).over(partition_by=TaskRecord.id, order_by=ActionRecord.created)
+            )
+            # calc action time diff using lag function
+            subquery_action_approval_flags = (
+                metrics_session.query(
+                    TaskRecord.id.label("task_id"),
+                    ActionRecord.id.label("action_id"),
+                    ActionRecord.created.label("action_created"),
+                    time_diff_expr.label("time_diff"),
+                    action_approvals_subq.c.is_approved.label("is_approved"),
+                )
+                .select_from(action_approvals_subq)
+                .join(
+                    ActionRecord, action_approvals_subq.c.action_id == ActionRecord.id
+                )
+                .join(
+                    EpisodeRecord, ActionRecord.episode_id == EpisodeRecord.id
+                )
+                .join(
+                    TaskRecord, TaskRecord.episode_id == EpisodeRecord.id
+                )
+                .subquery()
+            )
+            # Aggregate to task level
+            subquery_action_reviews = (
+                metrics_session.query(
+                    subquery_action_approval_flags.c.task_id,
+                    func.count(subquery_action_approval_flags.c.action_id).label("action_count"),
+                    func.sum(subquery_action_approval_flags.c.is_approved).label("approved_count"),
+                    func.avg(subquery_action_approval_flags.c.time_diff).label("avg_actions_time"),
+                )
+                .group_by(subquery_action_approval_flags.c.task_id)
+                .subquery()
+            )
+
+             # Final aggregation joining both subqueries by task_id
+            query_result = metrics_session.query(
+                subquery_task_reviews.c.skill_id,
+                subquery_task_reviews.c.task_id,
+                func.count(subquery_task_reviews.c.task_id).label("task_count"),
+                func.sum(subquery_task_reviews.c.task_review_approved).label("task_reviews_approved_count"),
+                func.avg(subquery_task_reviews.c.task_completion_time).label("avg_task_completion_time"),
+                func.sum(subquery_action_reviews.c.action_count).label("action_count"),
+                func.sum(subquery_action_reviews.c.approved_count).label("approved_count"),
+                func.avg(subquery_action_reviews.c.avg_actions_time).label("avg_action_completion_time")
+            ).join(
+                subquery_action_reviews,
+                subquery_action_reviews.c.task_id == subquery_task_reviews.c.task_id,
+            ).group_by(
+                subquery_task_reviews.c.skill_id,
+                subquery_task_reviews.c.task_id
+            ).one_or_none()
+
+            new_skill_metrics.append(query_result)
+
+        return new_skill_metrics
