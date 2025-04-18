@@ -1,4 +1,4 @@
-from orign.models import (
+from skillpacks.chat import (
     ChatRequest,
     ContentItem,
     ImageUrlContent,
