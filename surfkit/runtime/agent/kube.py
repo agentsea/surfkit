@@ -237,11 +237,17 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     "agent_type": type.name,
                     "agent_model": type.to_v1().model_dump_json(),
                     "openmeter.io/subject": owner_id,
-                    "data.openmeter.io/desktop_id": labels["desktop_id"] if labels and "desktop_id" in labels else "undefined",
-                    "data.openmeter.io/timeout": labels["timeout"] if labels and "timeout" in labels else "undefined",
+                    "data.openmeter.io/desktop_id": labels["desktop_id"]
+                    if labels and "desktop_id" in labels
+                    else "undefined",
+                    "data.openmeter.io/timeout": labels["timeout"]
+                    if labels and "timeout" in labels
+                    else "undefined",
                     "data.openmeter.io/agent_type": type.name,
                     "data.openmeter.io/agent_name": name,
-                    "data.openmeter.io/task_id": labels["task_id"] if labels and "task_id" in labels else "undefined",
+                    "data.openmeter.io/task_id": labels["task_id"]
+                    if labels and "task_id" in labels
+                    else "undefined",
                     "data.openmeter.io/workload": "agent",
                 },
             ),
@@ -1144,7 +1150,13 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         # Create the container spec
         container = client.V1Container(
             name=name,
-            command=["poetry", "run", "python", "-m", "foo.learner"],
+            command=[
+                "uv",
+                "run",
+                "python",
+                "-m",
+                "foo.learner",
+            ],  # TODO: make this configurable
             image=image,
             image_pull_policy="Always",
             env=container_env,
