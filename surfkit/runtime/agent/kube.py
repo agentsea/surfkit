@@ -1153,6 +1153,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             command=[
                 "uv",
                 "run",
+                "--prerelease=allow",
                 "python",
                 "-m",
                 "foo.learner",
