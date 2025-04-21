@@ -38,6 +38,7 @@ from namesgenerator import get_random_name
 from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_fixed
 
+from surfkit.config import AGENTSEA_AUTH_URL, NEBU_SERVER, ORIGN_SERVER
 from surfkit.server.models import (
     V1AgentType,
     V1LearnTask,
@@ -1081,6 +1082,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         version: Optional[str] = None,
         env_vars: Optional[dict] = None,
         owner_id: Optional[str] = None,
+        auth_server: str = AGENTSEA_AUTH_URL,
+        nebu_server: str = NEBU_SERVER,
+        orign_server: str = ORIGN_SERVER,
         debug: bool = False,
     ) -> None:
         """
@@ -1096,6 +1100,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             version (Optional[str], optional): Optional agent version (image tag) to use. Defaults to None.
             env_vars (Optional[dict], optional): Additional environment variables to pass along. Defaults to None.
             owner_id (Optional[str], optional): Owner ID used for labeling/annotations if desired. Defaults to None.
+            auth_server (str, optional): The auth server to use. Defaults to AGENTSEA_AUTH_URL.
+            nebu_server (str, optional): The nebu server to use. Defaults to NEBU_SERVER.
+            orign_server (str, optional): The orign server to use. Defaults to ORIGN_SERVER.
             debug (bool, optional): Whether to enable debug mode. Defaults to False.
         """
         logger.debug(
@@ -1121,6 +1128,9 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         # so the container can parse/use that data at startup
         env_vars["LEARN_TASK_JSON"] = learn_task.model_dump_json()
         env_vars["AGENTSEA_API_KEY"] = api_key
+        env_vars["NEBU_SERVER"] = nebu_server
+        env_vars["AGENTSEA_AUTH_SERVER"] = auth_server
+        env_vars["ORIGN_SERVER"] = origin_server
 
         if debug:
             env_vars["DEBUG"] = "true"

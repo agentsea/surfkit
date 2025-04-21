@@ -8,14 +8,20 @@ from typing import Optional
 import rootpath
 import yaml
 
-from .env import AGENTSEA_AUTH_URL_ENV, AGENTSEA_HUB_API_URL_ENV, AGENTSEA_HUB_URL_ENV
+from .env import (
+    AGENTSEA_AUTH_URL_ENV,
+    AGENTSEA_HUB_API_URL_ENV,
+    AGENTSEA_HUB_URL_ENV,
+    NEBU_SERVER_ENV,
+    ORIGN_SERVER_ENV,
+)
 
 AGENTSEA_HUB_URL = os.getenv(AGENTSEA_HUB_URL_ENV, "https://hub.agentsea.ai")
 AGENTSEA_HUB_API_URL = os.getenv(
     AGENTSEA_HUB_API_URL_ENV, "https://api.hub.agentsea.ai"
 )
 AGENTSEA_AUTH_URL = os.getenv(AGENTSEA_AUTH_URL_ENV, "https://auth.hub.agentsea.ai")
-
+ORIGN_SERVER = os.getenv(ORIGN_SERVER_ENV, "https://api.orign.sh")
 AGENTSEA_HOME = os.path.expanduser(os.environ.get("AGENTSEA_HOME", "~/.agentsea"))
 AGENTSEA_DB_DIR = os.path.expanduser(
     os.environ.get("AGENTSEA_DB_DIR", os.path.join(AGENTSEA_HOME, "data"))
@@ -23,10 +29,12 @@ AGENTSEA_DB_DIR = os.path.expanduser(
 AGENTSEA_LOG_DIR = os.path.expanduser(
     os.environ.get("AGENTSEA_LOG_DIR", os.path.join(AGENTSEA_HOME, "logs"))
 )
+
+NEBU_SERVER = os.environ.get(NEBU_SERVER_ENV, "https://api.nebulous.sh")
 DB_TEST = os.environ.get("AGENTSEA_DB_TEST", "false") == "true"
 DB_NAME = os.environ.get("SURFKIT_DB_NAME", "surfkit.db")
 if DB_TEST:
-    DB_NAME = f"surfkit_test_{int(time.time())}.db"
+    DB_NAME = f"surfkit_test_{int(time.time())}.db"  # type: ignore
 
 
 @dataclass
