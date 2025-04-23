@@ -1130,7 +1130,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         env_vars["AGENTSEA_API_KEY"] = api_key
         env_vars["NEBU_SERVER"] = nebu_server
         env_vars["AGENTSEA_AUTH_SERVER"] = auth_server
-        env_vars["ORIGN_SERVER"] = origin_server
+        env_vars["ORIGN_SERVER"] = orign_server
 
         if debug:
             env_vars["DEBUG"] = "true"
