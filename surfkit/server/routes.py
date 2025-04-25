@@ -57,7 +57,7 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
             remote=task_model.remote,
             id=task_model.id,
             owner_id=task_model.owner_id,
-            auth_token=current_user.token,
+            auth_token=task_model.auth_token,
         )
         if not found:
             raise Exception(f"Task {task_model.id} not found")
@@ -66,7 +66,7 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
 
         task = found[0]
         task.remote = task_model.remote  # type: ignore
-        task.auth_token = current_user.token  # type: ignore
+        task.auth_token = task_model.auth_token  # type: ignore
 
         skill_id = None
         if task.skill:
@@ -79,7 +79,9 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
             raise ValueError("Task skill or skill label not set")
 
         logger.info(f"finding skill_id: {skill_id}")
-        skills = Skill.find(id=skill_id, remote=task.remote, token=current_user.token)
+        skills = Skill.find(
+            id=skill_id, remote=task.remote, token=task_model.auth_token
+        )
         if not skills:
             raise ValueError(f"Skill not found: {skill_id}")
         skill = skills[0]
@@ -143,7 +145,9 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
         owner_id = task_model.task.owner_id
         if not owner_id:
             owner_id = "local"
-        task = Task.from_v1(task_model.task, owner_id=owner_id)
+        task = Task.from_v1(
+            task_model.task, owner_id=owner_id, auth_token=task_model.task.auth_token
+        )
 
         logger.info("Saving remote tasks status to running...")
         task.status = TaskStatus.IN_PROGRESS
@@ -156,9 +160,7 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
             for Device in Agent.supported_devices():
                 if Device.type() == task_model.task.device.type:
                     logger.debug(f"found device: {task_model.task.device.model_dump()}")
-                    api_key = (
-                        current_user.token if current_user.token else task.auth_token
-                    )
+                    api_key = task_model.task.auth_token
                     if api_key is None:
                         logger.info("No Api key/token on Task or in Auth")
 
@@ -252,7 +254,7 @@ def task_router(Agent: Type[TaskAgent]) -> APIRouter:
 
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(10))
-def get_remote_task(id: str, owner_id: str, server: str) -> Task:
+def get_remote_task(id: str, owner_id: str, server: str, auth_token: str) -> Task:
     HUB_API_KEY = os.environ.get(AGENTESEA_HUB_API_KEY_ENV)
     if not HUB_API_KEY:
         raise Exception(f"${AGENTESEA_HUB_API_KEY_ENV} not set")
@@ -263,6 +265,7 @@ def get_remote_task(id: str, owner_id: str, server: str) -> Task:
             id=id,
             remote=server,
             owner_id=owner_id,
+            auth_token=auth_token,
         )
         if not tasks:
             raise Exception(f"Task {id} not found")
