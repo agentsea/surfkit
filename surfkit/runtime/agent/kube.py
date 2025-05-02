@@ -1127,10 +1127,13 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         # Store the learn_task as a JSON-encoded environment variable
         # so the container can parse/use that data at startup
         env_vars["LEARN_TASK_JSON"] = learn_task.model_dump_json()
-        env_vars["AGENTSEA_API_KEY"] = api_key
+        env_vars["USER_API_KEY"] = api_key
         env_vars["NEBU_SERVER"] = nebu_server
         env_vars["AGENTSEA_AUTH_SERVER"] = auth_server
         env_vars["ORIGN_SERVER"] = orign_server
+
+        if "AGENTSEA_API_KEY" not in env_vars:
+            env_vars["AGENTSEA_API_KEY"] = api_key
 
         if debug:
             env_vars["DEBUG"] = "true"
