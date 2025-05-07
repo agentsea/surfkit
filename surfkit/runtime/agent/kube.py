@@ -64,7 +64,7 @@ def my_proxy_override(self, *args, **kwargs):
 
         print(">>> K8s PortForward _proxy crashed with exception:")
         traceback.print_exc()
-        # Potentially re-raise if you want it to be truly “unhandled”
+        # Potentially re-raise if you want it to be truly "unhandled"
         # raise
 
 
@@ -98,29 +98,29 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         self.cfg = cfg or KubeConnectConfig()
 
         self.kubeconfig = None
-        if cfg.provider == "gke":
-            opts = cfg.gke_opts
+        if self.cfg.provider == "gke":
+            opts = self.cfg.gke_opts
             if not opts:
                 raise ValueError("GKE opts missing")
             self.connect_to_gke(opts)
-        elif cfg.provider == "local":
-            opts = cfg.local_opts
+        elif self.cfg.provider == "local":
+            opts = self.cfg.local_opts
             if not opts:
                 opts = LocalOpts()
             if opts.path:
                 config.load_kube_config(opts.path)
                 self.kubeconfig = opts.path
         else:
-            raise ValueError("Unsupported provider: " + cfg.provider)
+            raise ValueError("Unsupported provider: " + self.cfg.provider)
 
         self.core_api = client.CoreV1Api()
 
-        self.namespace = cfg.namespace
+        self.namespace = self.cfg.namespace
 
         self.subprocesses = []
         self.setup_signal_handlers()
 
-        self.branch = cfg.branch
+        self.branch = self.cfg.branch
 
     @classmethod
     def name(cls) -> str:
