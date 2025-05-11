@@ -1,16 +1,16 @@
 import logging
-from typing import Optional, Dict
+from typing import Dict, Optional
 
+import typer
 from agentdesk.device_v1 import Desktop
 from namesgenerator import get_random_name
 from taskara import Task
 from taskara.runtime.base import Tracker
-import typer
 
 from surfkit.config import AGENTSEA_HUB_API_URL, GlobalConfig
+from surfkit.runtime.agent.base import AgentInstance
 from surfkit.server.models import V1SolveTask
 from surfkit.types import AgentType
-from surfkit.runtime.agent.base import AgentInstance
 
 logger = logging.getLogger(__name__)
 
@@ -220,12 +220,12 @@ def solve(
     _device = None
     if device_type:
         if device_type == "desktop":
-            from agentdesk.server.models import V1ProviderData
             from agentdesk.runtime.load import load_provider
+            from agentdesk.server.models import V1ProviderData
 
             if device_provider == "qemu" and agent_runtime != "process":
                 raise ValueError(
-                    f"QEMU provider is only supported for the agent 'process' runtime"
+                    "QEMU provider is only supported for the agent 'process' runtime"
                 )
 
             data = V1ProviderData(type=device_provider)

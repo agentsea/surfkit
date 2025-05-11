@@ -84,7 +84,7 @@ class LocalOpts(BaseModel):
 
 
 class KubeConnectConfig(BaseModel):
-    provider: Literal["gke", "local"] = "local"
+    provider: Literal["gke", "local", "in_cluster"] = "local"
     namespace: str = "default"
     gke_opts: Optional[GKEOpts] = None
     local_opts: Optional[LocalOpts] = None
@@ -97,25 +97,66 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
     def __init__(self, cfg: Optional[KubeConnectConfig] = None) -> None:
         self.cfg = cfg or KubeConnectConfig()
 
+        print("KubeAgentRuntime init", self.cfg.model_dump())
+
         self.kubeconfig = None
         if self.cfg.provider == "gke":
             opts = self.cfg.gke_opts
             if not opts:
+                logger.error("GKE provider selected but gke_opts is missing.")
                 raise ValueError("GKE opts missing")
+            logger.info(
+                f"Attempting to connect to GKE cluster: {opts.cluster_name} in region: {opts.region}"
+            )
             self.connect_to_gke(opts)
         elif self.cfg.provider == "local":
             opts = self.cfg.local_opts
             if not opts:
                 opts = LocalOpts()
             if opts.path:
-                config.load_kube_config(opts.path)
-                self.kubeconfig = opts.path
+                logger.info(f"Loading kubeconfig from path: {opts.path}")
+                try:
+                    config.load_kube_config(opts.path)
+                    self.kubeconfig = opts.path
+                    contexts, active_context = config.list_kube_config_contexts(
+                        opts.path
+                    )
+                    logger.debug(
+                        f"Successfully loaded kubeconfig. Active context: {active_context['name']}"
+                    )
+                    logger.debug(f"Available contexts: {[c['name'] for c in contexts]}")
+                except Exception as e:
+                    logger.error(f"Failed to load kubeconfig from {opts.path}: {e}")
+                    raise
+            else:
+                logger.warning(
+                    "Local provider selected but no kubeconfig path specified. Attempting in-cluster config or default."
+                )
+                try:
+                    config.load_kube_config()  # Tries default ~/.kube/config or in-cluster
+                    logger.info("Successfully loaded default/in-cluster kubeconfig.")
+                except config.ConfigException as e:
+                    logger.error(
+                        f"Failed to load default or in-cluster kubeconfig: {e}"
+                    )
+                    raise
+        elif self.cfg.provider == "in_cluster":
+            logger.info("Attempting to load in-cluster Kubernetes configuration.")
+            try:
+                config.load_incluster_config()
+                logger.info("Successfully loaded in-cluster Kubernetes configuration.")
+            except config.ConfigException as e:
+                logger.error(f"Failed to load in-cluster Kubernetes configuration: {e}")
+                raise
         else:
+            logger.error(f"Unsupported provider specified: {self.cfg.provider}")
             raise ValueError("Unsupported provider: " + self.cfg.provider)
 
         self.core_api = client.CoreV1Api()
+        logger.debug("Kubernetes CoreV1Api client initialized.")
 
         self.namespace = self.cfg.namespace
+        logger.info(f"Using Kubernetes namespace: {self.namespace}")
 
         self.subprocesses = []
         self.setup_signal_handlers()
@@ -750,16 +791,78 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         self,
         name: str,
     ) -> bool:
+        logger.debug(
+            f"Checking existence of pod '{name}' in namespace '{self.namespace}'"
+        )
         try:
-            pod = self.core_api.read_namespaced_pod(name=name, namespace=self.namespace)
+            logger.debug(
+                f"Calling read_namespaced_pod for pod '{name}' in namespace '{self.namespace}'"
+            )
+            pod_api_response = self.core_api.read_namespaced_pod(
+                name=name, namespace=self.namespace
+            )
 
-            agent_type_model = pod.metadata.annotations.get("agent_model")  # type: ignore
+            pod_status_phase = "N/A"
+            # Explicitly check attributes to satisfy linters
+            if (
+                pod_api_response
+                and hasattr(pod_api_response, "status")
+                and pod_api_response.status
+                and hasattr(pod_api_response.status, "phase")
+            ):
+                pod_status_phase = pod_api_response.status.phase
+            logger.debug(
+                f"read_namespaced_pod for '{name}' successful. Pod status: {pod_status_phase}"
+            )
+
+            agent_type_model = None
+            if (
+                pod_api_response
+                and hasattr(pod_api_response, "metadata")
+                and pod_api_response.metadata
+                and hasattr(pod_api_response.metadata, "annotations")
+                and pod_api_response.metadata.annotations
+            ):
+                agent_type_model = pod_api_response.metadata.annotations.get(
+                    "agent_model"
+                )
+            else:
+                logger.warning(
+                    f"Pod '{name}' exists but metadata or annotations are missing or not in the expected structure."
+                )
+                return False
+
             if not agent_type_model:
-                raise ValueError("Agent model annotation missing in pod metadata")
+                logger.warning(
+                    f"Pod '{name}' exists but lacks 'agent_model' annotation."
+                )
+                # Depending on strictness, you might still return True or False here.
+                # For now, if it lacks the annotation, we'll say it doesn't "exist" as a valid agent.
+                # Consider if this is the desired behavior.
+                # raise ValueError("Agent model annotation missing in pod metadata")
+                return False  # Or True, if physical existence is enough
 
+            logger.info(f"Pod '{name}' exists and has agent_model annotation.")
             return True
         except ApiException as e:
-            print(f"Failed to get pod '{name}': {e}")
+            logger.error(
+                f"ApiException when checking existence of pod '{name}' in namespace '{self.namespace}': Status={e.status}, Reason={e.reason}"
+            )
+            if e.body:
+                try:
+                    error_body = json.loads(e.body)
+                    logger.error(f"API Error Body: {json.dumps(error_body, indent=2)}")
+                except json.JSONDecodeError:
+                    logger.error(f"API Error Body (not JSON): {e.body}")
+            # logger.exception(f"Full stack trace for ApiException while checking pod '{name}':") # Uncomment for full trace
+            return False
+        except Exception as e:
+            logger.error(
+                f"Unexpected exception when checking existence of pod '{name}' in namespace '{self.namespace}': {type(e).__name__} - {e}"
+            )
+            logger.exception(
+                f"Full stack trace for unexpected exception while checking pod '{name}':"
+            )
             return False
 
     def delete(
@@ -767,17 +870,52 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         name: str,
         owner_id: Optional[str] = None,
     ) -> None:
+        logger.debug(
+            f"Attempting to delete pod '{name}' and its secret in namespace '{self.namespace}'. Owner_id: {owner_id}"
+        )
         try:
             # Delete the pod
+            logger.info(
+                f"Calling delete_namespaced_pod for pod '{name}' in namespace '{self.namespace}'"
+            )
             self.core_api.delete_namespaced_pod(
                 name=name,
                 namespace=self.namespace,
                 body=client.V1DeleteOptions(grace_period_seconds=5),
             )
+            logger.info(f"Successfully initiated delete_namespaced_pod for pod: {name}")
+
+            # Delete the corresponding secret
+            # Assuming secret name is the same as the pod name, as per create() logic
+            logger.info(
+                f"Calling delete_namespaced_secret for secret '{name}' in namespace '{self.namespace}'"
+            )
             self.core_api.delete_namespaced_secret(name=name, namespace=self.namespace)
-            print(f"Successfully deleted pod: {name}")
+            logger.info(
+                f"Successfully initiated delete_namespaced_secret for secret: {name}"
+            )
+            print(f"Successfully deleted pod and secret: {name}")
         except ApiException as e:
-            print(f"Failed to delete pod '{name}': {e}")
+            logger.error(
+                f"ApiException when deleting pod/secret '{name}' in namespace '{self.namespace}': Status={e.status}, Reason={e.reason}"
+            )
+            if e.body:
+                try:
+                    error_body = json.loads(e.body)
+                    logger.error(f"API Error Body: {json.dumps(error_body, indent=2)}")
+                except json.JSONDecodeError:
+                    logger.error(f"API Error Body (not JSON): {e.body}")
+            # logger.exception(f"Full stack trace for ApiException during delete of '{name}':") # Uncomment for full trace
+            print(f"Failed to delete pod/secret '{name}': API Exception - {e.reason}")
+            raise
+        except Exception as e:
+            logger.error(
+                f"Unexpected exception when deleting pod/secret '{name}' in namespace '{self.namespace}': {type(e).__name__} - {e}"
+            )
+            logger.exception(
+                f"Full stack trace for unexpected exception during delete of '{name}':"
+            )
+            print(f"Failed to delete pod/secret '{name}': Unexpected Exception - {e}")
             raise
 
     def runtime_local_addr(self, name: str, owner_id: Optional[str] = None) -> str:
