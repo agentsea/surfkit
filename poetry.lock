@@ -4812,13 +4812,13 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.126"
+version = "0.1.127"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.126-py3-none-any.whl", hash = "sha256:b576e6daafefe900109bf8105b9fd245e55968e0b6f5758a1d3ca5b4dc3e7563"},
-    {file = "skillpacks-0.1.126.tar.gz", hash = "sha256:c91357334095a3d7f7ac95870d358f0622c0e58f3d7887c5c42a0e9a199ad544"},
+    {file = "skillpacks-0.1.127-py3-none-any.whl", hash = "sha256:efe6d814dc1d7ba5b1ef2806dc44960a0bd2bff52032e25bf3797e57d5a19731"},
+    {file = "skillpacks-0.1.127.tar.gz", hash = "sha256:e2240cae0e8050c5a69f8d87ca4aff569fa750d88c7ad49de562490770de5585"},
 ]
 
 [package.dependencies]
@@ -4986,13 +4986,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.241"
+version = "0.1.242"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.241-py3-none-any.whl", hash = "sha256:849bb8600d2fd370dfba05e8c5740eaea6cbe77497b257c2c244d0257e3125b0"},
-    {file = "taskara-0.1.241.tar.gz", hash = "sha256:78c542196697df46502c6d474b0b67385b6a3e865ed76b3c85aa98b06f5e37a4"},
+    {file = "taskara-0.1.242-py3-none-any.whl", hash = "sha256:6e4a8a811d69c503fa66c94bc41e411bedb269bd438ed4ec814c6839f2bad4fb"},
+    {file = "taskara-0.1.242.tar.gz", hash = "sha256:c0944648148f2af115fc2dee074b5f9cd0b68d1fc4fd63c97b1101e04c395c1d"},
 ]
 
 [package.dependencies]
@@ -5003,7 +5003,7 @@ openmeter = ">=1.0.0b188,<2.0.0"
 pydantic = ">=2.6.4,<3.0.0"
 redis = ">=5.2.0,<6.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.126,<0.2.0"
+skillpacks = ">=0.1.127,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 tqdm = ">=4.66.4,<5.0.0"
 
@@ -5894,4 +5894,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "0eb82bb282a0813f445966cdcf19f301d5e9c0a139f616a8244b3f08c28e393e"
+content-hash = "b72fb4eb0148433b72fb87a07bff83eec71c9428158bf11041c1f9a7a9deb5e4"
