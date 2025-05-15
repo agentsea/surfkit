@@ -17,7 +17,7 @@ from skillpacks.db.models import ActionRecord, EpisodeRecord, ReviewRecord, acti
 from taskara.db.conn import get_db as get_task_DB
 from taskara.db.models import TaskRecord, LabelRecord, task_label_association
 from surfkit.db.conn import WithDB
-from surfkit.db.models import SkillRecord
+from surfkit.db.models import SkillRecord, to_dict
 from surfkit.server.models import (
     SkillsWithGenTasks,
     UserTask,
@@ -375,6 +375,7 @@ class Skill(WithDB):
             return
         else:
             for db in self.get_db():
+                print(f"saving skill: {self.id} with data {to_dict(self.to_record())}")
                 record = self.to_record()
                 db.merge(record)
                 db.commit()
@@ -1144,125 +1145,3 @@ class Skill(WithDB):
                 )
 
         return results
-
-    def calc_metrics(self, start_time: float = 0.0, end_time: float|None = None):
-        end = end_time if end_time else time.time()
-        new_skill_metrics = []
-        new_skill_metrics = []
-        for metrics_session in get_task_DB():
-            # Optimized Task reviews subquery
-            subquery_task_reviews = (
-                metrics_session.query(
-                    TaskRecord.id.label("task_id"),
-                    TaskRecord.skill.label("skill_id"),
-                    (func.max(TaskRecord.completed) - func.max(TaskRecord.started)).label("task_completion_time"),
-                    func.max(case((ReviewRecord.approved, 1), else_=0)).label("task_review_approved"),
-                )
-                .join(
-                    ReviewRecord,
-                    and_(
-                        ReviewRecord.resource_type == "task",
-                        TaskRecord.id == ReviewRecord.resource_id,
-                        TaskRecord.skill == self.id,
-                        TaskRecord.assigned_type != "user",
-                        TaskRecord.reviews != "[]",
-                        TaskRecord.completed.between(start_time, end)
-                    ),
-                )
-                .group_by(TaskRecord.id, TaskRecord.skill)
-                .subquery()
-            )
-
-            # Subquery: For each action, compute "is_approved" = 1 if any review is True, else 0
-            action_approvals_subq = (
-                metrics_session.query(
-                    action_reviews.c.action_id.label("action_id"),
-                    func.max(case((ReviewRecord.approved, 1), else_=0)).label("is_approved"),
-                )
-                .select_from(TaskRecord)
-                .join(
-                    EpisodeRecord,
-                    and_(
-                        TaskRecord.episode_id == EpisodeRecord.id,
-                        TaskRecord.skill == self.id,  # earliest filtering by skill
-                        TaskRecord.assigned_type != "user",
-                        TaskRecord.reviews != "[]",
-                        TaskRecord.completed.between(start_time, end)
-                    ),
-                )
-                .join(
-                    ActionRecord,
-                    ActionRecord.episode_id == EpisodeRecord.id
-                )
-                .join(
-                    action_reviews,
-                    action_reviews.c.action_id == ActionRecord.id,
-                )
-                .join(
-                    ReviewRecord,
-                    ReviewRecord.id == action_reviews.c.review_id,
-                )
-                .group_by(action_reviews.c.action_id)
-                .subquery()
-            )
-
-            # Define a window specification for calculating the time difference
-            # 'partition_by' = group by each task, 'order_by' = sequence by the action's created time
-            # The time-difference expression
-            time_diff_expr = (
-                ActionRecord.created - func.lag(ActionRecord.created).over(partition_by=TaskRecord.id, order_by=ActionRecord.created)
-            )
-            # calc action time diff using lag function
-            subquery_action_approval_flags = (
-                metrics_session.query(
-                    TaskRecord.id.label("task_id"),
-                    ActionRecord.id.label("action_id"),
-                    ActionRecord.created.label("action_created"),
-                    time_diff_expr.label("time_diff"),
-                    action_approvals_subq.c.is_approved.label("is_approved"),
-                )
-                .select_from(action_approvals_subq)
-                .join(
-                    ActionRecord, action_approvals_subq.c.action_id == ActionRecord.id
-                )
-                .join(
-                    EpisodeRecord, ActionRecord.episode_id == EpisodeRecord.id
-                )
-                .join(
-                    TaskRecord, TaskRecord.episode_id == EpisodeRecord.id
-                )
-                .subquery()
-            )
-            # Aggregate to task level
-            subquery_action_reviews = (
-                metrics_session.query(
-                    subquery_action_approval_flags.c.task_id,
-                    func.count(subquery_action_approval_flags.c.action_id).label("action_count"),
-                    func.sum(subquery_action_approval_flags.c.is_approved).label("approved_count"),
-                    func.avg(subquery_action_approval_flags.c.time_diff).label("avg_actions_time"),
-                )
-                .group_by(subquery_action_approval_flags.c.task_id)
-                .subquery()
-            )
-
-             # Final aggregation joining both subqueries by task_id
-            query_result = metrics_session.query(
-                subquery_task_reviews.c.skill_id,
-                subquery_task_reviews.c.task_id,
-                func.count(subquery_task_reviews.c.task_id).label("task_count"),
-                func.sum(subquery_task_reviews.c.task_review_approved).label("task_reviews_approved_count"),
-                func.avg(subquery_task_reviews.c.task_completion_time).label("avg_task_completion_time"),
-                func.sum(subquery_action_reviews.c.action_count).label("action_count"),
-                func.sum(subquery_action_reviews.c.approved_count).label("approved_count"),
-                func.avg(subquery_action_reviews.c.avg_actions_time).label("avg_action_completion_time")
-            ).join(
-                subquery_action_reviews,
-                subquery_action_reviews.c.task_id == subquery_task_reviews.c.task_id,
-            ).group_by(
-                subquery_task_reviews.c.skill_id,
-                subquery_task_reviews.c.task_id
-            ).one_or_none()
-
-            new_skill_metrics.append(query_result)
-
-        return new_skill_metrics
