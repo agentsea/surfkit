@@ -16,13 +16,13 @@ pydantic = ">=2.8.2,<3.0.0"
 
 [[package]]
 name = "agentdesk"
-version = "0.2.121"
+version = "0.2.126"
 description = "A desktop for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "agentdesk-0.2.121-py3-none-any.whl", hash = "sha256:ab98b5e77bd0ad0e5655d8c5d2fcdf834fbd30be58936502b785af792fa954f1"},
-    {file = "agentdesk-0.2.121.tar.gz", hash = "sha256:f9548c46681bd7b97852de23b5754801db5ce2cd516947eb46deedf8fd03ef8d"},
+    {file = "agentdesk-0.2.126-py3-none-any.whl", hash = "sha256:b573920cbda0b36e3b0d6fa04b95ba23e603ba5de6253de2e24fe558464948c0"},
+    {file = "agentdesk-0.2.126.tar.gz", hash = "sha256:52c8b0d3263b6b41e5fa0c3bc724821993364893d6980d8cbabfdd1a9712dea7"},
 ]
 
 [package.dependencies]
@@ -5894,4 +5894,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b72fb4eb0148433b72fb87a07bff83eec71c9428158bf11041c1f9a7a9deb5e4"
+content-hash = "097d90b8d4cc302242b176eb9a74e4ea9a0f7da3f87edeee3c31295d5b91e7eb"
