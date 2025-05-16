@@ -213,6 +213,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         auth_enabled: bool = True,
         labels: Optional[Dict[str, str]] = None,
         check_http_health: bool = True,
+        extra_spec: Optional[Dict[str, str]] = None
     ) -> None:
         if not name:
             name = get_random_name("-")
@@ -264,6 +265,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         pod_spec = client.V1PodSpec(
             containers=[container],
             restart_policy="Never",
+            **(extra_spec or {})
         )
 
         # Pod creation
@@ -962,6 +964,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         auth_enabled: bool = True,
         debug: bool = False,
         check_http_health: bool = True,
+        extra_spec: Optional[Dict[str, str]] = None
     ) -> AgentInstance:
         logger.debug("creating agent with type: ", agent_type.__dict__)
         if not agent_type.versions:
@@ -1016,6 +1019,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             auth_enabled=auth_enabled,
             labels=labels,
             check_http_health=check_http_health,
+            extra_spec=extra_spec
         )
 
         return AgentInstance(
