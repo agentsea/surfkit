@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from mllm import Router
 from shortuuid import uuid
-from sqlalchemy import Integer, asc, func, case, cast, and_, distinct, over
+from sqlalchemy import Integer, asc, func, case, cast, and_, distinct, over, update
 from sqlalchemy.orm import joinedload
 from taskara import ReviewRequirement, Task, TaskStatus
 from threadmem import RoleThread
@@ -220,7 +220,7 @@ class Skill(WithDB):
             threads=json.dumps([thread._id for thread in self.threads]),  # type: ignore
             tasks=json.dumps([task.id for task in self.tasks]),
             example_tasks=json.dumps(self.example_tasks),
-            generating_tasks=self.generating_tasks,
+            # generating_tasks=self.generating_tasks, omitting as we don't want overwrites
             status=self.status.value,
             min_demos=self.min_demos,
             demos_outstanding=self.demos_outstanding,
@@ -598,10 +598,44 @@ class Skill(WithDB):
 
         return self
 
-    def set_generating_tasks(self, input: bool):
-        if self.generating_tasks != input:
-            self.generating_tasks = input
-            self.save()
+    def set_generating_tasks(self, flag: bool):
+        """
+        Only flip the `generating_tasks` bit (and updated timestamp)
+        in the database, to avoid stomping on any concurrent changes
+        to other fields.
+        """
+        if self.generating_tasks == flag:
+            return
+        self.generating_tasks = flag
+
+        # if self.remote:
+        #     # --- remote API path: PATCH only that field if supported ---
+        #     url = f"{self.remote}/v1/skills/{self.id}"
+        #     payload = {"generating_tasks": flag}
+        #     try:
+        #         # assuming your API supports HTTP PATCH for partial updates
+        #         resp = requests.patch(
+        #             url,
+        #             json=payload,
+        #             headers={"Authorization": f"Bearer {self.token}"},
+        #         )
+        #         resp.raise_for_status()
+        #         return
+        #     except requests.RequestException as e:
+        #         print(f"Error patching generating_tasks remotely: {e}", flush=True)
+
+        for db in self.get_db():
+            stmt = (
+                update(SkillRecord)
+                .where(SkillRecord.id == self.id)
+                .values(
+                    generating_tasks=flag,
+                    updated=int(time.time()),
+                )
+            )
+            db.execute(stmt)
+            db.commit()
+        return
 
     def get_task_descriptions(self, limit: Optional[int] = None):
         maxLimit = len(self.tasks)
@@ -729,11 +763,11 @@ class Skill(WithDB):
                         flush=True,
                     )
                     result.append(tsk)
-                self.save()  # need to save for every iteration as we want tasks to incrementally show up
-            self.generating_tasks = False
+                # self.save()  # need to save for every iteration as we want tasks to incrementally show up, Commenting because we aren't getting tasks using the array anymore
+            self.set_generating_tasks(False)
             # self.kvs["agenttutor_msg"] = {"msg": "test information message, baby shark do do do do", "timestamp": time.time()}
             # self.kvs["alert"] = {"msg": "test alert message, the lion sleeps in the jungle tonight", "timestamp": time.time()}
-            self.save()
+            # self.save()
 
             return result
 
