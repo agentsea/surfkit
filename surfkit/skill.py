@@ -231,77 +231,6 @@ class Skill(WithDB):
         )
 
     @classmethod
-    def from_record(cls, record: SkillRecord) -> "Skill":
-        start_time = time.time()
-        # We aren't using threads right now
-        # thread_ids = json.loads(str(record.threads))
-        threads = [] # [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
-        tasks = []
-        task_ids = json.loads(str(record.tasks))
-
-        if task_ids:
-            tasks = Task.find_many_lite(task_ids)
-            valid_task_ids = []
-
-            if len(tasks) < len(task_ids):
-                try:
-                    print(f"updating tasks for skill {record.id}", flush=True)
-                    task_map = {task.id: task for task in tasks}
-                    for task_id in task_ids:
-                        if not task_map[task_id]:
-                            print(f"Task {task_id} not found, removing from skill")
-                            continue
-
-                        valid_task_ids.append(task_id)
-
-                    record.tasks = json.dumps(valid_task_ids)  # type: ignore
-                    for db in cls.get_db():
-                        db.merge(record)
-                        db.commit()
-                    print(f"updated tasks for skill {record.id}", flush=True)
-                except Exception as e:
-                    print(
-                        f"Error updating tasks for skill {record.id}: {e}", flush=True
-                    )
-        print(
-            f"tasks found for skill {record.id} time lapsed: {(time.time() - start_time):.4f}"
-        )
-        example_tasks = json.loads(str(record.example_tasks))
-
-        requirements = json.loads(str(record.requirements))
-
-        out = cls.__new__(cls)
-        out.id = record.id
-        out.name = record.name
-        out.owner_id = record.owner_id
-        out.description = record.description
-        out.requirements = requirements
-        out.max_steps = record.max_steps
-        out.review_requirements = (
-            json.loads(str(record.review_requirements))
-            if record.review_requirements is not None
-            else []
-        )
-        out.agent_type = record.agent_type
-        out.threads = threads
-        out.tasks = tasks
-        out.example_tasks = example_tasks
-        out.generating_tasks = record.generating_tasks
-        out.status = SkillStatus(record.status)
-        out.min_demos = record.min_demos
-        out.demos_outstanding = record.demos_outstanding
-        out.demo_queue_size = record.demo_queue_size
-        out.kvs = json.loads(str(record.kvs)) if record.kvs else {}  # type: ignore
-        out.created = record.created
-        out.updated = record.updated
-        out.remote = None
-        print(
-            f"record composed for skill {record.id} time lapsed: {(time.time() - start_time):.4f}"
-        )
-        return out
-
-
-    @classmethod
     def from_record_with_tasks(cls, record: SkillRecord, tasks: List[Task]) -> "Skill":
         start_time = time.time()
         # We aren't using threads right now
@@ -449,7 +378,13 @@ class Skill(WithDB):
                     f"skills found in db {records} time lapsed: {(time.time() - start_time):.4f}",
                     flush=True,
                 )
-                out.extend([cls.from_record(record) for record in records])
+                skill_ids = [str(record.id) for record in records]
+                tasks = Task.find_many_lite(skill_ids=skill_ids)
+
+                task_map: defaultdict[str, list[Task]] = defaultdict(list)
+                for task in tasks:
+                    task_map[task.skill].append(task) # type: ignore
+                out.extend([cls.from_record_with_tasks(record, task_map[str(record.id)]) for record in records])
                 print(
                     f"skills from_record ran time lapsed: {(time.time() - start_time):.4f}",
                     flush=True,
