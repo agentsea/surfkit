@@ -16,13 +16,13 @@ pydantic = ">=2.8.2,<3.0.0"
 
 [[package]]
 name = "agentdesk"
-version = "0.2.129"
+version = "0.2.132"
 description = "A desktop for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "agentdesk-0.2.129-py3-none-any.whl", hash = "sha256:67f7a9d139e140de2f03095e16aa7c35bcd30cd67b8197299d1cd76557f069a1"},
-    {file = "agentdesk-0.2.129.tar.gz", hash = "sha256:eefb2686212eb67b27db921f215bd5112f081f2a5fa35192dc653d7385b51d9b"},
+    {file = "agentdesk-0.2.132-py3-none-any.whl", hash = "sha256:79d7078881beb3dc1c855ad16562f2b090d6667bb566261ca6925b1e9f28aa02"},
+    {file = "agentdesk-0.2.132.tar.gz", hash = "sha256:016bb599f8fce10241d98949881aaf590ab66aabd04b1bc95be95c2b0355d0cc"},
 ]
 
 [package.dependencies]
@@ -4986,13 +4986,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.242"
+version = "0.1.243"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.242-py3-none-any.whl", hash = "sha256:6e4a8a811d69c503fa66c94bc41e411bedb269bd438ed4ec814c6839f2bad4fb"},
-    {file = "taskara-0.1.242.tar.gz", hash = "sha256:c0944648148f2af115fc2dee074b5f9cd0b68d1fc4fd63c97b1101e04c395c1d"},
+    {file = "taskara-0.1.243-py3-none-any.whl", hash = "sha256:4d4600830101ccb6a5ac42c87e4f1a5f8981bf54fd437587fff06752d306fa7e"},
+    {file = "taskara-0.1.243.tar.gz", hash = "sha256:e63e9fb918b326f12dc411e7292412f2b7001bde5599356e9a5913ae473d5c92"},
 ]
 
 [package.dependencies]
@@ -5894,4 +5894,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "17b8c2b5315267b640595ef06875d065e8792b96f01eb8a67e368c50bfccde07"
+content-hash = "cd107e60d5183c8feff9e75bca5c514cf63caa1b8e2006d4f695f808f0a49861"
