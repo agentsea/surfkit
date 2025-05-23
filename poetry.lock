@@ -4986,13 +4986,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.243"
+version = "0.1.244"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.243-py3-none-any.whl", hash = "sha256:4d4600830101ccb6a5ac42c87e4f1a5f8981bf54fd437587fff06752d306fa7e"},
-    {file = "taskara-0.1.243.tar.gz", hash = "sha256:e63e9fb918b326f12dc411e7292412f2b7001bde5599356e9a5913ae473d5c92"},
+    {file = "taskara-0.1.244-py3-none-any.whl", hash = "sha256:1a37717a70abfcdf43a01da45f7cdd08d26d17c03bade4464c7265050fa35766"},
+    {file = "taskara-0.1.244.tar.gz", hash = "sha256:7408b269751a9e30f82c90af3626ec37bf2b3e0c02b3abde3a06f2f371ca7718"},
 ]
 
 [package.dependencies]
@@ -5894,4 +5894,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b71e0bab98ff1cf9157a0e8bba9b12d53882d8a85cd16980f109c9025f034c94"
+content-hash = "4e505d7d47ba64625b7a5827234838ea94b26ea6aa9ecdc4266ce85af29ab0b8"

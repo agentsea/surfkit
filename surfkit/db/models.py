@@ -27,7 +27,7 @@ class SkillRecord(Base):
     review_requirements = Column(String, nullable=True)
     agent_type = Column(String, nullable=False)
     threads = Column(String, nullable=True)
-    generating_tasks = Column(Boolean, nullable=False)
+    generating_tasks = Column(Boolean, default=False, server_default="false")
     example_tasks = Column(String, nullable=True)
     tasks = Column(String, nullable=True)
     public = Column(Boolean, nullable=True, default=False)
