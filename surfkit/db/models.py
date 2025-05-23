@@ -5,11 +5,12 @@ from sqlalchemy import Boolean, Column, Float, Index, Integer, String
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.inspection import inspect
 
+
 def to_dict(instance):
     return {
-        c.key: getattr(instance, c.key)
-        for c in inspect(instance).mapper.column_attrs
+        c.key: getattr(instance, c.key) for c in inspect(instance).mapper.column_attrs
     }
+
 
 Base = declarative_base()
 

@@ -213,7 +213,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         auth_enabled: bool = True,
         labels: Optional[Dict[str, str]] = None,
         check_http_health: bool = True,
-        extra_spec: Optional[Dict[str, str]] = None
+        extra_spec: Optional[Dict[str, str]] = None,
     ) -> None:
         if not name:
             name = get_random_name("-")
@@ -263,9 +263,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
 
         # Pod specification
         pod_spec = client.V1PodSpec(
-            containers=[container],
-            restart_policy="Never",
-            **(extra_spec or {})
+            containers=[container], restart_policy="Never", **(extra_spec or {})
         )
 
         # Pod creation
@@ -281,17 +279,23 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
                     "agent_type": type.name,
                     "agent_model": type.to_v1().model_dump_json(),
                     "openmeter.io/subject": owner_id,
-                    "data.openmeter.io/desktop_id": labels["desktop_id"]
-                    if labels and "desktop_id" in labels
-                    else "undefined",
-                    "data.openmeter.io/timeout": labels["timeout"]
-                    if labels and "timeout" in labels
-                    else "undefined",
+                    "data.openmeter.io/desktop_id": (
+                        labels["desktop_id"]
+                        if labels and "desktop_id" in labels
+                        else "undefined"
+                    ),
+                    "data.openmeter.io/timeout": (
+                        labels["timeout"]
+                        if labels and "timeout" in labels
+                        else "undefined"
+                    ),
                     "data.openmeter.io/agent_type": type.name,
                     "data.openmeter.io/agent_name": name,
-                    "data.openmeter.io/task_id": labels["task_id"]
-                    if labels and "task_id" in labels
-                    else "undefined",
+                    "data.openmeter.io/task_id": (
+                        labels["task_id"]
+                        if labels and "task_id" in labels
+                        else "undefined"
+                    ),
                     "data.openmeter.io/workload": "agent",
                 },
             ),
@@ -964,7 +968,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         auth_enabled: bool = True,
         debug: bool = False,
         check_http_health: bool = True,
-        extra_spec: Optional[Dict[str, str]] = None
+        extra_spec: Optional[Dict[str, str]] = None,
     ) -> AgentInstance:
         logger.debug("creating agent with type: ", agent_type.__dict__)
         if not agent_type.versions:
@@ -1019,7 +1023,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             auth_enabled=auth_enabled,
             labels=labels,
             check_http_health=check_http_health,
-            extra_spec=extra_spec
+            extra_spec=extra_spec,
         )
 
         return AgentInstance(

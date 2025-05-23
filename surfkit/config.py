@@ -41,6 +41,8 @@ if DB_TEST:
 class GlobalConfig:
     api_key: Optional[str] = None
     hub_address: str = AGENTSEA_HUB_URL
+    provider: Optional[str] = None
+    provider_base_url: Optional[str] = None
 
     def write(self) -> None:
         home = os.path.expanduser("~")

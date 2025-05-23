@@ -387,6 +387,15 @@ def create_agent(
     local_keys: bool = typer.Option(
         False, "--local-keys", "-l", help="Use local API keys."
     ),
+    provider: Optional[str] = typer.Option(
+        None,
+        "--provider",
+        "-p",
+        help="AI provider to use (openai, openrouter, azure, etc.)",
+    ),
+    provider_base_url: Optional[str] = typer.Option(
+        None, "--provider-base-url", help="Base URL for the AI provider API"
+    ),
     debug: bool = typer.Option(False, help="Run the agent with debug logging"),
 ):
     from surfkit.server.models import V1AgentType
@@ -476,13 +485,42 @@ def create_agent(
         name = instance_name(agent_type)
 
     env_vars = find_envs(agent_type, use_local=local_keys)
+
+    # Add provider configuration to environment variables if specified
+    if provider:
+        from surfkit.providers import ProviderConfig
+        from surfkit.config import GlobalConfig
+
+        # Get provider configuration
+        provider_config = ProviderConfig.get_provider(provider.lower())
+
+        # Set provider in global config
+        config = GlobalConfig.read()
+        config.provider = provider.lower()
+        if provider_base_url:
+            config.provider_base_url = provider_base_url
+        config.write()
+
+        # Add provider info to environment variables
+        env_vars["SURFKIT_PROVIDER"] = provider.lower()
+        if provider_base_url:
+            env_vars[f"{provider_config.env_key.split('_API_KEY')[0]}_BASE_URL"] = (
+                provider_base_url
+            )
+        elif provider_config.base_url:
+            env_vars[f"{provider_config.env_key.split('_API_KEY')[0]}_BASE_URL"] = (
+                provider_config.base_url
+            )
+
     if type:
+        provider_info = f" with provider '{provider}'" if provider else ""
         typer.echo(
-            f"Running agent '{type}' with runtime '{runtime}' and name '{name}'..."
+            f"Running agent '{type}' with runtime '{runtime}' and name '{name}'{provider_info}..."
         )
     else:
+        provider_info = f" with provider '{provider}'" if provider else ""
         typer.echo(
-            f"Running agent '{file}' with runtime '{runtime}' and name '{name}'..."
+            f"Running agent '{file}' with runtime '{runtime}' and name '{name}'{provider_info}..."
         )
 
     try:
@@ -861,6 +899,31 @@ def list_types():
 def find(help="Find an agent"):
     """Find an agent"""
     list_types()
+
+
+@app.command("providers")
+def list_providers():
+    """List available AI providers"""
+    from surfkit.providers import PROVIDERS
+
+    table = []
+    for provider_id, provider in PROVIDERS.items():
+        table.append(
+            [
+                provider_id,
+                provider["name"],
+                provider["base_url"] or "Custom URL required",
+                provider["env_key"],
+            ]
+        )
+
+    print(
+        tabulate(
+            table,
+            headers=["ID", "Name", "Base URL", "API Key Environment Variable"],
+        )
+    )
+    print("")
 
 
 @list_group.command("tasks")
@@ -1462,6 +1525,12 @@ def solve(
     local_keys: bool = typer.Option(
         False, "--local-keys", "-l", help="Use local API keys."
     ),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", help="AI provider to use (openai, openrouter, azure, etc.)"
+    ),
+    provider_base_url: Optional[str] = typer.Option(
+        None, "--provider-base-url", help="Base URL for the AI provider API"
+    ),
     debug: bool = typer.Option(False, help="Run the agent with debug logging"),
 ):
     from surfkit.client import solve
@@ -1486,6 +1555,8 @@ def solve(
         starting_url=starting_url,
         auth_enabled=auth_enabled,
         local_keys=local_keys,
+        provider=provider,
+        provider_base_url=provider_base_url,
         debug=debug,
         interactive=True,
         create_tracker=False,

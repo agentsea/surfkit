@@ -8,7 +8,6 @@ C = TypeVar("C", bound="BaseModel")
 
 
 class ContainerRuntime(Generic[C, R], ABC):
-
     @classmethod
     def name(cls) -> str:
         return cls.__name__
