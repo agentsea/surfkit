@@ -159,7 +159,6 @@ build-backend = "poetry.core.masonry.api"
 def generate_agentfile(
     name: str, description: str, image_repo: str, icon_url: str
 ) -> None:
-
     out = f"""
 api_version: v1
 kind: TaskAgent
@@ -200,7 +199,6 @@ resource_limits:
 
 
 def generate_gitignore() -> None:
-
     out = """
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -380,7 +378,6 @@ cidata.iso
 
 
 def generate_readme(agent_name: str, description: str) -> None:
-
     out = f"""# {agent_name}
 
 {description}

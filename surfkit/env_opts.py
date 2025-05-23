@@ -9,7 +9,6 @@ from surfkit.types import AgentType
 
 
 def find_local_llm_keys(typ: AgentType) -> Optional[dict]:
-
     env_vars = None
 
     if typ.llm_providers and typ.llm_providers.preference:
