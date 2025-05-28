@@ -34,6 +34,8 @@ def get_pg_conn() -> Engine:
     engine = create_engine(
         f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}",
         client_encoding="utf8",
+        pool_pre_ping=True,
+        pool_recycle=300
     )
 
     return engine
