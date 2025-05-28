@@ -1227,6 +1227,8 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         auth_server: str = AGENTSEA_AUTH_URL,
         nebu_server: str = NEBU_SERVER,
         orign_server: str = ORIGN_SERVER,
+        labels: Optional[Dict[str, str]] = None,
+        extra_spec: Optional[Dict[str, str]] = None,
         debug: bool = False,
     ) -> None:
         """
@@ -1323,6 +1325,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         pod_spec = client.V1PodSpec(
             containers=[container],
             restart_policy="Never",
+            **(extra_spec or {})
         )
 
         # Incorporate any relevant annotations/labels
@@ -1332,7 +1335,7 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
             "agent_type": agent_type.name,
             "agent_model": agent_type.to_v1().model_dump_json(),
         }
-        labels = {"provisioner": "surfkit"}
+        labels = {"provisioner": "surfkit", **(labels or {})}
 
         # Construct the pod template
         template = client.V1PodTemplateSpec(
