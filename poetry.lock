@@ -4812,13 +4812,13 @@ files = [
 
 [[package]]
 name = "skillpacks"
-version = "0.1.127"
+version = "0.1.128"
 description = "Pluggable skills for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "skillpacks-0.1.127-py3-none-any.whl", hash = "sha256:efe6d814dc1d7ba5b1ef2806dc44960a0bd2bff52032e25bf3797e57d5a19731"},
-    {file = "skillpacks-0.1.127.tar.gz", hash = "sha256:e2240cae0e8050c5a69f8d87ca4aff569fa750d88c7ad49de562490770de5585"},
+    {file = "skillpacks-0.1.128-py3-none-any.whl", hash = "sha256:a0ce4e7cceacc53fd17e7b4136d064fb655e0e366e4520c5a49d0e76205d8ea1"},
+    {file = "skillpacks-0.1.128.tar.gz", hash = "sha256:80a54390002bf81337e60b089921f985125c374ba374bc73a2144fc1eca148ec"},
 ]
 
 [package.dependencies]
@@ -4986,13 +4986,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "taskara"
-version = "0.1.244"
+version = "0.1.246"
 description = "Task management for AI agents"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "taskara-0.1.244-py3-none-any.whl", hash = "sha256:1a37717a70abfcdf43a01da45f7cdd08d26d17c03bade4464c7265050fa35766"},
-    {file = "taskara-0.1.244.tar.gz", hash = "sha256:7408b269751a9e30f82c90af3626ec37bf2b3e0c02b3abde3a06f2f371ca7718"},
+    {file = "taskara-0.1.246-py3-none-any.whl", hash = "sha256:13bd547d2c438634482fca6fdd172b9c8076f0f6994773cc655dffb1c2f05bc9"},
+    {file = "taskara-0.1.246.tar.gz", hash = "sha256:9075fa21e9f58833c9d0a06267351ccdd1d8988b3b4dd1fad0b14b1b6458a374"},
 ]
 
 [package.dependencies]
@@ -5003,7 +5003,7 @@ openmeter = ">=1.0.0b188,<2.0.0"
 pydantic = ">=2.6.4,<3.0.0"
 redis = ">=5.2.0,<6.0.0"
 shortuuid = ">=1.0.13,<2.0.0"
-skillpacks = ">=0.1.127,<0.2.0"
+skillpacks = ">=0.1.128,<0.2.0"
 sqlalchemy = ">=2.0.29,<3.0.0"
 tqdm = ">=4.66.4,<5.0.0"
 
@@ -5894,4 +5894,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "ec2adb03def2c79abe6054d9e46b6d34f5bf346d2b852e1c604f51cbd41824d2"
+content-hash = "ca25cccb8a1f48d4a062efe6820ffc77700e65b26b71f45a578d9e06083f83c9"
