@@ -970,8 +970,8 @@ class KubeAgentRuntime(AgentRuntime["KubeAgentRuntime", KubeConnectConfig]):
         if not agent_type.versions:
             raise ValueError("No versions specified in agent type")
         if not version:
-            version = list(agent_type.versions.keys())[0]
-        img = agent_type.versions.get(version)
+            version = next(iter(agent_type.versions.values()))
+        img = version
         if not img:
             raise ValueError("img not found")
         if not env_vars:
