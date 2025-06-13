@@ -656,7 +656,6 @@ class Skill(WithDB):
         router = Router(
             [
                 "mistral/mistral-medium-latest",
-                "mistral/mistral-small-latest",
                 "mistral/mistral-large-latest",
             ]
         )
