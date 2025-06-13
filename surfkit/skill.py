@@ -1,6 +1,6 @@
-from collections import defaultdict
 import json
 import time
+from collections import defaultdict
 from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
@@ -9,13 +9,18 @@ from typing import Any, Dict, List, Optional
 import requests
 from mllm import Router
 from shortuuid import uuid
-from sqlalchemy import Integer, asc, func, case, cast, and_, distinct, over, update
+from skillpacks.db.models import (
+    ActionRecord,
+    EpisodeRecord,
+    ReviewRecord,
+    action_reviews,
+)
+from sqlalchemy import Integer, and_, asc, case, cast, distinct, func, over, update
 from sqlalchemy.orm import joinedload
 from taskara import ReviewRequirement, Task, TaskStatus
-from threadmem import RoleThread
-from skillpacks.db.models import ActionRecord, EpisodeRecord, ReviewRecord, action_reviews
 from taskara.db.conn import get_db as get_task_DB
-from taskara.db.models import TaskRecord, LabelRecord, task_label_association
+from taskara.db.models import LabelRecord, TaskRecord, task_label_association
+
 from surfkit.db.conn import WithDB
 from surfkit.db.models import SkillRecord, to_dict
 from surfkit.server.models import (
@@ -25,6 +30,7 @@ from surfkit.server.models import (
     V1Skill,
     V1UpdateSkill,
 )
+from threadmem import RoleThread
 
 
 class SkillStatus(Enum):
@@ -96,7 +102,6 @@ class Skill(WithDB):
         router = Router(
             [
                 "mistral/mistral-medium-latest",
-                "mistral/mistral-small-latest",
                 "mistral/mistral-large-latest",
             ]
         )
@@ -106,7 +111,7 @@ class Skill(WithDB):
             role="user",
             msg=f"Please generate a name for this skill description that is no longer than 5 words, lowercase and hyphenated as a single word, if there is a specific tool involved like 'airbnb' make sure to include that e.g. 'search-for-stays-on-airbnb': '{self.description}'",
         )
-        resp = router.chat(thread, model="mistral/mistral-small-latest")
+        resp = router.chat(thread, model="mistral/mistral-medium-latest")
         print(
             "Get Name Chat response", asdict(resp), flush=True
         )  # TODO test pydantic dump
@@ -235,7 +240,7 @@ class Skill(WithDB):
         start_time = time.time()
         # We aren't using threads right now
         # thread_ids = json.loads(str(record.threads))
-        threads = [] # [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
+        threads = []  # [RoleThread.find(id=thread_id)[0] for thread_id in thread_ids]
         example_tasks = json.loads(str(record.example_tasks))
 
         requirements = json.loads(str(record.requirements))
@@ -383,8 +388,13 @@ class Skill(WithDB):
 
                 task_map: defaultdict[str, list[Task]] = defaultdict(list)
                 for task in tasks:
-                    task_map[task.skill].append(task) # type: ignore
-                out.extend([cls.from_record_with_tasks(record, task_map[str(record.id)]) for record in records])
+                    task_map[task.skill].append(task)  # type: ignore
+                out.extend(
+                    [
+                        cls.from_record_with_tasks(record, task_map[str(record.id)])
+                        for record in records
+                    ]
+                )
                 print(
                     f"skills from_record ran time lapsed: {(time.time() - start_time):.4f}",
                     flush=True,
@@ -426,8 +436,13 @@ class Skill(WithDB):
 
             task_map: defaultdict[str, list[Task]] = defaultdict(list)
             for task in tasks:
-                task_map[task.skill].append(task) # type: ignore
-            out.extend([cls.from_record_with_tasks(record, task_map[str(record.id)]) for record in records])
+                task_map[task.skill].append(task)  # type: ignore
+            out.extend(
+                [
+                    cls.from_record_with_tasks(record, task_map[str(record.id)])
+                    for record in records
+                ]
+            )
             print(
                 f"skills from_record ran time lapsed: {(time.time() - start_time):.4f}",
                 flush=True,
@@ -670,7 +685,7 @@ class Skill(WithDB):
             example_str = str(
                 f"Some examples of tasks for this skill are: '{json.dumps(self.example_tasks)}'"
             )
-            example_schema = str('{"tasks": ' f"{json.dumps(self.example_tasks)}" "}")
+            example_schema = str(f'{{"tasks": {json.dumps(self.example_tasks)}}}')
         if len(self.requirements) > 0:
             print(
                 f"Generating tasks for skill: '{self.description}', skill ID: {self.id} with requirements: {self.requirements}",
@@ -711,7 +726,7 @@ class Skill(WithDB):
                 print(f"prompt: {prompt}", flush=True)
                 thread.post("user", prompt)
                 response = router.chat(
-                    thread, model="mistral/mistral-small-latest", expect=UserTasks
+                    thread, model="mistral/mistral-medium-latest", expect=UserTasks
                 )
                 print(f"thread {thread}, response: {response}", flush=True)
                 if not response.parsed:
@@ -794,7 +809,7 @@ class Skill(WithDB):
         thread.post("user", prompt)
 
         response = router.chat(
-            thread, model="mistral/mistral-small-latest", expect=UserTask
+            thread, model="mistral/mistral-medium-latest", expect=UserTask
         )
 
         if not response.parsed:
@@ -839,7 +854,6 @@ class Skill(WithDB):
     def find_skills_for_task_gen(cls) -> list[SkillsWithGenTasks]:
         skill_records = []
         for skill_session in cls.get_db():
-
             # Query all skills needing tasks
             skill_records = (
                 skill_session.query(SkillRecord.id, SkillRecord.demo_queue_size)
@@ -924,19 +938,16 @@ class Skill(WithDB):
                 )
 
         return results
-    
+
     @classmethod
     def find_skills_for_agent_task_gen(cls) -> list[SkillsWithGenTasks]:
         skill_records = []
         for skill_session in cls.get_db():
-
             # Query all skills needing tasks
             skill_records = (
                 skill_session.query(SkillRecord.id, SkillRecord.kvs)
                 .filter(
-                    SkillRecord.status.in_(
-                        [SkillStatus.TRAINING.value]
-                    ),
+                    SkillRecord.status.in_([SkillStatus.TRAINING.value]),
                     SkillRecord.generating_tasks == False,  # noqa: E712
                 )
                 .all()
@@ -963,31 +974,36 @@ class Skill(WithDB):
                     func.count().label("count"),
                 )
                 .filter(
-                    TaskRecord.assigned_type != 'user',
-                    TaskRecord.reviews == '[]',  # Only include tasks with an empty reviews field
-                    TaskRecord.status.in_([
-                        TaskStatus.IN_QUEUE.value,
-                        TaskStatus.TIMED_OUT.value,
-                        TaskStatus.WAITING.value,
-                        TaskStatus.IN_PROGRESS.value,
-                        TaskStatus.FAILED.value,
-                        TaskStatus.ERROR.value,
-                        TaskStatus.REVIEW.value,
-                    ]),
+                    TaskRecord.assigned_type != "user",
+                    TaskRecord.reviews
+                    == "[]",  # Only include tasks with an empty reviews field
+                    TaskRecord.status.in_(
+                        [
+                            TaskStatus.IN_QUEUE.value,
+                            TaskStatus.TIMED_OUT.value,
+                            TaskStatus.WAITING.value,
+                            TaskStatus.IN_PROGRESS.value,
+                            TaskStatus.FAILED.value,
+                            TaskStatus.ERROR.value,
+                            TaskStatus.REVIEW.value,
+                        ]
+                    ),
                 )
                 .outerjoin(
                     task_label_association,
-                    TaskRecord.id == task_label_association.c.task_id
+                    TaskRecord.id == task_label_association.c.task_id,
                 )
                 .outerjoin(
                     LabelRecord,
                     and_(
                         task_label_association.c.label_id == LabelRecord.id,
-                        LabelRecord.key == 'can_review',
-                        LabelRecord.value == 'false'
-                    )
+                        LabelRecord.key == "can_review",
+                        LabelRecord.value == "false",
+                    ),
                 )
-                .filter(LabelRecord.id.is_(None))  # Exclude tasks with the "can_review" label set to 'false'
+                .filter(
+                    LabelRecord.id.is_(None)
+                )  # Exclude tasks with the "can_review" label set to 'false'
                 .group_by(TaskRecord.skill)
                 .all()
             )
@@ -1004,13 +1020,21 @@ class Skill(WithDB):
         results = []
         for sid in skill_ids:
             agent_task_queue_size = 5
-            if 'agent_task_queue_size' in skill_map[sid]['kvs']:
-                print(f'fail limit is {skill_map[sid]["kvs"]["agent_task_queue_size"]}', flush=True)
+            if "agent_task_queue_size" in skill_map[sid]["kvs"]:
+                print(
+                    f"fail limit is {skill_map[sid]['kvs']['agent_task_queue_size']}",
+                    flush=True,
+                )
                 try:
-                    agent_task_queue_size = int(skill_map[sid]['kvs']['agent_task_queue_size'])  # Ensure conversion
+                    agent_task_queue_size = int(
+                        skill_map[sid]["kvs"]["agent_task_queue_size"]
+                    )  # Ensure conversion
                 except ValueError:
-                    print(f"Invalid agent_task_queue_size for skill {skill_map[sid]}, using default 3", flush=True)
-                
+                    print(
+                        f"Invalid agent_task_queue_size for skill {skill_map[sid]}, using default 3",
+                        flush=True,
+                    )
+
             count_value = in_queue_counts[sid]  # defaults to 0 if sid never occurred
             if count_value < agent_task_queue_size:
                 results.append(
