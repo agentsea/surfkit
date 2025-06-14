@@ -613,7 +613,7 @@ def list_agents(
         )
         print("")
     else:
-        print("No agents found.")
+        print("No agents found")
 
 
 @list_group.command("devices")
